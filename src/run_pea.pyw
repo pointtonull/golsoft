@@ -7,7 +7,7 @@ Testing case
 
 from autopipe import showimage
 from image import equalize, imread, normalize
-from pea import get_pea, guess_angles
+from pea import get_pea, guess_directors_angles
 from numpy import angle
 import sys
 
@@ -37,7 +37,7 @@ def main():
         showimage(equalize(image))
         for distance in frange(.0, .05, 2):
             print(distance)
-            alpha, beta = guess_angles(image)
+            alpha, beta = guess_director_angles(image)
             pea = get_pea(image, distance, alpha, beta)
             showimage(equalize(pea))
             showimage(normalize(angle(pea)))
