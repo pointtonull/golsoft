@@ -167,8 +167,8 @@ def generic_minimizer(fitness_func, initial_guess, epsilon=5e-3):
         if best_result is None or last_result < best_result:
             best_guess = xend
             best_result = last_result
-            print(best_guess, last_result)
-        if last_result < epsilon:
-            break
+            print(optimizer.func_name, best_guess, last_result)
+            if last_result < epsilon:
+                break
 
     return best_guess
