@@ -7,7 +7,7 @@ spectrum image.
 View run_automask to see a complete example.
 """
 
-from autopipe import showimage
+#from autopipe import showimage
 from collections import defaultdict
 from image import get_centered
 from scipy.ndimage import geometric_transform
@@ -189,8 +189,8 @@ def main():
         mask *= 1 - get_mask(array.shape, window, l_pnoise[1])
         window = windowmaker(c_order[2] * r_scale)
         mask *= 1 - get_mask(array.shape, window, c_order[1])
-        showimage(mask * 255)
-        showimage(logscale(mask * array))
+#        showimage(mask * 255)
+#        showimage(logscale(mask * array))
 
         window = get_holed_window(windowmaker, r_order[2] * r_scale, 10)
         mask = get_mask(array.shape, window, r_order[1])
@@ -198,8 +198,8 @@ def main():
         mask *= 1 - get_mask(array.shape, window, r_pnoise[1])
         window = windowmaker(c_order[2] * r_scale)
         mask *= 1 - get_mask(array.shape, window, c_order[1])
-        showimage(mask * 255)
-        showimage(logscale(mask * array))
+#        showimage(mask * 255)
+#        showimage(logscale(mask * array))
 
 
 if __name__ == "__main__":

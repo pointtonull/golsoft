@@ -11,7 +11,6 @@ from fmt import get_shiftedfft, get_ifft, get_shiftedifft
 from image import equalize, get_intensity, get_centered, normalize
 from numpy import exp, cos, sqrt
 from scipy import optimize
-from autopipe import showimage
 import cache
 import numpy as np
 
@@ -33,7 +32,7 @@ def apply_mask(array):
     array = get_centered(array)
     shape = array.shape
     intensity = equalize(array)
-    showimage(intensity)
+#    showimage(intensity)
 
     windowmaker = lambda x: np.kaiser(x, 0)#FIXME
     circles = sorted(get_circles(intensity, 3, 50))
@@ -47,7 +46,7 @@ def apply_mask(array):
     mask = get_mask(shape, window)
 
     masked = get_centered(mask * centered)
-    showimage(normalize(masked))
+#    showimage(normalize(masked))
     return masked
 
 
@@ -94,7 +93,7 @@ def get_pea(hologram, distance, alpha=tau/4, cos_beta=tau/4):
         (LAMBDA * 230.8658393 * col)**2)
     propagation_array = exp(1j * phase_correction_factor * distance)
     print("Propagation array")
-    showimage(equalize(propagation_array.real))
+#    showimage(equalize(propagation_array.real))
     propagated = propagation_array * masked
 
     reconstructed = get_ifft(propagated)
@@ -155,8 +154,10 @@ def guess_director_angles(hologram):
 def generic_minimizer(fitness_func, initial_guess, epsilon=5e-3):
     optimizers = [
         optimize.fmin, # 66
-        optimize.fmin_bfgs,
-        optimize.fmin_powell
+        optimize.fmin_powell,
+#        optimize.fmin_cg,
+#        optimize.fmin_slsqp,
+#        optimize.fmin_bfgs,
     ]
 
     best_result = None
@@ -166,8 +167,8 @@ def generic_minimizer(fitness_func, initial_guess, epsilon=5e-3):
         if best_result is None or last_result < best_result:
             best_guess = xend
             best_result = last_result
-            print(best_guess, last_result)
-        if last_result < epsilon:
-            break
+            print(optimizer.func_name, best_guess, last_result)
+            if last_result < epsilon:
+                break
 
     return best_guess
