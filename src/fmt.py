@@ -6,7 +6,7 @@ This is a simple implementation of the Fourier-Mellin Trasform
 """
 
 from automask import get_mask
-from autopipe import showimage
+#from autopipe import showimage
 from image import get_intensity, get_centered, logscale, equalize
 from numpy import fft
 from numpy import ndarray as atype
@@ -171,7 +171,7 @@ def get_fmt_correlation(image1, image2):
 #    correlation = correlate2d(get_intensity(fmt1), get_intensity(fmt2))
     correlation = correlate2d(np.abs(fmt1), np.abs(fmt2)) #magnitude
 #    correlation = correlate2d(np.angle(fmt1), np.angle(fmt2)) #phase
-    showimage(logscale(correlation), equalize(correlation))
+#    showimage(logscale(correlation), equalize(correlation))
 
     #6 reverse 2D Fourier transform of result of step 5; note that steps 4+6 are
     #  equivalent to perform a correlation on results of step 3; step 5
