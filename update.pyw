@@ -17,8 +17,8 @@ import os
 import sys
 import webbrowser
 
-REPO_URL = "http://msysgit.googlecode.com/files/Git-1.7.9-preview20120201.exe"
-GIT_INSTALLER = "git://github.com/pointtonull/pyunwrap.git"
+REPO_URL = "git://github.com/pointtonull/golsoft.git"
+GIT_INSTALLER = "http://msysgit.googlecode.com/files/Git-1.7.9-preview20120201.exe"
 
 def enqueue_output(out, queue):
     for line in iter(out.read, ''):

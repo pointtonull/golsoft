@@ -1,6 +1,6 @@
 Setup Tools;setuptools;download;http://pypi.python.org/packages/2.7/s/setuptools/setuptools-0.6c11.win32-py2.7.exe
-URLGrabber;urlgrabber;easy_install;urlgrabber
 Python Package Index;pip;easy_install;pip
+URLGrabber;urlgrabber;pip;urlgrabber
 Python Imaging Library;Image;easy_install;pil
 NumPy;numpy;easy_install;numpy
 Py2exe;py2exe;download;http://ufpr.dl.sourceforge.net/project/py2exe/py2exe/0.6.9/py2exe-0.6.9.win32-py2.7.exe
