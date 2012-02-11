@@ -25,7 +25,7 @@ def downloader(url, dest, retries=5):
         currentsize = 0
 
     while currentsize < totalsize:
-        data = connection.read(8192)
+        data = connection.read(819200)
         output.write(data)
         currentsize += len(data)
         print "%d, " % (100 * currentsize / totalsize),

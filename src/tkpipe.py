@@ -2,7 +2,10 @@
 #-*- coding: UTF-8 -*-
 
 from Tkinter import Button, Frame, Label, Text
-import ImageTk
+try:
+    import ImageTk
+except ImportError:
+    ImageTk = False
 
 class Tkpipe(Frame):
 
@@ -75,9 +78,12 @@ class Tkpipe(Frame):
         self.close()
 
     def writeimage(self, image):
-        self.images.append(ImageTk.PhotoImage(image))
-        self.txt_messages.image_create("end", {"image" : self.images[-1]})
-        self.update()
+        if ImageTk:
+            self.images.append(ImageTk.PhotoImage(image))
+            self.txt_messages.image_create("end", {"image" : self.images[-1]})
+            self.update()
+        else:
+            self.write("<Must install PIL to display images>\n")
 
 
 class ColoredPipe:

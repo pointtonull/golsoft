@@ -84,21 +84,20 @@ def execute(path):
     return non_blocking_proc([path])
 
 
-def download(url):
+def download(url, destpath=None):
     sys.stderr.write("""        Fetching installer\n"""
         """        execute & retry\n""")
-    filename = os.path.basename(url)
-    filepath = os.path.join("tools", filename)
-    downloader(url, filepath)
-    return non_blocking_proc([filepath])
-
-
+    if destpath is None:
+        destdir = "tools"
+        filename = os.path.basename(url)
+        destpath = os.path.join(destdir, filename)
+    downloader(url, destpath)
+    return non_blocking_proc([destpath])
 
 def easy_install(module):
     easy_install_paths = get_paths("easy_install")
     command = [easy_install_paths[0], module]
     non_blocking_proc(command)
-
 
 def pip_install(module):
     pip_paths = get_paths(r"pip")
@@ -115,7 +114,7 @@ def main():
         print("pass")
     else:
         red("fail\n")
-        download(GIT_INSTALLER)
+        download(GIT_INSTALLER, "git-setup.exe")
         return 1
 
     blue("Verifing valid repository: ")
