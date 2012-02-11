@@ -8,7 +8,7 @@ import sys
 
 
 def logscale(image):
-    array = numpy.asarray(image, dtype=float)
+    array = numpy.asarray(image.convert("F"), dtype=float)
     print array.min(), array.max()
     array -= array.min()
     print array.min(), array.max()
