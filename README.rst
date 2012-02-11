@@ -1,4 +1,4 @@
-.. figure:: https://github.com/pointtonull/golsof/raw/master/docs/images/compose.png
+.. figure:: https://github.com/pointtonull/golsoft/raw/master/docs/images/compose.png
    :align: right
 
 Description
