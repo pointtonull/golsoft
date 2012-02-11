@@ -29,6 +29,7 @@ def logscale(image):
 def main():
     image = Image.open(sys.argv[1])
     autopipe.pipe.writeimage(image)
+    autopipe.pipe.writeimage(image.convert("F"))
     image = logscale(image)
     autopipe.pipe.writeimage(image)
 
