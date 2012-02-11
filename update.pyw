@@ -146,7 +146,7 @@ def main():
         "pip" : pip_install
     }
 
-    sys.stderr.write("\nTesting dependencies:\n")
+    blue("\nTesting dependencies:\n")
     lines = (line.strip().split(";") for line in open("dependencies.txt")
         if not line.startswith("#"))
     for name, module, method, argument in lines:
