@@ -24,7 +24,6 @@ def downloader(url, dest, retries=5):
         output = open(dest, "wb")
         currentsize = 0
 
-    print currentsize, totalsize
     while currentsize < totalsize:
         data = connection.read(8192)
         output.write(data)

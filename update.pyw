@@ -11,6 +11,7 @@ desactualizado.
 from Queue import Queue, Empty
 from src import autopipe
 from src.executables import get_paths
+from src.downloader import downloader
 from subprocess import Popen, PIPE, STARTUPINFO, SW_HIDE, STARTF_USESHOWWINDOW
 from threading  import Thread
 import os
@@ -84,9 +85,13 @@ def execute(path):
 
 
 def download(url):
-    sys.stderr.write("""***     Fetching installer\n"""
-        """***     execute & retry\n""")
-    return webbrowser.open(url)
+    sys.stderr.write("""        Fetching installer\n"""
+        """        execute & retry\n""")
+    filename = os.path.basename(url)
+    filepath = os.path.join("tools", filename)
+    download(url, filepath)
+    return non_blocking_proc([filepath])
+
 
 
 def easy_install(module):
@@ -146,7 +151,8 @@ def main():
     }
 
     sys.stderr.write("\nTesting dependencies:\n")
-    lines = (line.strip().split(";") for line in open("dependencies.txt"))
+    lines = (line.strip().split(";") for line in open("dependencies.txt")
+        if not line.startswith("#"))
     for name, module, method, argument in lines:
         if not check_module(name, module):
             methods[method](argument)
