@@ -10,8 +10,8 @@ TKPIPE = os.name in ("nt")
 if TKPIPE:
     import tkpipe
     TKPIPE = tkpipe.Tkpipe()
-    sys.stdout = pipe.default("green")
-    sys.stderr = pipe.default("red")
+    sys.stdout = TKPIPE.default("green")
+    sys.stderr = TKPIPE.default("red")
 
 
 def showimage(image):
