@@ -89,7 +89,7 @@ def download(url):
         """        execute & retry\n""")
     filename = os.path.basename(url)
     filepath = os.path.join("tools", filename)
-    download(url, filepath)
+    downloader(url, filepath)
     return non_blocking_proc([filepath])
 
 
