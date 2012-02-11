@@ -18,9 +18,12 @@ def logscale(image):
 
 def main():
     image = Image.open(sys.argv[1])
+    print("Original image:")
     autopipe.pipe.writeimage(image)
+    print("On gray tones:")
     autopipe.pipe.writeimage(image.convert("F"))
     image = logscale(image)
+    print("On log-scaled gray tones:")
     autopipe.pipe.writeimage(image)
 
 if __name__ == "__main__":
