@@ -9,7 +9,7 @@ desactualizado.
 """
 
 from Queue import Queue, Empty
-from src import autopipe
+from src.autopipe import red, blue, green
 from src.executables import get_paths
 from src.downloader import downloader
 from subprocess import Popen, PIPE, STARTUPINFO, SW_HIDE, STARTF_USESHOWWINDOW
@@ -106,32 +106,28 @@ def pip_install(module):
     non_blocking_proc(command)
 
 
-def message(text, color="blue"):
-    return sys.stderr.write(text, color)
-
-
 def main():
     "The main routine"
 
-    message("Verifing git: ")
+    blue("Verifing git: ")
     git_paths = get_paths(r"git\cmd\git")
     if git_paths:
         print("pass")
     else:
-        message("fail\n", "red")
+        red("fail\n")
         download(GIT_INSTALLER)
         return 1
 
-    message("Verifing valid repository: ")
+    blue("Verifing valid repository: ")
     if os.path.isdir(".git"):
         print("pass")
     else:
-        message("fail\n", "red")
-        message("Attempting to clone the repository at the current location\n"
+        red("fail\n")
+        blue("Attempting to clone the repository at the current location\n"
             "\n\nThis may take some time depending on pool size and the speed"
             "of the connection.\n")
         non_blocking_proc([git_paths[0], "clone", REPO_URL])
-        message("""\n\nMust execute "update.pyw" inside the new dir.\n""")
+        blue("""\n\nMust execute "update.pyw" inside the new dir.\n""")
         return
 
     commands = (

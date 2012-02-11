@@ -77,7 +77,6 @@ class Tkpipe(Frame):
     def writeimage(self, image):
         self.images.append(ImageTk.PhotoImage(image))
         self.txt_messages.image_create("end", {"image" : self.images[-1]})
-        self.write("\n")
         self.update()
 
 
