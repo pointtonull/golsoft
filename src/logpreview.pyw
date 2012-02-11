@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
-#import autopipe
+import autopipe
 import Image
 import numpy
 import sys
@@ -23,10 +23,9 @@ def logscale(image):
 
 def main():
     image = Image.open(sys.argv[1])
-    image.show("Original")
+    autopipe.pipe.writeimage(image)
     image = logscale(image)
-    image.show("Logscaled")
-#    autopipe.pipe.writeimage(image)
+    autopipe.pipe.writeimage(image)
 
 if __name__ == "__main__":
     exit(main())
