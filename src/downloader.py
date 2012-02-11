@@ -28,10 +28,11 @@ def downloader(url, dest, retries=5):
         data = connection.read(81920)
         output.write(data)
         if len(data) == 0:
+            print("<Connection dead>")
             break
         else:
             currentsize += len(data)
-            print "%d, " % (100 * currentsize / totalsize),
+            print "%d%% " % (100 * currentsize / totalsize),
     
     if totalsize == currentsize:
         print ""
