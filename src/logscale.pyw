@@ -5,10 +5,10 @@ import autopipe
 import Image
 import numpy as np
 import sys
+from ImageOps import autocontrast
 import ImageOps
 
 def logscale(image):
-    image = image.convert("F")
     array = np.asarray(image, dtype=float)
     array -= array.min()
     array *= np.expm1(1) / array.max()
@@ -16,19 +16,6 @@ def logscale(image):
     array *= 255
     image = Image.fromarray(array.astype('uint8'))
     return image
-
-def fftlogscale(image):
-    image = image.convert("F")
-    array = np.asarray(image, dtype=float)
-    array = np.fft.fft2(array)
-    array -= array.min()
-    array *= np.expm1(1) / array.max()
-    array = np.log1p(array)
-    array = np.fft.ifft2(array)
-    array *= 255
-    image = Image.fromarray(array.astype('uint8'))
-    return image
-
 
 def toLmode(image):
     image = image.convert("F")
@@ -40,7 +27,6 @@ def toLmode(image):
 
 
 def equalizefloat(image):
-    image = image.convert("F")
     array = np.asarray(image)
     shape = array.shape
     array = array.flatten()
@@ -48,10 +34,16 @@ def equalizefloat(image):
     for order, place in enumerate(sorters):
         array[place] = order
     array *= 255. / order
-    print(array.min(), array.max())
     array = array.reshape(shape)
     image = Image.fromarray(array.astype("uint8"))
     return image
+
+
+def equalize(image):
+    if image.mode in ("F"):
+        return equalizefloat(image)
+    else:
+        return ImageOps.equalize(image)
 
 
 def main():
@@ -60,20 +52,14 @@ def main():
     print("Original image:")
     autopipe.showimage(image)
 
-    print("On gray tones:")
-    autopipe.showimage(image.convert("F"))
-
-    print("On log-scaled gray tones:")
+    print("With logscale:")
     autopipe.showimage(logscale(image))
 
     print("With auto-contrast:")
-    autopipe.showimage(ImageOps.autocontrast(toLmode(image)))
+    autopipe.showimage(autocontrast(toLmode(image)))
 
     print("With equalized histogram:")
-    autopipe.showimage(ImageOps.equalize(toLmode(image)))
-
-    print("With float equalized histogram:")
-    autopipe.showimage(equalizefloat(image))
+    autopipe.showimage(equalize(image))
 
 if __name__ == "__main__":
     exit(main())
