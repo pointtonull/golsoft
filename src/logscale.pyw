@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
-from src.autopipe import red
+from autopipe import red, blue, showimage
 import Image
 import numpy as np
 import sys
@@ -57,21 +57,21 @@ def main():
     image = Image.open(sys.argv[1])
     width, height = image.size
     if max(width, height) > 600:
-        print "Resizing..."
+        print("Resizing...")
         prop = max(width, height) / 600.
         image = image.resize((int(width / prop), int(height / prop)), 1)
 
     print("Original image:")
-    autopipe.showimage(image)
+    showimage(image)
 
     print("With logscale:")
-    autopipe.showimage(logscale(image))
+    showimage(logscale(image))
 
     print("With auto-contrast:")
-    autopipe.showimage(autocontrast(image))
+    showimage(autocontrast(image))
 
     print("With equalized histogram:")
-    autopipe.showimage(equalize(image))
+    showimage(equalize(image))
 
 if __name__ == "__main__":
     exit(main())
