@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
-import autopipe
+from autopipe import red
 import Image
 import numpy as np
 import sys
@@ -47,7 +47,10 @@ def equalize(image):
 def autocontrast(image):
     if image.mode in ("F"):
         image = toLmode(image)
-    return ImageOps.autocontrast(image)
+    try:
+        return ImageOps.autocontrast(image)
+    except IOError:
+        red("Error on '%s' image" % image.mode)
 
 
 def main():
