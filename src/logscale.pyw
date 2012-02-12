@@ -48,6 +48,10 @@ def equalize(image):
 
 def main():
     image = Image.open(sys.argv[1])
+    width, height = image.size
+    if max(width, height) > 600:
+        prop = max(width, height) / 600.
+        image.resize((width / prop, height / prop))
 
     print("Original image:")
     autopipe.showimage(image)
