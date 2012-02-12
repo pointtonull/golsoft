@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
-from autopipe import red
+from src.autopipe import red
 import Image
 import numpy as np
 import sys
