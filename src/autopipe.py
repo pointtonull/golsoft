@@ -17,6 +17,7 @@ if TKPIPE:
 def showimage(image):
     if TKPIPE:
         TKPIPE.writeimage(image)
+        print("")
     else:
         image.show()
 
