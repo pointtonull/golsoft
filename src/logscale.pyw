@@ -71,5 +71,8 @@ def main():
     print("With equalized histogram:")
     autopipe.showimage(ImageOps.equalize(toLmode(image)))
 
+    print("With equalized histogram:")
+    autopipe.showimage(ImageOps.equalize(ImageOps.autocontrast(toLmode(image))))
+
 if __name__ == "__main__":
     exit(main())
