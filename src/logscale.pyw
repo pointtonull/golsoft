@@ -44,7 +44,7 @@ def equalize(image):
     else:
         return ImageOps.equalize(image)
 
-def autocontrat(image):
+def autocontrast(image):
     if image.mode in ("F"):
         image = toLmode(image)
     return ImageOps.autocontrast(image)
