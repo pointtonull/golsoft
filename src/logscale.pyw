@@ -5,7 +5,6 @@ import autopipe
 import Image
 import numpy as np
 import sys
-from ImageOps import autocontrast
 import ImageOps
 
 def logscale(image):
@@ -45,6 +44,11 @@ def equalize(image):
     else:
         return ImageOps.equalize(image)
 
+def autocontrat(image):
+    if image.mode in ("F"):
+        image = toLmode(image)
+    return ImageOps.autocontrast(image)
+
 
 def main():
     image = Image.open(sys.argv[1])
@@ -61,7 +65,7 @@ def main():
     autopipe.showimage(logscale(image))
 
     print("With auto-contrast:")
-    autopipe.showimage(autocontrast(toLmode(image)))
+    autopipe.showimage(autocontrast(image))
 
     print("With equalized histogram:")
     autopipe.showimage(equalize(image))
