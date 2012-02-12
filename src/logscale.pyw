@@ -19,28 +19,13 @@ def logscale(image):
 
 def fftlogscale(image):
     image = image.convert("F")
-
     array = np.asarray(image, dtype=float)
-    print(array.min(), array.max())
-
     array = np.fft.fft2(array)
-    print(array.min(), array.max())
-
     array -= array.min()
-    print(array.min(), array.max())
-
     array *= np.expm1(1) / array.max()
-    print(array.min(), array.max())
-
     array = np.log1p(array)
-    print(array.min(), array.max())
-
     array = np.fft.ifft2(array)
-    print(array.min(), array.max())
-
     array *= 255
-    print(array.min(), array.max())
-
     image = Image.fromarray(array.astype('uint8'))
     return image
 
@@ -54,13 +39,6 @@ def toLmode(image):
     return image
 
 
-def bisect(array):
-    median = np.median(array)
-    left = array <= median
-    right = array > median
-    return left, right
-
-
 def equalizefloat(image):
     image = image.convert("F")
     array = np.asarray(image)
@@ -72,7 +50,6 @@ def equalizefloat(image):
     array *= 255. / order
     print(array.min(), array.max())
     array = array.reshape(shape)
-    print array
     image = Image.fromarray(array.astype("uint8"))
     return image
 
