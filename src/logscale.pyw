@@ -50,8 +50,9 @@ def main():
     image = Image.open(sys.argv[1])
     width, height = image.size
     if max(width, height) > 600:
+        print "Resizing..."
         prop = max(width, height) / 600.
-        image.resize((width / prop, height / prop))
+        image.resize((int(width / prop), int(height / prop)))
 
     print("Original image:")
     autopipe.showimage(image)
