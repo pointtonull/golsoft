@@ -48,10 +48,9 @@ def equalize(image):
 def autocontrast(image):
     if image.mode in ("F"):
         image = toLmode(image)
-    try:
-        return ImageOps.autocontrast(image)
-    except IOError:
-        red("Error on '%s' image" % image.mode)
+    elif image.mode in ("RBGA"):
+        image = image.convert("RBG")
+    return ImageOps.autocontrast(image)
 
 
 def main():
