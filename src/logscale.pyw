@@ -52,7 +52,7 @@ def main():
     if max(width, height) > 600:
         print "Resizing..."
         prop = max(width, height) / 600.
-        image = image.resize((int(width / prop), int(height / prop)), 3)
+        image = image.resize((int(width / prop), int(height / prop)), 1)
 
     print("Original image:")
     autopipe.showimage(image)
