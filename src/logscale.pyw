@@ -41,8 +41,9 @@ def equalizefloat(image):
 def equalize(image):
     if image.mode in ("F"):
         return equalizefloat(image)
-    else:
-        return ImageOps.equalize(image)
+    elif image.mode in ("RBGA"):
+        image = image.convert("RBG")
+    return ImageOps.equalize(image)
 
 def autocontrast(image):
     if image.mode in ("F"):
