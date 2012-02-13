@@ -47,12 +47,14 @@ def equalizefloat(array):
 
 
 def equalize(image):
-    if image.mode in ("F"):
+    if isclass(image, pil.Image):
+        if image.mode in ("F"):
+            return equalizefloat(np.asarray(image))
+        elif image.mode in ("RBGA"):
+            image = image.convert("RBG")
+        return ImageOps.equalize(image)
+    else:
         return equalizefloat(image)
-    elif image.mode in ("RBGA"):
-        image = image.convert("RBG")
-    return ImageOps.equalize(image)
-
 
 def autocontrast(image):
     if image.mode in ("F"):

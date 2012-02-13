@@ -25,7 +25,7 @@ def main():
     showimage(autocontrast(image))
 
     print("With equalized histogram:")
-    showimage(equalize(image))
+    showimage(Image.fromarray(equalize(image)))
 
 if __name__ == "__main__":
     exit(main())
