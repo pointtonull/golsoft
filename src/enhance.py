@@ -27,8 +27,7 @@ def toLmode(image):
     return image
 
 
-def equalizefloat(image):
-    array = np.asarray(image)
+def equalizefloat(array):
     shape = array.shape
     array = array.flatten()
     sorters = array.argsort()
@@ -43,9 +42,8 @@ def equalizefloat(image):
     if value:
         array *= 255. / value
     array = array.reshape(shape)
-    image = Image.fromarray(array.astype("uint8"))
 #    print "frequencies: %d" % value
-    return image
+    return array
 
 
 def equalize(image):
