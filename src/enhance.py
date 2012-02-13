@@ -40,7 +40,8 @@ def equalizefloat(image):
         value = counter.next()
         for ovalue, pos in list(group):
             array[pos] = value
-    array *= 255. / value
+    if value:
+        array *= 255. / value
     array = array.reshape(shape)
     image = Image.fromarray(array.astype("uint8"))
 #    print "frequencies: %d" % value
