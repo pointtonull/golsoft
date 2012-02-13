@@ -3,6 +3,8 @@
 
 import Image
 import ImageOps
+from itertools import groupby, izip, count
+import operator
 import numpy as np
 
 
@@ -30,11 +32,18 @@ def equalizefloat(image):
     shape = array.shape
     array = array.flatten()
     sorters = array.argsort()
-    for order, place in enumerate(sorters):
-        array[place] = order
-    array *= 255. / order
+    array.sort()
+    zippeds = izip(array, sorters)
+    groups = groupby(zippeds, operator.itemgetter(0))
+    counter = count()
+    for ovalue, group in groups:
+        value = counter.next()
+        for ovalue, pos in list(group):
+            array[pos] = value
+    array *= 255. / value
     array = array.reshape(shape)
     image = Image.fromarray(array.astype("uint8"))
+    print "frequencies: %d" % value
     return image
 
 
