@@ -43,7 +43,7 @@ def equalizefloat(image):
     array *= 255. / value
     array = array.reshape(shape)
     image = Image.fromarray(array.astype("uint8"))
-    print "frequencies: %d" % value
+#    print "frequencies: %d" % value
     return image
 
 
