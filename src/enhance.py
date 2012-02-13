@@ -47,7 +47,7 @@ def equalizefloat(array):
 
 
 def equalize(image):
-    if isclass(image, pil.Image):
+    if isinstance(image, pil.Image):
         if image.mode in ("F"):
             return equalizefloat(np.asarray(image))
         elif image.mode in ("RBGA"):
