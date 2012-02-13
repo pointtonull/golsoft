@@ -112,6 +112,7 @@ def main():
         masked_low = array * circle_low
         image = pil.fromarray(masked_low, "F")
         image.save("salida.tiff")
+        image = equalize(image)
 
 
 if __name__ == "__main__":
