@@ -2,16 +2,15 @@
 #-*- coding: UTF-8 -*-
 
 from autopipe import showimage, red, blue
+from enhance import equalize, autocontrast, logscale
 from itertools import combinations
-from scipy.ndimage import maximum_filter1d, minimum_filter1d
 from scipy.ndimage import geometric_transform, gaussian_filter
-import ImageDraw
+from scipy.ndimage import maximum_filter1d, minimum_filter1d
 import Image as pil
+import ImageDraw
 import numpy as np
-from libtiff import TIFFimage
 import os
 import sys
-from enhance import equalize, autocontrast, logscale
 
 
 def get_maxmins(array, window=25):
@@ -105,24 +104,21 @@ def draw_circle(canvas_shape, center, radius, fill=1):
 def main():
     for filename in sys.argv[1:]:
         image = pil.open(filename)
-        print image.mode
         array = np.array(image)
+        if "." in filename:
+            filename = "".join(filename.split(".")[:-1])
         circles = sorted((get_circles(array)))
-        low = circles[0]
-        circle_low = draw_circle(array.shape, low[1], low[2], 1.)
-        masked_low = array * circle_low
-        print array.ptp(), circle_low.ptp(), masked_low.ptp()
-        path, filename = os.path.split(filename)
-        tiff = TIFFimage(array, description='')
-        tiff.write_file(os.path.join(path, 'original.tiff'), compression='none')
-        tiff = TIFFimage(circle_low, description='')
-        tiff.write_file(os.path.join(path, 'filtro.tiff'), compression='none')
-        tiff = TIFFimage(masked_low, description='')
-        tiff.write_file(os.path.join(path, 'filtrado.tiff'), compression='none')
-
-#        image = pil.fromarray(equalize(masked_low), "F")
-#        image.save("salida.tiff")
-#        showimage(image)
+        for number, (value, center, radius) in enumerate(circles):
+            print number, value, center, radius
+            mask = draw_circle(array.shape, center, radius)
+            masked = np.float32(array * mask)
+            mask = np.float32(mask)
+            mask_name = '%s-%d-mask.tiff' % (filename, number)
+            image = pil.fromarray(mask)
+            image.save(mask_name)
+            masked_name = '%s-%d-masked.tiff' % (filename, number)
+            image = pil.fromarray(masked)
+            image.save(masked_name)
 
 
 if __name__ == "__main__":
