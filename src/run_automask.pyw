@@ -9,6 +9,7 @@ import ImageDraw
 import Image as pil
 import numpy as np
 from libtiff import TIFFimage
+import os
 import sys
 from enhance import equalize, autocontrast, logscale
 
@@ -111,12 +112,13 @@ def main():
         circle_low = draw_circle(array.shape, low[1], low[2], 1.)
         masked_low = array * circle_low
         print array.ptp(), circle_low.ptp(), masked_low.ptp()
+        path, filename = os.path.split(filename)
         tiff = TIFFimage(array, description='')
-        tiff.write_file('original.tiff', compression='none')
+        tiff.write_file(os.path.join(path, 'original.tiff'), compression='none')
         tiff = TIFFimage(circle_low, description='')
-        tiff.write_file('filtro.tiff', compression='none')
+        tiff.write_file(os.path.join(path, 'filtro.tiff'), compression='none')
         tiff = TIFFimage(masked_low, description='')
-        tiff.write_file('filtrado.tiff', compression='none')
+        tiff.write_file(os.path.join(path, 'filtrado.tiff'), compression='none')
 
 #        image = pil.fromarray(equalize(masked_low), "F")
 #        image.save("salida.tiff")
