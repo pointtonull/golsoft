@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
-import Image
+import Image as pil
 import ImageOps
 from itertools import groupby, izip, count
 import operator
@@ -14,7 +14,7 @@ def logscale(image):
     array *= np.expm1(1) / array.max()
     array = np.log1p(array)
     array *= 255
-    image = Image.fromarray(array.astype('uint8'))
+    image = pil.fromarray(array.astype('uint8'))
     return image
 
 
@@ -23,7 +23,7 @@ def toLmode(image):
     array = np.asarray(image, dtype=float)
     array -= array.min()
     array *= 255 / array.max()
-    image = Image.fromarray(array.astype('uint8'))
+    image = pil.fromarray(array.astype('uint8'))
     return image
 
 
