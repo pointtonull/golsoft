@@ -108,11 +108,10 @@ def main():
         circles = sorted((get_circles(array)))
         low = circles[0]
         circle_low = draw_circle(array.shape, low[1], low[2], 1.)
-        pil.fromarray(circle_low).show()
         masked_low = array * circle_low
         image = pil.fromarray(masked_low, "F")
         image.save("salida.tiff")
-        image = equalize(image)
+        showimage(equalize(image))
 
 
 if __name__ == "__main__":
