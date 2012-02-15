@@ -63,3 +63,22 @@ def autocontrast(image):
         image = image.convert("RBG")
     return ImageOps.autocontrast(image)
 
+if __name__ == "__main__":
+    from mayavi.api import Engine
+    from mayavi.sources.api import ArraySource
+    from mayavi.filters.api import WarpScalar, PolyDataNormals
+    from mayavi.modules.api import Surface
+    import scipy
+    array = logscale(scipy.lena())
+    print max(array)
+    engine = Engine()
+    engine.start()
+    scene = engine.new_scene()
+    source = ArraySource(scalar_data=array)
+    engine.add_source(source)
+    warp = WarpScalar()
+    engine.add_filter(warp, obj=source)
+    normals = PolyDataNormals()
+    engine.add_filter(normals, obj=warp)
+    surf = Surface()
+    engine.add_module(surf, obj=normals)

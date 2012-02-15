@@ -7,11 +7,11 @@ from itertools import combinations
 from scipy.ndimage import geometric_transform, gaussian_filter
 from scipy.ndimage import maximum_filter1d, minimum_filter1d
 import Image as pil
-import ImageDraw
 import numpy as np
 import os
 import sys
 
+tau = np.pi * 2
 
 def get_maxmins(array, window=25):
     mins = minimum_filter1d(array, window)
@@ -100,25 +100,69 @@ def draw_circle(canvas_shape, center, radius, fill=1):
     array[mask] = fill
     return array
 
+def radial_extrusion(array, center=None):
+    inshape = array.shape
+    assert len(inshape) == 1
+    center = center or inshape[0] / 2.
+    outxs = max(inshape[0] - center, center) * 2
+    outys = outxs
+
+    def out2in((outx, outy)):
+        rho = ((outx-center) ** 2 + (outy-center) ** 2) ** .5
+        if outy > center:
+            return (center + rho, )
+        else:
+            return (center - rho, )
+
+    extrusion = geometric_transform(array, out2in, (outxs, outys))
+    return extrusion
+
 
 def main():
-    for filename in sys.argv[1:]:
-        image = pil.open(filename)
-        array = np.array(image)
-        if "." in filename:
-            filename = "".join(filename.split(".")[:-1])
-        circles = sorted((get_circles(array)))
-        for number, (value, center, radius) in enumerate(circles):
-            print number, value, center, radius
-            mask = draw_circle(array.shape, center, radius)
-            masked = np.float32(array * mask)
-            mask = np.float32(mask)
-            mask_name = '%s-%d-mask.tiff' % (filename, number)
-            image = pil.fromarray(mask)
-            image.save(mask_name)
-            masked_name = '%s-%d-masked.tiff' % (filename, number)
-            image = pil.fromarray(masked)
-            image.save(masked_name)
+
+    window = np.hanning(500)
+    window2d = radial_extrusion(window)
+    equalized = window2d * 255
+    showimage(pil.fromarray(equalized))
+
+    window = np.bartlett(500)
+    window2d = radial_extrusion(window)
+    equalized = window2d * 255
+    showimage(pil.fromarray(equalized))
+
+    window = np.blackman(500)
+    window2d = radial_extrusion(window)
+    equalized = window2d * 255
+    showimage(pil.fromarray(equalized))
+
+    window = np.hamming(500)
+    window2d = radial_extrusion(window)
+    equalized = window2d * 255
+    showimage(pil.fromarray(equalized))
+
+    window = np.kaiser(500, 14) #https://en.wikipedia.org/wiki/Kaiser_window
+    window2d = radial_extrusion(window)
+    equalized = window2d * 255
+    showimage(pil.fromarray(equalized))
+
+
+#    for filename in sys.argv[1:]:
+#        image = pil.open(filename)
+#        array = np.array(image)
+#        if "." in filename:
+#            filename = "".join(filename.split(".")[:-1])
+#        circles = sorted((get_circles(array)))
+#        for number, (value, center, radius) in enumerate(circles):
+#            print number, value, center, radius
+#            mask = draw_circle(array.shape, center, radius)
+#            masked = np.float32(array * mask)
+#            mask = np.float32(mask)
+#            mask_name = '%s-%d-mask.tiff' % (filename, number)
+#            image = pil.fromarray(mask)
+#            image.save(mask_name)
+#            masked_name = '%s-%d-masked.tiff' % (filename, number)
+#            image = pil.fromarray(masked)
+#            image.save(masked_name)
 
 
 if __name__ == "__main__":
