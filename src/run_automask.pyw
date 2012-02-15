@@ -120,26 +120,37 @@ def radial_extrusion(array, center=None):
 
 def main():
 
+    print("Circular mask:")
+    window = np.ones(500)
+    window2d = radial_extrusion(window)
+    equalized = window2d * 255
+    showimage(pil.fromarray(equalized))
+
+    print("Hanning2D mask:")
     window = np.hanning(500)
     window2d = radial_extrusion(window)
     equalized = window2d * 255
     showimage(pil.fromarray(equalized))
 
+    print("Bartlett2D mask:")
     window = np.bartlett(500)
     window2d = radial_extrusion(window)
     equalized = window2d * 255
     showimage(pil.fromarray(equalized))
 
+    print("Blackman2D mask:")
     window = np.blackman(500)
     window2d = radial_extrusion(window)
     equalized = window2d * 255
     showimage(pil.fromarray(equalized))
 
+    print("Hamming2D mask:")
     window = np.hamming(500)
     window2d = radial_extrusion(window)
     equalized = window2d * 255
     showimage(pil.fromarray(equalized))
 
+    print("Kaiser2D mask:")
     window = np.kaiser(500, 14) #https://en.wikipedia.org/wiki/Kaiser_window
     window2d = radial_extrusion(window)
     equalized = window2d * 255
