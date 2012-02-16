@@ -74,11 +74,11 @@ def get_wide_segment(array, startpoint, endpoint):
 
 def get_circles(array, count=3, window=30):
     rowsums = array.sum(1)
-    rowpeaks = get_peaks1d(rowsums, count, window
+    rowpeaks = get_peaks1d(rowsums, count, window)
     rowsstd = np.std([rowsums[pos] for pos in rowpeaks])
 
     colsums = array.sum(0)
-    colpeaks = get_peaks1d(colsums, count, window
+    colpeaks = get_peaks1d(colsums, count, window)
     colsstd = np.std([colsums[pos] for pos in colpeaks])
 
     if colsstd < rowsstd:
