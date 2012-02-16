@@ -131,10 +131,7 @@ def radial_extrusion(array, center=None):
 
     def out2in((outx, outy)):
         rho = ((outx-center) ** 2 + (outy-center) ** 2) ** .5
-        if outy > center:
-            return (center + rho, )
-        else:
-            return (center - rho, )
+        return (center + rho, )
 
     extrusion = geometric_transform(array, out2in, (outxs, outys))
     return extrusion
