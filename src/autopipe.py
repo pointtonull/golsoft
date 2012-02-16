@@ -3,6 +3,7 @@
 
 import os
 import sys
+import numpy as np
 
 
 TKPIPE = os.name in ("nt")
@@ -19,7 +20,9 @@ else:
 
 def showimage(image):
     if TKPIPE:
-        TKPIPE.writeimage(pil.fromarray(image))
+        if isinstance(image, np.ndarray):
+            image = pil.fromarray(image)
+        TKPIPE.writeimage(image)
         print("")
     else:
         imshow(image)
