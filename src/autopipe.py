@@ -9,6 +9,7 @@ TKPIPE = os.name in ("nt")
 
 if TKPIPE:
     import tkpipe
+    import Image as pil
     TKPIPE = tkpipe.Tkpipe()
     sys.stdout = TKPIPE.default("green")
     sys.stderr = TKPIPE.default("red")
@@ -18,7 +19,7 @@ else:
 
 def showimage(image):
     if TKPIPE:
-        TKPIPE.writeimage(image)
+        TKPIPE.writeimage(pil.fromarray(image))
         print("")
     else:
         imshow(image)
