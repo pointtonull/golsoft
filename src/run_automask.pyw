@@ -155,7 +155,7 @@ def get_centered(array, center):
 
 def main():
 
-    if len(sys.argv) <= 2:
+    if len(sys.argv) < 2:
 
         print("Circular mask:")
         window = np.ones(500)
@@ -197,22 +197,27 @@ def main():
 
         for filename in sys.argv[1:]:
             array = misc.imread(filename)
+            orows, ocols = array.shape
             if "." in filename:
                 filename = "".join(filename.split(".")[:-1])
             circles = sorted((get_circles(array)))
             for number, (value, center, radius) in enumerate(circles):
                 print number, value, center, radius
                 centered = get_centered(array, center)
-                croped = centered[rrowc - hyp / 2: rrowc + hyp / 2, col0:col1]
-                mask = draw_circle(array.shape, center, radius)
-                masked = np.float32(array * mask)
-                mask = np.float32(mask)
-                mask_name = '%s-%d-mask.tiff' % (filename, number)
-                image = pil.fromarray(mask)
-                image.save(mask_name)
+                showimage(equalize(centered))
+                croped = centered[orows/2. - radius: orows/2. + radius,
+                    ocols/2. - radius:ocols/2. + radius]
+                showimage(equalize(croped))
+                window = np.kaiser(radius * 2, 14)
+                mask = radial_extrusion(window)
+                showimage(equalize(np.float32(mask)))
+                print croped.shape, mask.shape
+                masked = np.float32(croped * mask)
                 masked_name = '%s-%d-masked.tiff' % (filename, number)
-                image = pil.fromarray(masked)
+                masked.tofile(masked_name[:-4] + "raw")
+                image = pil.fromarray(np.float32(masked))
                 image.save(masked_name)
+                showimage(np.float32(equalize(masked)))
 
 
 
