@@ -4,14 +4,13 @@
 from autopipe import showimage, red, blue
 from enhance import equalize, autocontrast, logscale
 from itertools import combinations
+from scipy import misc
 from scipy.ndimage import geometric_transform, gaussian_filter
 from scipy.ndimage import maximum_filter1d, minimum_filter1d, rotate
 import Image as pil
 import numpy as np
-import os
+#import pylab
 import scipy
-import pylab
-from scipy import misc
 import sys
 
 tau = np.pi * 2
@@ -70,23 +69,23 @@ def get_wide_segment(array, startpoint, endpoint):
     col1 = rcolc + hyp / 2.
     croped = rotated[rrowc - hyp / 2: rrowc + hyp / 2, col0:col1]
     sumed = croped.sum(0)
-    return sumed 
+    return sumed
 
 
 def get_circles(array, count=3, window=30):
     rowsums = array.sum(1)
-    rowpeaks = get_peaks1d(rowsums, count)
+    rowpeaks = get_peaks1d(rowsums, count, window
     rowsstd = np.std([rowsums[pos] for pos in rowpeaks])
 
     colsums = array.sum(0)
-    colpeaks = get_peaks1d(colsums, count)
+    colpeaks = get_peaks1d(colsums, count, window
     colsstd = np.std([colsums[pos] for pos in colpeaks])
 
     if colsstd < rowsstd:
-    
+
         centers = []
         for colpeak in colpeaks:
-            rowsums = array[:,colpeak - 5:colpeak + 5].sum(1)
+            rowsums = array[:, colpeak - 5:colpeak + 5].sum(1)
             rowpeak = get_peaks1d(rowsums, 1)[0]
             centers.append((int(rowpeak), int(colpeak)))
 
@@ -198,7 +197,6 @@ def main():
         showimage(pil.fromarray(equalized))
 
     else:
-
 
         for filename in sys.argv[1:]:
             array = misc.imread(filename)
