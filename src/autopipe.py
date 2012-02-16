@@ -12,6 +12,8 @@ if TKPIPE:
     TKPIPE = tkpipe.Tkpipe()
     sys.stdout = TKPIPE.default("green")
     sys.stderr = TKPIPE.default("red")
+else:
+    from scipy.misc import imshow
 
 
 def showimage(image):
@@ -19,7 +21,7 @@ def showimage(image):
         TKPIPE.writeimage(image)
         print("")
     else:
-        image.show()
+        imshow(image)
 
 def color(message, color="blue"):
     if TKPIPE:
