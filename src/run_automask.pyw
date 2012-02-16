@@ -213,11 +213,11 @@ def main():
                 showimage(equalize(np.float32(mask)))
                 print croped.shape, mask.shape
                 masked = np.float32(croped * mask)
+                showimage(np.float32(equalize(masked)))
                 masked_name = '%s-%d-masked.tiff' % (filename, number)
                 masked.tofile(masked_name[:-4] + "raw")
                 image = pil.fromarray(np.float32(masked))
                 image.save(masked_name)
-                showimage(np.float32(equalize(masked)))
 
 
 
