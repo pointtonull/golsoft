@@ -173,7 +173,7 @@ def kaiser14(length):
 def get_holed_mask(winfunc, length, holelen=4):
     window = winfunc(length)
     center = length / 2.
-    holelen -= holelen % 2 #only odds for now
+    holelen -= holelen % 2 #only evens for now
     hole = np.ones(holelen) - winfunc(holelen)
     window[center - holelen / 2:center + holelen / 2] *= hole
     return window
