@@ -26,7 +26,6 @@ def get_localmaxs(array, count=3, window=25):
 
 def get_peaks1d(array, count=1, window=30):
     localmaxs = get_localmaxs(array, count, window)
-    print "Localmaxs:", localmaxs
     return localmaxs
 
 
@@ -153,71 +152,82 @@ def get_centered(array, center):
     return centered
 
 
+def get_mask(shape, window, center=None):
+    array = np.zeros(shape)
+    window2d = radial_extrusion(window)
+    if center is None:
+        center = shape[0] / 2., shape[1] / 2.
+    crow, ccol = center
+    radius = window.shape[0] / 2.
+    top, bottom = (crow - radius), (crow + radius)
+    left, right = (ccol - radius), (ccol + radius)
+    array[top:bottom, left:right] = window2d
+    return array
+
+
+def kaiser14(length):
+    return np.kaiser(length, 14)
+
+
+def get_holed(winfunc, length, holelen=4):
+    window = winfunc(length)
+    center = length / 2
+    hole = np.ones(holelen) - winfunc(holelen)
+    window[center - holelen / 2:center + holelen / 2] *= hole
+    return window
+
+
+
 def main():
+
+    windows = {
+        "Rectangular": np.ones,
+        "Hanning": np.hanning,
+        "Bartlett": np.hamming,
+        "Blackman": np.bartlett,
+        "Hamming": np.blackman,
+        "Kaiser14": kaiser14,
+    }
 
     if len(sys.argv) < 2:
 
-        print("Circular mask:")
-        window = np.ones(500)
-        window2d = radial_extrusion(window)
-        equalized = window2d * 255
-        showimage(pil.fromarray(equalized))
+        for w_name in windows:
 
-        print("Hanning2D mask:")
-        window = np.hanning(500)
-        window2d = radial_extrusion(window)
-        equalized = window2d * 255
-        showimage(pil.fromarray(equalized))
-
-        print("Bartlett2D mask:")
-        window = np.bartlett(500)
-        window2d = radial_extrusion(window)
-        equalized = window2d * 255
-        showimage(pil.fromarray(equalized))
-
-        print("Blackman2D mask:")
-        window = np.blackman(500)
-        window2d = radial_extrusion(window)
-        equalized = window2d * 255
-        showimage(pil.fromarray(equalized))
-
-        print("Hamming2D mask:")
-        window = np.hamming(500)
-        window2d = radial_extrusion(window)
-        equalized = window2d * 255
-        showimage(pil.fromarray(equalized))
-
-        print("Kaiser2D mask:")
-        window = np.kaiser(500, 14) #https://en.wikipedia.org/wiki/Kaiser_window
-        window2d = radial_extrusion(window)
-        equalized = window2d * 255
-        showimage(pil.fromarray(equalized))
+            print("%s window:" % w_name)
+            window = windows[w_name](500)
+            window2d = get_mask((500, 500), window)
+            showimage(window2d * 255)
 
     else:
 
-        for filename in sys.argv[1:]:
-            array = misc.imread(filename)
+        for infilename in sys.argv[1:]:
+            print("File: %s" % infilename)
+            array = misc.imread(infilename)
             orows, ocols = array.shape
-            if "." in filename:
-                filename = "".join(filename.split(".")[:-1])
+            if "." in infilename:
+                infilename = "".join(infilename.split(".")[:-1])
             circles = sorted((get_circles(array)))
-            for number, (value, center, radius) in enumerate(circles):
-                print number, value, center, radius
-                centered = get_centered(array, center)
-                showimage(equalize(centered))
-                croped = centered[orows/2. - radius: orows/2. + radius,
-                    ocols/2. - radius:ocols/2. + radius]
-                showimage(equalize(croped))
-                window = np.kaiser(radius * 2, 14)
-                mask = radial_extrusion(window)
-                showimage(equalize(np.float32(mask)))
-                print croped.shape, mask.shape
-                masked = np.float32(croped * mask)
-                showimage(np.float32(equalize(masked)))
-                masked_name = '%s-%d-masked.tiff' % (filename, number)
-                masked.tofile(masked_name.replace("tiff", "raw"))
-                image = pil.fromarray(np.float32(masked))
-                image.save(masked_name)
+            for value, (crow, ccol), radius in circles:
+                print("  Center %d, %d, radius %d:" % (ccol, crow, radius))
+                top, bottom = crow - radius, crow + radius
+                left, right = ccol - radius, ccol + radius
+                helprect = "X%d-%d Y%d-%d" % (left, right, top, bottom)
+                print("    %s" % helprect)
+                for w_name, w_function in windows.iteritems():
+                    plusholes = {
+                        "o" + w_name: lambda length:get_holed(w_function,
+                            length),
+                        w_name: w_function,
+                    }
+                    for w_name, w_func in plusholes.iteritems():
+                        filename = "-".join((infilename, w_name, helprect))
+                        filename += ".tiff"
+                        print("      %s" % w_name)
+                        window = w_func(radius * 2)
+                        mask = get_mask((512, 512), window, (crow, ccol))
+                        image = pil.fromarray(np.float32(mask))
+                        image.save(filename)
+                        showimage(mask * 255)
 
 
 
