@@ -14,6 +14,7 @@ import scipy
 import sys
 
 tau = np.pi * 2
+HOLE_LEN = 4
 
 
 def get_localmaxs(array, count=3, window=25):
@@ -169,9 +170,10 @@ def kaiser14(length):
     return np.kaiser(length, 14)
 
 
-def get_holed(winfunc, length, holelen=4):
+def get_holed_mask(winfunc, length, holelen=4):
     window = winfunc(length)
-    center = length / 2
+    center = length / 2.
+    holelen -= holelen % 2
     hole = np.ones(holelen) - winfunc(holelen)
     window[center - holelen / 2:center + holelen / 2] *= hole
     return window
@@ -215,8 +217,8 @@ def main():
                 print("    %s" % helprect)
                 for w_name, w_function in windows.iteritems():
                     plusholes = {
-                        "o" + w_name: lambda length:get_holed(w_function,
-                            length),
+                        "o" + w_name: lambda length:get_holed_mask(w_function,
+                            length, HOLE_LEN),
                         w_name: w_function,
                     }
                     for w_name, w_func in plusholes.iteritems():
