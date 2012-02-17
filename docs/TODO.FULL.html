@@ -68,6 +68,117 @@ document.onkeypress = handleKey
 			<td width="90%" height="90%" align="center" valign="top">
 				<table><tr><td align='left'>
 <!-- Wiki content -->
+<p>
+Created jueves 16 febrero 2012<br>
+</p>
+<p>
+<ul>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">(1) Autofiltro de imagen de espectro</li>
+<ul>
+<li style="list-style-image: url(pixmaps/checked-box.png)">identificar picos</li>
+<li style="list-style-image: url(pixmaps/checked-box.png)">identificar radio</li>
+<ul>
+<li style="list-style-image: url(pixmaps/xchecked-box.png)">método por entropía de círculos?</li>
+</ul>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">(1.1) implementar Ventana de Manning</li>
+<li style="list-style-image: url(pixmaps/xchecked-box.png)">implementar relevancia según entropía</li>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">(1.2) mejorar obtención de segmento por extensión al rectángulo:</li>
+<ul>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">media del rectángulo completo?</li>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">suma del rectangulo inscripto?</li>
+</ul>
+</ul>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">(2) Crear instalador</li>
+<ul>
+<li style="list-style-image: url(pixmaps/checked-box.png)">Luego de instalar git debe clonar el repositorio</li>
+<li style="list-style-image: url(pixmaps/checked-box.png)">Debe ser un único fichero ejecutable</li>
+<li style="list-style-image: url(pixmaps/xchecked-box.png)">No depender de Python(?)</li>
+<ul>
+<li style="list-style-image: url(pixmaps/xchecked-box.png)">autoejecutable a la 7-z?</li>
+<li style="list-style-image: url(pixmaps/xchecked-box.png)">Verificar python como dependencia</li>
+</ul>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">(2.1) Arreglar inicialización de forks en windows</li>
+<ul>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">(2.2) Probar con shell=True</li>
+</ul>
+</ul>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">(3) Fourier-Mellin</li>
+<ul>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">(3.1) mellinizador</li>
+<ul>
+<li style="list-style-image: url(pixmaps/checked-box.png)">algoritmo</li>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">FFT con frecuencia 0 desplazada hasta el centro</li>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">convolucionar la magnitud con un filtro high pass</li>
+<li style="list-style-image: url(pixmaps/checked-box.png)">transformar a espacio log-polar</li>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">transformar con FFT</li>
+</ul>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">(3.2) comparador</li>
+<ul>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">mellinizar (a) y (b)</li>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">computar correlación de fase entre los resultados</li>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">ubicar (x,y) del pico de la correlación de fase</li>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">calcular ángulo = (Tau / ys) * y</li>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">rotar (b) en ángulo</li>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">(c) FFT</li>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">rotar (b) en ángulo + py</li>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">(d) FFT</li>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">calcular correlación de fase entre FFT(a) y (c)</li>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">(pico a) ubicar (x,y) del pico de la correlación de fase</li>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">calcular correlación de fase entre FFT(b) y (c)</li>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">(pico b) ubicar (x,y) del pico de la correlación de fase</li>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">(traslación) = max((pico a) &gt; (pico b))</li>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">si ángulo &lt; 180:</li>
+<ul>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">+= pi</li>
+</ul>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">sino:</li>
+<ul>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">-= pi</li>
+</ul>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">Tada!</li>
+</ul>
+</ul>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">(4) Machine-learning</li>
+<ul>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">(4.1) seleccionar toolkits de machine learning</li>
+<ul>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">(4.1.1) entrenarlos para los casos disponibles</li>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">(4.1.2) comparar resultados</li>
+</ul>
+</ul>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">(5) Desenvolvimiento de fase, hasta obtener buenos resultados</li>
+<ul>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">(5.1) Escoger</li>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">(5.2) Implementar</li>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">(5.3) Probar contra datos simulados</li>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">(5.4) Probar contra datos de fase obtenidos</li>
+</ul>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">(6) Autopipe</li>
+<ul>
+<li style="list-style-image: url(pixmaps/checked-box.png)">(6.1) Implementación básica</li>
+<li style="list-style-image: url(pixmaps/checked-box.png)">(6.2) Función de módulo que permita "imprimir" imágenes</li>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">(6.3) Argumento opcional para forzar Tk en GNU/Linux</li>
+</ul>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">(7) PipeTk</li>
+<ul>
+<li style="list-style-image: url(pixmaps/checked-box.png)">(7.1) Implementación básica para windows y GNU/Linux</li>
+<li style="list-style-image: url(pixmaps/checked-box.png)">(7.2) Colores para diferenciar stderr de stdout</li>
+<li style="list-style-image: url(pixmaps/checked-box.png)">(7.3) Método para imprimir imágenes</li>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">(7.4) Mejorar tiempo de respuesta</li>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">(7.5) Mostrar barra de desplazamiento (es la costumbre en windows)</li>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">(7.6) Permitir la entrada por teclado</li>
+</ul>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">(8) Conseguir muestras</li>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">(9) Crear simulador</li>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">(10) abrir ficheros raw en que se guarda el holograma</li>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">(11) Simulación de un haz de referencia</li>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">(12) Shift-FFT</li>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">(13) array complejo &gt; intensidad</li>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">(14) Centrar array (todos los valores distitos de cero al centro)</li>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">(15) Propagar (?)</li>
+<li style="list-style-image: url(pixmaps/unchecked-box.png)">(16) IFFT</li>
+</ul>
+</p>
 <!-- End wiki content -->
 				</tr></td></table>
 			</td>
