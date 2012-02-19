@@ -14,9 +14,11 @@ mv docs/TODO.tmp docs/TODO.html
 
 awk '{gsub("file:///usr/share/zim/", "")}/./' docs/DONE.html > docs/DONE.tmp
 mv docs/DONE.tmp docs/TODO.DONE.html
+rm docs/DONE.html
 
 awk '{gsub("file:///usr/share/zim/", "")}/./' docs/FULL.html > docs/FULL.tmp
 mv docs/FULL.tmp docs/TODO.FULL.html
+rm docs/FULL.html
 
 ln -f ~/documentos/carlos/seminario/documento/Maestro.pdf docs/seminario\ Carlos.pdf
 
