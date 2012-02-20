@@ -24,4 +24,4 @@ ln -f ~/documentos/carlos/seminario/documento/Maestro.pdf docs/seminario\ Carlos
 
 git add docs/*.html docs/*.pdf
 git commit -m "updated docs"
-git push
+git push origin master
