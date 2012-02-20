@@ -10,19 +10,21 @@ fmt = fft(lp_ft_magnitude)
 """
 
 from autopipe import showimage
-from fmt import logpolar, asarray
+from fmt import get_logpolar
 from scipy import misc
 import sys
 
 
 
 def main():
-    images = (misc.imread(filename) for filename in sys.argv[1:])
+    images = [misc.imread(filename, True) for filename in sys.argv[1:]]
     if not images:
-        images = (misc.lena(),)
-    logpolar = logpolar(image)
-    showimage(image)
-    showimage(logpolar)
+        images = [misc.lena()]
+    for image in images:
+        logpolar = get_logpolar(image)
+#        showimage(image)
+        showimage(logpolar)
+
 
 if __name__ == "__main__":
     exit(main())
