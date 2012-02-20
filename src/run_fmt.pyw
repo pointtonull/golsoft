@@ -11,19 +11,19 @@ fmt = fft(lp_ft_magnitude)
 
 from autopipe import showimage
 from fmt import logpolar, asarray
-import Image
+from scipy import misc
 import sys
 
 
+
 def main():
-    filename = sys.argv[1]
-    print("Openning image file: %s" % filename)
-    image = Image.open(filename)
-    showimage(image)
-    print("Transforming to log polar")
-    image = Image.fromarray(logpolar(asarray(image), 1))
-    print("Displaying")
-    showimage(image)
+    files = sys.argv[1:]
+    if files:
+        images = (
+            Image.open(filename)
+        image = Image.fromarray(logpolar(asarray(image), 1))
+        print("Displaying")
+        showimage(image)
 
 if __name__ == "__main__":
     exit(main())
