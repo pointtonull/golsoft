@@ -21,13 +21,15 @@ def get_logpolar(array):
     row0 = rows / 2.
     col0 = cols / 2.
     theta_scalar = tau / out_cols
+    max_radius = (row0 ** 2 + col0 ** 2) ** .5
+    rho_scalar = log(max_radius) / cols
 
     def out2in(dst_coords):
-        theta, radius = dst_coords
-        rho = log(radius) # radius = e^rho 
+        theta, rho = dst_coords
+        rho = exp(rho * rho_scalar)
         theta = theta * theta_scalar - pi
-        row_from = exp(rho) * cos(theta) + row0
-        col_from = exp(rho) * sin(theta) + col0
+        row_from = rho * cos(theta) + row0
+        col_from = rho * sin(theta) + col0
         return row_from, col_from
 
     logpolar = geometric_transform(array, out2in, (out_rows, out_cols), order=3)
