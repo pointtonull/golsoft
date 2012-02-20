@@ -17,13 +17,12 @@ import sys
 
 
 def main():
-    files = sys.argv[1:]
-    if files:
-        images = (
-            Image.open(filename)
-        image = Image.fromarray(logpolar(asarray(image), 1))
-        print("Displaying")
-        showimage(image)
+    images = (misc.imread(filename) for filename in sys.argv[1:])
+    if not images:
+        images = (misc.lena(),)
+    logpolar = logpolar(image)
+    showimage(image)
+    showimage(logpolar)
 
 if __name__ == "__main__":
     exit(main())
