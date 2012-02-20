@@ -22,7 +22,6 @@ def main():
         images = [misc.lena()]
     for image in images:
         logpolar = get_logpolar(image)
-#        showimage(image)
         showimage(logpolar)
 
 
