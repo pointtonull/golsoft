@@ -22,10 +22,12 @@ def main():
     if not images:
         images = [misc.lena()]
     for image in images:
-
-        fmt = get_fmt(image)
-        showimage(equalize(fmt.real ** 2 + fmt.imag ** 2))
-        showimage(equalize(fmt.real + fmt.imag))
+        rpi = misc.imrotate(image, 90)
+        rtau = misc.imrotate(image, 180)
+        for transform in (image, rpi, rtau):
+            showimage(transform)
+            fmt = get_fmt(transform)
+            showimage(equalize(fmt.real ** 2 + fmt.imag ** 2))
 
 
 if __name__ == "__main__":
