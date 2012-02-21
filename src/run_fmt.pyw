@@ -14,7 +14,7 @@ from enhance import equalize
 from fmt import get_logpolar, get_fmt
 from scipy import misc
 from itertools import product, combinations
-from automask import get_centered
+from scipy.ndimage import shift
 import sys
 
 
@@ -25,13 +25,13 @@ def main():
         if not images:
             images = [misc.lena()]
         angles = (45, 90, 180)
-        scales = (.5, 1, 1.5)
-        centers = list(combinations((-25, 0, 25), 2))
+        scales = (.5, 1., 1.5)
+        centers = list(combinations((-15, 0, 15), 2))
         for combination in product(images, angles, scales, centers):
             image, angle, scale, center = combination
             image = misc.imrotate(image, angle)
             image = misc.imresize(image, scale)
-            image = get_centered(image, center)
+            image = shift(image, center)
             showimage(image)
             fmt = get_fmt(image)
             showimage(equalize(fmt.real ** 2 + fmt.imag ** 2))

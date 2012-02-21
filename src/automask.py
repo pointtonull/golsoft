@@ -120,6 +120,7 @@ def get_centered(array, center):
     """
     Shift the given array to make the given point be the new center.
     """
+    #TODO: can improve speed using ndimage.shift
     rows, cols = array.shape
     rowcc = rows / 2.
     colcc = cols / 2
