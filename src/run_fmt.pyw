@@ -10,7 +10,8 @@ fmt = fft(lp_ft_magnitude)
 """
 
 from autopipe import showimage
-from fmt import get_logpolar
+from enhance import equalize
+from fmt import get_logpolar, get_fmt
 from scipy import misc
 import sys
 
@@ -21,8 +22,10 @@ def main():
     if not images:
         images = [misc.lena()]
     for image in images:
-        logpolar = get_logpolar(image)
-        showimage(logpolar)
+
+        fmt = get_fmt(image)
+        showimage(equalize(fmt.real ** 2 + fmt.imag ** 2))
+        showimage(equalize(fmt.real + fmt.imag))
 
 
 if __name__ == "__main__":

@@ -9,7 +9,8 @@ lp_ft_magnitude = logpolar(ft_magnitude)
 fmt = fft(lp_ft_magnitude)
 """
 
-from numpy import pi, sin, cos, exp, ndarray, asarray, log
+from numpy import fft
+from numpy import pi, sin, cos, exp, log
 from scipy.ndimage import geometric_transform
 
 tau = 2 * pi
@@ -34,3 +35,19 @@ def get_logpolar(array):
 
     logpolar = geometric_transform(array, out2in, (out_rows, out_cols), order=3)
     return logpolar
+
+
+def get_fmt(array):
+    """
+    Follows this algoritm:
+        * FFT with centered frecuencies
+        * convolucionar la magnitud con un filtro high pass #TODO
+        * Logpolar
+        * FFT with centered frecuencies
+    """
+    fourier = fft.fftshift(fft.fft2(array))
+    reallogpolar = get_logpolar(fourier.real)
+    imaglogpolar = get_logpolar(fourier.imag)
+    complexlogpolar = reallogpolar + 1j * imaglogpolar
+    fmt = fft.fftshift(fft.fft2(complexlogpolar))
+    return fmt
