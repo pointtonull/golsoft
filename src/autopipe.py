@@ -6,9 +6,7 @@ import sys
 import numpy as np
 
 
-TKPIPE = os.name in ("nt")
-
-if TKPIPE:
+if os.name in ("nt") or "TKPIPE" in os.environ:
     import tkpipe
     import Image as pil
     TKPIPE = tkpipe.Tkpipe()
@@ -16,16 +14,18 @@ if TKPIPE:
     sys.stderr = TKPIPE.default("red")
 else:
     from scipy.misc import imshow
+    TKPIPE = False
 
-
-def showimage(image):
+def showimage(*images):
     if TKPIPE:
-        if isinstance(image, np.ndarray):
-            image = pil.fromarray(image)
-        TKPIPE.writeimage(image)
+        for image in images:
+            if isinstance(image, np.ndarray):
+                image = pil.fromarray(image)
+            TKPIPE.writeimage(image)
         print("")
     else:
-        imshow(image)
+        for image in images:
+            imshow(image)
 
 def color(message, color="blue"):
     if TKPIPE:
