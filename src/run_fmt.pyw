@@ -11,7 +11,7 @@ fmt = fft(lp_ft_magnitude)
 
 from autopipe import showimage
 from enhance import equalize
-from fmt import get_logpolar, get_fmt
+from fmt import get_logpolar, get_fmt, get_correlation
 from scipy import misc
 from itertools import product, combinations
 from scipy.ndimage import shift
@@ -27,6 +27,7 @@ def main():
             images = [lena]
         angles = (0., 90., 180.)
         scales = (.5, 1., 1.5)
+        scales = (.5, 1.)
         centers = list(combinations((-25, 0, 25), 2))
 
         for combination in product(images, centers, scales, angles):
@@ -39,7 +40,10 @@ def main():
             fmt_intensity = equalize(fmt.real ** 2 + fmt.imag ** 2)
             showimage(image, fmt_intensity)
     else:
-        print("Compare images")
+        for image1, image2 in combinations(images, 2):
+            print("\nCompare images:")
+            showimage(image1, image2)
+            print("Correlation: %0.5f" % get_correlation(image1, image2))
 
 
 if __name__ == "__main__":
