@@ -23,18 +23,21 @@ def main():
     images = [misc.imread(filename, True) for filename in sys.argv[1:]]
     if len(images) < 2:
         if not images:
-            images = [misc.lena()]
-        angles = (45, 90, 180)
+            lena = misc.imresize(misc.lena(), .5)
+            images = [lena]
+        angles = (0., 90., 180.)
         scales = (.5, 1., 1.5)
-        centers = list(combinations((-15, 0, 15), 2))
-        for combination in product(images, angles, scales, centers):
-            image, angle, scale, center = combination
+        centers = list(combinations((-25, 0, 25), 2))
+
+        for combination in product(images, centers, scales, angles):
+            image, center, scale, angle = combination
+            print(scale, center, angle)
+            image = shift(image, center)
             image = misc.imrotate(image, angle)
             image = misc.imresize(image, scale)
-            image = shift(image, center)
-            showimage(image)
             fmt = get_fmt(image)
-            showimage(equalize(fmt.real ** 2 + fmt.imag ** 2))
+            fmt_intensity = equalize(fmt.real ** 2 + fmt.imag ** 2)
+            showimage(image, fmt_intensity)
     else:
         print("Compare images")
 
