@@ -3,41 +3,29 @@
 
 from automask import get_mask, get_circles, get_holed_window
 from autopipe import showimage, red, blue
+from itertools import product
 from scipy import misc
 import Image as pil
 import numpy as np
 import sys
 
-HOLE_LEN = 4
-
-
-def kaiser14(length):
-    return np.kaiser(length, 14)
-
-
 
 def main():
 
-    windows = {
-        "Rectangular": np.ones,
-        "Hanning": np.hanning,
-        "Bartlett": np.hamming,
-        "Blackman": np.bartlett,
-        "Hamming": np.blackman,
-        "Kaiser14": kaiser14,
-    }
+    alone = [True, False]
+    radius_factor = [1., 1.25, 1.5, 1.75, 2]
+    softness = [0, 2, 5, 6, 8.6]
+    hole_len = [0, 4]
 
     if len(sys.argv) < 2:
-
-        for w_name in windows:
-
-            print("%s window:" % w_name)
-            window = windows[w_name](500)
-            window2d = get_mask((500, 500), window)
+        options = product(solitudiness, softness, hole_len)
+        for solitudiness, softness, hole_len in options:
+            print("%so %s %0.2fs") % ("alone" * alone, softness)
+            window = np.kaiser(250, softness)
+            window2d = get_mask((250, 250), window)
             showimage(window2d * 255)
-
     else:
-
+        options = product(alone, radius_factor, softness, hole_len)
         for infilename in sys.argv[1:]:
             print("File: %s" % infilename)
             array = misc.imread(infilename)
@@ -65,7 +53,6 @@ def main():
                         image = pil.fromarray(np.float32(mask))
                         image.save(filename)
                         showimage(mask * 255)
-
 
 
 if __name__ == "__main__":
