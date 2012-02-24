@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
+from itertools import groupby, izip, count
 import Image as pil
 import ImageOps
-from itertools import groupby, izip, count
-import operator
 import numpy as np
+import operator
 
 
 def logscale(image):
