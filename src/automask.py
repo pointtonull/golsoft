@@ -10,9 +10,17 @@ View run_automask to see a complete example.
 from scipy.ndimage import geometric_transform
 from scipy.ndimage import maximum_filter1d, rotate
 import numpy as np
+import matplotlib.pyplot as plt
 
+np.seterr(all='raise')
 tau = np.pi * 2
 HOLE_LEN = 4
+
+
+def graf(*arrays):
+    for array in arrays:
+        plt.plot(array)
+    plt.show()
 
 
 def get_localmaxs(array, count=3, window=25):
@@ -22,6 +30,7 @@ def get_localmaxs(array, count=3, window=25):
     """
     maxs = maximum_filter1d(array, window)
     maxs[maxs > array] = array.min()
+    graf(array, maxs)
     top_positions = maxs.argsort()[::-1][:count]
     return sorted(top_positions)
 
@@ -50,7 +59,7 @@ def get_wide_segment(array, startpoint, endpoint):
     return sumed
 
 
-def get_circles(array, count=3, window=30):
+def get_circles(array, count=3, window=25):
     """
     Identify the center and radius for each non 0 order.
     Returns: value, center, radius
@@ -153,15 +162,17 @@ def get_mask(shape, window, center=None):
     return array
 
 
-def get_holed_window(winfunc, length, holelen=4):
+def get_holed_window(winfunc, length, holelen=0):
     """
     Create a window with a centered hole.
     """
+    length = int(round(length))
     window = winfunc(length)
     center = length / 2.
-    holelen -= holelen % 2 #FIXME: only evens for now
-    hole = np.ones(holelen) - winfunc(holelen)
-    window[center - holelen / 2:center + holelen / 2] *= hole
+    if holelen:
+        holelen -= holelen % 2 #FIXME: only evens for now
+        hole = np.ones(holelen) - winfunc(holelen)
+        window[center - holelen / 2:center + holelen / 2] *= hole
     return window
 
 
