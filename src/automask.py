@@ -61,13 +61,12 @@ def get_wide_segment(array, startpoint, endpoint):
 
 def get_circles(array, count=3, window=25):
     """
-    Identify the center and radius for each non 0 order.
-    Returns: value, center, radius
-    Value: the value at the center cell
-    Center: row, col position
-    Radius: ¬¬
+    Identify the center and radius for each local max
+        Returns: value, center, radius
+        Value: the value at the center cell
+        Center: row, col position
+        Radius: radius
     """
-    #FIXME: too large and bored
     rowsums = array.sum(1)
     rowpeaks = get_localmaxs(rowsums, count, window)
     rowsstd = np.std([rowsums[pos] for pos in rowpeaks])
@@ -76,32 +75,30 @@ def get_circles(array, count=3, window=25):
     colpeaks = get_localmaxs(colsums, count, window)
     colsstd = np.std([colsums[pos] for pos in colpeaks])
 
+    centers = []
     if colsstd < rowsstd:
-
-        centers = []
         for colpeak in colpeaks:
             rowsums = array[:, colpeak - 5:colpeak + 5].sum(1)
             rowpeak = get_localmaxs(rowsums, 1)[0]
             centers.append((int(rowpeak), int(colpeak)))
-
+            graf(rowsums)
     else:
-
-        centers = []
         for rowpeak in rowpeaks:
             colsums = array[rowpeak - 5:rowpeak + 5].sum(0)
             colpeak = get_localmaxs(colsums, 1)[0]
             centers.append((int(rowpeak), int(colpeak)))
+            graf(colsums)
 
+    print centers 
     circles = [] #value, center, radio
-    valley = get_wide_segment(array, centers[0], centers[1])
-    peaks = get_localmaxs(-valley, 1)[0]
-    radius = abs(int(round(peaks)))
-    circles.append((array[centers[0]], centers[0], radius))
-
-    valley = get_wide_segment(array, centers[1], centers[2])
-    peaks = get_localmaxs(-valley, 1)[0]
-    radius = abs(int(round(centers[2][0] - centers[1][0] - peaks)))
-    circles.append((array[centers[2]], centers[2], radius))
+    for center0, center1 in zip(centers, centers[1:]):
+        print center0, center1
+        valley = get_wide_segment(array, center0, center1)
+        peaks = get_localmaxs(-valley, 1)[0]
+        radius0 = abs(int(round(peaks)))
+        radius1 = valley.shape[0] - radius0
+        circles.append((array[center0], center0, radius0))
+        circles.append((array[center1], center1, radius1))
 
     return circles
 
@@ -178,7 +175,14 @@ def get_holed_window(winfunc, length, holelen=0):
 
 
 def main():
+    import sys
+    from scipy import misc
     print("Import then exist.")
+    for infilename in sys.argv[1:]:
+        print("File: %s" % infilename)
+        array = misc.imread(infilename)
+        circles = get_circles(array, 5)
+        print(circles)
 
 
 if __name__ == "__main__":
