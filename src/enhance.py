@@ -42,7 +42,6 @@ def equalizefloat(array):
     if value:
         array *= 255. / value
     array = array.reshape(shape)
-#    print "frequencies: %d" % value
     return array
 
 

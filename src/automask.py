@@ -7,20 +7,23 @@ spectrum image.
 View run_automask to see a complete example.
 """
 
+from autopipe import showimage
+from collections import defaultdict
 from scipy.ndimage import geometric_transform
 from scipy.ndimage import maximum_filter1d, rotate
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 np.seterr(all='raise')
 tau = np.pi * 2
-HOLE_LEN = 4
+VERBOSE = 0
 
 
 def graf(*arrays):
-    for array in arrays:
-        plt.plot(array)
-    plt.show()
+    if VERBOSE:
+        for array in arrays:
+            plt.plot(array)
+        plt.show()
 
 
 def get_localmaxs(array, count=3, window=25):
@@ -62,7 +65,7 @@ def get_wide_segment(array, startpoint, endpoint):
 def get_circles(array, count=3, window=25):
     """
     Identify the center and radius for each local max
-        Returns: value, center, radius
+    Returns value, center, radius
         Value: the value at the center cell
         Center: row, col position
         Radius: radius
@@ -81,25 +84,22 @@ def get_circles(array, count=3, window=25):
             rowsums = array[:, colpeak - 5:colpeak + 5].sum(1)
             rowpeak = get_localmaxs(rowsums, 1)[0]
             centers.append((int(rowpeak), int(colpeak)))
-            graf(rowsums)
     else:
         for rowpeak in rowpeaks:
             colsums = array[rowpeak - 5:rowpeak + 5].sum(0)
             colpeak = get_localmaxs(colsums, 1)[0]
             centers.append((int(rowpeak), int(colpeak)))
-            graf(colsums)
 
-    print centers 
-    circles = [] #value, center, radio
+    radius = defaultdict(float)
     for center0, center1 in zip(centers, centers[1:]):
-        print center0, center1
         valley = get_wide_segment(array, center0, center1)
         peaks = get_localmaxs(-valley, 1)[0]
         radius0 = abs(int(round(peaks)))
         radius1 = valley.shape[0] - radius0
-        circles.append((array[center0], center0, radius0))
-        circles.append((array[center1], center1, radius1))
+        radius[center0] = max(radius[center0], radius0)
+        radius[center1] = max(radius[center1], radius1)
 
+    circles = [(array[center], center, radius[center]) for center in centers]
     return circles
 
 
@@ -177,12 +177,33 @@ def get_holed_window(winfunc, length, holelen=0):
 def main():
     import sys
     from scipy import misc
-    print("Import then exist.")
+    from enhance import logscale
+    softness = 2
+    r_scale = 3
+    windowmaker = lambda x: np.kaiser(x, softness)
     for infilename in sys.argv[1:]:
         print("File: %s" % infilename)
         array = misc.imread(infilename)
         circles = get_circles(array, 5)
-        print(circles)
+        l_pnoise, l_order, c_order, r_order, r_pnoise = circles
+
+        window = get_holed_window(windowmaker, l_order[2] * r_scale, 10)
+        mask = get_mask(array.shape, window, l_order[1])
+        window = windowmaker(l_pnoise[2] * r_scale)
+        mask *= 1 - get_mask(array.shape, window, l_pnoise[1])
+        window = windowmaker(c_order[2] * r_scale)
+        mask *= 1 - get_mask(array.shape, window, c_order[1])
+        showimage(mask * 255)
+        showimage(logscale(mask * array))
+
+        window = get_holed_window(windowmaker, r_order[2] * r_scale, 10)
+        mask = get_mask(array.shape, window, r_order[1])
+        window = windowmaker(r_pnoise[2] * r_scale)
+        mask *= 1 - get_mask(array.shape, window, r_pnoise[1])
+        window = windowmaker(c_order[2] * r_scale)
+        mask *= 1 - get_mask(array.shape, window, c_order[1])
+        showimage(mask * 255)
+        showimage(logscale(mask * array))
 
 
 if __name__ == "__main__":
