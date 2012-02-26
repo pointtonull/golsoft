@@ -24,6 +24,7 @@ def graf(*arrays):
         for array in arrays:
             plt.plot(array)
         plt.show()
+        plt.close()
 
 
 def get_localmaxs(array, count=3, window=25):
