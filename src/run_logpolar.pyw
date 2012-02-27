@@ -23,20 +23,11 @@ def main():
         if not images:
             lena = misc.imresize(misc.lena(), .5)
             images = [lena]
-        scales = (0.5, 1., 2.)
 
-        for image in images:
-            showimage(image)
-            for scale in scales:
-                print(scale)
-                scaled_image = misc.imresize(image, scale)
-                logpolar = get_logpolar(scaled_image, 3)
-                showimage(logpolar)
-        return
-
-    else:
-        print("Compare images")
-
+    for image in images:
+        showimage(image)
+        logpolar = get_logpolar(image, 3)
+        showimage(logpolar)
 
 if __name__ == "__main__":
     exit(main())
