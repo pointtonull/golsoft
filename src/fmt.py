@@ -48,7 +48,13 @@ def correlate2d(array1, array2):
     return result
 
 
-@Cache("fmt.logpolar.pickle")
+@Cache("fmt.ifft.pickle")
+def get_shiftedifft(array):
+    shiftedifft = fft.ifftshift(fft.ifft2(array))
+    return shiftedifft
+
+
+@Cache("fmt.fft.pickle")
 def get_shiftedfft(array):
     shiftedfft = fft.fftshift(fft.fft2(array))
     return shiftedfft
