@@ -10,9 +10,10 @@ fmt = fft(lp_ft_magnitude)
 """
 
 from autopipe import showimage
-from enhance import equalize
-from fmt import get_logpolar, get_fmt, get_correlation
-from itertools import product, combinations
+from enhance import equalize, logscale, get_intensity
+from fmt import get_logpolar, get_fmt, get_fmt_correlation
+from itertools import product, combinations, permutations
+from random import sample
 from scipy import misc, ndimage
 import sys
 
