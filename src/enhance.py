@@ -2,32 +2,63 @@
 #-*- coding: UTF-8 -*-
 
 from itertools import groupby, izip, count
+from scipy import ndimage
 import Image as pil
 import ImageOps
 import numpy as np
 import operator
 
 
-def logscale(image):
-    array = np.asarray(image, dtype=float)
+def get_centered(array, center=None, mode='wrap'):
+    """
+    Shift the given array to make the given point be the new center.
+    If center is None the center of mass is used.
+    """
+    center = center or ndimage.center_of_mass(array)
+    rows, cols = array.shape
+    rowcc = rows / 2.
+    colcc = cols / 2
+    rowc, colc = center
+    drows = -(rowc - rowcc)
+    dcols = -(colc - colcc)
+    
+    centered = ndimage.shift(array, (drows, dcols), mode=mode)
+
+#    def out2in((outrow, outcol)):
+#        return outrow + drows, outcol + dcols
+
+#    centered = ndimage.geometric_transform(array, out2in, array.shape, 
+#        mode="wrap")
+
+    return centered
+
+
+def get_intensity(array):
+    return array.real ** 2 + array.imag ** 2
+
+
+def logscale(array):
+    if issubclass(array.dtype.type, complex):
+        array = get_intensity(array)
     array -= array.min()
     array *= np.expm1(1) / array.max()
     array = np.log1p(array)
     array *= 255
-    image = pil.fromarray(array.astype('uint8'))
-    return image
+    return array
 
 
-def toLmode(image):
-    image = image.convert("F")
-    array = np.asarray(image, dtype=float)
-    array -= array.min()
-    array *= 255 / array.max()
-    image = pil.fromarray(array.astype('uint8'))
-    return image
+#def toLmode(image):
+#    image = image.convert("F")
+#    array = np.asarray(image, dtype=float)
+#    array -= array.min()
+#    array *= 255 / array.max()
+#    image = pil.fromarray(array.astype('uint8'))
+#    return image
 
 
-def equalizefloat(array):
+def equalizearray(array):
+    if issubclass(array.dtype.type, complex):
+        array = get_intensity(array)
     shape = array.shape
     array = array.flatten()
     sorters = array.argsort()
@@ -48,36 +79,17 @@ def equalizefloat(array):
 def equalize(image):
     if isinstance(image, pil.Image):
         if image.mode in ("F"):
-            return equalizefloat(np.asarray(image))
+            return equalizearray(np.asarray(image))
         elif image.mode in ("RBGA"):
             image = image.convert("RBG")
         return ImageOps.equalize(image)
     else:
-        return equalizefloat(image)
+        return equalizearray(image)
 
-def autocontrast(image):
-    if image.mode in ("F"):
-        image = toLmode(image)
-    elif image.mode in ("RBGA"):
-        image = image.convert("RBG")
-    return ImageOps.autocontrast(image)
 
-if __name__ == "__main__":
-    from mayavi.api import Engine
-    from mayavi.sources.api import ArraySource
-    from mayavi.filters.api import WarpScalar, PolyDataNormals
-    from mayavi.modules.api import Surface
-    import scipy
-    array = logscale(scipy.lena())
-    print max(array)
-    engine = Engine()
-    engine.start()
-    scene = engine.new_scene()
-    source = ArraySource(scalar_data=array)
-    engine.add_source(source)
-    warp = WarpScalar()
-    engine.add_filter(warp, obj=source)
-    normals = PolyDataNormals()
-    engine.add_filter(normals, obj=warp)
-    surf = Surface()
-    engine.add_module(surf, obj=normals)
+#def autocontrast(image):
+#    if image.mode in ("F"):
+#        image = toLmode(image)
+#    elif image.mode in ("RBGA"):
+#        image = image.convert("RBG")
+#    return ImageOps.autocontrast(image)

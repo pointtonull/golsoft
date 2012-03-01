@@ -28,7 +28,7 @@ def _hash_arg(args):
 
 
 class Cache:
-    def __init__(self, filename=None, deadline=100*86400, flush_frequency=0):
+    def __init__(self, filename=None, deadline=0, flush_frequency=0):
         self.count = 0
         self.deadline = deadline
         self.filename = filename

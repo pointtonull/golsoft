@@ -16,6 +16,7 @@ else:
     from scipy.misc import imshow
     TKPIPE = False
 
+
 def showimage(*images):
     if TKPIPE:
         for image in images:
@@ -27,11 +28,13 @@ def showimage(*images):
         for image in images:
             imshow(image)
 
+
 def color(message, color="blue"):
     if TKPIPE:
         TKPIPE.write(message, color)
     else:
         sys.stderr.write(message)
+
 
 blue = lambda message:color(message, "blue")
 red = lambda message:color(message, "red")

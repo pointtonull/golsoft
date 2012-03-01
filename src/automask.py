@@ -9,12 +9,13 @@ View run_automask to see a complete example.
 
 from autopipe import showimage
 from collections import defaultdict
+from enhance import get_centered
 from scipy.ndimage import geometric_transform
 from scipy.ndimage import maximum_filter1d, rotate
 import matplotlib.pyplot as plt
 import numpy as np
 
-np.seterr(all='raise')
+#np.seterr(all='raise')
 tau = np.pi * 2
 VERBOSE = 0
 
@@ -121,26 +122,6 @@ def radial_extrusion(array, center=None):
 
     extrusion = geometric_transform(array, out2in, (outxs, outys))
     return extrusion
-
-
-def get_centered(array, center):
-    """
-    Shift the given array to make the given point be the new center.
-    """
-    #TODO: can improve speed using ndimage.shift
-    rows, cols = array.shape
-    rowcc = rows / 2.
-    colcc = cols / 2
-    rowc, colc = center
-    drows = rowc - rowcc 
-    dcols = colc - colcc 
-    
-    def out2in((outrow, outcol)):
-        return outrow + drows, outcol + dcols
-
-    centered = geometric_transform(array, out2in, array.shape, 
-        mode="wrap")
-    return centered
 
 
 def get_mask(shape, window, center=None):
