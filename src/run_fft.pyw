@@ -10,7 +10,7 @@ fmt = fft(lp_ft_magnitude)
 """
 
 from autopipe import showimage, blue, red, green
-from enhance import equalize
+from enhance import equalize, get_intensity
 from fmt import get_shiftedfft
 from scipy import misc, ndimage
 import numpy as np
@@ -26,7 +26,7 @@ def main():
 
     for image in images:
         fft_complex = get_shiftedfft(image)
-        fft_intensity = fft_complex.real ** 2 + fft_complex.imag ** 2
+        fft_intensity = get_intensity(fft_complex)
         fft_image = equalize(fft_intensity)
         showimage(image, fft_image)
 
