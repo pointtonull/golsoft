@@ -20,7 +20,6 @@ import sys
 
 
 def main():
-    #TODO: center image using center of mass of the image
     images = [misc.imread(filename, True) for filename in sys.argv[1:]]
     if not images:
         lena = misc.imresize(misc.lena(), .5)
