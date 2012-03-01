@@ -37,14 +37,14 @@ def get_intensity(array):
     return array.real ** 2 + array.imag ** 2
 
 
-def logscale(image):
-    array = np.asarray(image, dtype=float)
+def logscale(array):
+    if issubclass(array.dtype.type, complex):
+        array = get_intensity(array)
     array -= array.min()
     array *= np.expm1(1) / array.max()
     array = np.log1p(array)
     array *= 255
-    image = pil.fromarray(array.astype('uint8'))
-    return image
+    return array
 
 
 #def toLmode(image):
@@ -57,6 +57,8 @@ def logscale(image):
 
 
 def equalizearray(array):
+    if issubclass(array.dtype.type, complex):
+        array = get_intensity(array)
     shape = array.shape
     array = array.flatten()
     sorters = array.argsort()
