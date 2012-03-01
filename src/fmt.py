@@ -73,16 +73,55 @@ def get_logpolar(array, interpolation=0, reverse=False):
     max_radius = (row0 ** 2 + col0 ** 2) ** .5
     rho_scalar = log(max_radius) / cols
 
-    def out2in(dst_coords):
+    def cart2logpol(dst_coords):
         theta, rho = dst_coords
         rho = exp(rho * rho_scalar)
-        theta = theta * theta_scalar - tau / 2
+        theta = np.pi / 2 - theta * theta_scalar
         row_from = rho * cos(theta) + row0
         col_from = rho * sin(theta) + col0
         return row_from, col_from
 
-    logpolar = geometric_transform(array, out2in, array.shape, order=order)
+    def logpol2cart(dst_coords):
+        xindex, yindex = dst_coords
+        x = xindex - col0
+        y = yindex - row0
+
+        r = np.log(np.sqrt(x ** 2 + y ** 2)) / rho_scalar
+        theta = np.arctan2(y, x)
+        theta_index = np.round((theta + np.pi) * cols / tau)
+        return theta_index, r
+
+    trans = logpol2cart if reverse else cart2logpol
+
+    logpolar = geometric_transform(array, trans, array.shape,
+        order=interpolation)
     return logpolar
+
+
+
+def cv_logpolar(array, interpolation=1, inverse=False):
+    """
+    Returns a new array with the logpolar transfamation of array.
+    Scale is the factor (see below).
+        rho = scale  * log(sqrt{x**2 + y**2})
+        phi = atan(y/x)
+    Interpolation can be:
+        0 None
+        1 Linear
+        2 Cubic
+        3 Area
+    """
+    #TODO: very fast but bogus (manual scale, no-initialized variables), a shame
+    assert interpolation in range(4)
+    if not isinstance(array, cv.cvmat):
+        array = cv.fromarray(array)
+    center = array.rows / 2, array.cols / 2
+    scale = array.cols * .1925
+    logpolar = cv.CreateMat(array.rows, array.cols, array.type)
+    flags = interpolation + inverse * cv.CV_WARP_INVERSE_MAP
+    cv.LogPolar(array, logpolar, center, scale, flags)
+    return np.asarray(logpolar)
+
 
 
 @Cache("fmt.hi_pass_filter.pickle")
