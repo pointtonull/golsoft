@@ -10,29 +10,62 @@ fmt = fft(lp_ft_magnitude)
 """
 
 from automask import get_mask
-from autopipe import showimage
 from cache import Cache
-from enhance import equalize, logscale
+from enhance import get_intensity, get_centered
 from numpy import fft
 from numpy import ndarray as atype
-from numpy import sin, cos, exp, log
+from numpy import sin, cos, exp, log, arctan2
 from scipy import misc, signal
 from scipy.ndimage import geometric_transform
+import cv2.cv as cv
 import numpy as np
 
 tau = 2 * np.pi
 
-@Cache("fmt.correlate2d")
-def correlate2d(array1, array2):
-    return signal.correlate2d(array1, array2)
 
+@Cache("fmt.correlate2d.pickle")
+def correlate2d(array1, array2):
+    """
+    Performs cross correlation between array1 and array2.
+    Returns a array of shape h1*2+h2-2, w1*2+w2-2
+    """
+    rows_1, cols_1 = array1.shape
+    rows_2, cols_2 = array2.shape
+    matrix1 = cv.fromarray(np.float32(array1))
+
+    correlation_shape = rows_1 * 2 + rows_2 - 2, cols_1 * 2 + cols_2 - 2
+    correlation = np.zeros(correlation_shape)
+    correlation[rows_1 - 1:rows_1 - 1 + rows_2,cols_1-1:cols_1-1+cols_2] = array2
+    correlation_matrix = cv.fromarray(np.float32(correlation))
+
+    result = np.zeros((rows_1 + rows_2 - 1, cols_1 + cols_2 - 1))
+    result_matrix = cv.fromarray(np.float32(result))
+
+    cv.MatchTemplate(matrix1, correlation_matrix, result_matrix,
+        cv.CV_TM_CCORR_NORMED)
+    result = np.asarray(result_matrix)
+    return result
+
+
+@Cache("fmt.logpolar.pickle")
 def get_shiftedfft(array):
     shiftedfft = fft.fftshift(fft.fft2(array))
     return shiftedfft
 
 
 @Cache("fmt.logpolar.pickle")
-def get_logpolar(array, order=0):
+def get_logpolar(array, interpolation=0, reverse=False):
+    """
+    Returns a new array with the logpolar transfamation of array.
+    Interpolation can be:
+        0 Near
+        1 Linear
+        2 Bilineal
+        3 Cubic
+        4
+        5
+    """
+    assert interpolation in range(6)
     rows, cols = array.shape
     row0 = rows / 2.
     col0 = cols / 2.
@@ -91,96 +124,29 @@ def get_correlation(image1, image2):
     image2 = misc.imresize(image2, (min_rows, min_cols))
     fmt1 = get_fmt(image1)
     fmt2 = get_fmt(image2)
-    intensity1 = equalize(fmt1.real ** 2 + fmt1.imag ** 2)
-    intensity2 = equalize(fmt2.real ** 2 + fmt2.imag ** 2)
-    showimage(intensity1, intensity2)
+    intensity1 = get_intensity(fmt1)
+    intensity2 = get_intensity(fmt2)
     intensitydiff = (intensity2 - intensity1) ** 2
-    showimage(equalize(intensitydiff))
     diff = intensitydiff.mean()
     correlation = (54**2 / (1 + diff)) ** 2
     return correlation
 
 
-@Cache("fmt.get_fmt_correlation.pickle")
+@Cache("fmt.get_fmt_correlation.pickle", 60)
 def get_fmt_correlation(image1, image2):
+    image1 = get_centered(image1)
+    image2 = get_centered(image2)
+
+#    min_rows = min(image1.shape[0], image2.shape[0])
+#    min_cols = min(image1.shape[1], image2.shape[1])
+#    image1 = misc.imresize(image1, (min_rows, min_cols))
+#    image2 = misc.imresize(image2, (min_rows, min_cols))
+
     fmt1 = get_fmt(image1)
     fmt2 = get_fmt(image2)
-    corr = correlate2d(fmt1, fmt2)
-    corr_intensity = equalize(corr.real ** 2 + corr.imag ** 2)
-    showimage(equalize(corr_intensity))
-
-#    fmt1 = get_fmt(image1)
-#    angle1 = np.angle(fmt1)
-#    fmt2 = get_fmt(image2)
-#    angle2 = np.angle(fmt2)
-#    theta_cross = exp((angle1 - angle2).imag)
-#    theta_phase = fft.ifft2(theta_cross).real
-#    theta_x, theta_y = np.unravel_index(theta_phase.argmax(), theta_phase.shape)
-#    dpp = 360 / theta_phase.shape[1]
-#    theta = dpp * (theta_y - 1)
-#    r1 = misc.imrotate(image1, -theta)
-#    r2 = misc.imrotate(image2, -(theta + 180))
-#    showimage(r1, r2)
-#    r1_f2 = get_shiftedfft(r1)
-#    angle1 = np.angle(get_shiftedfft(image1))
-#    angle2 = np.angle(r1_f2)
-#    r1_f2_cross = exp((angle1 - angle2).imag)
-#    r1_f2_phase = fft.ifft2(r1_f2_cross).real
-#    r2_f2 = get_shiftedfft(r2)    
-#    fft_image2 = get_shiftedfft(image2)
-#    angle1 = np.angle(fft_image2)
-#    angle2 = np.angle(r2_f2)
-#    r2_f2_cross = exp((angle1 - angle2).imag)
-#    r2_f2_phase = fft.ifft2(r2_f2_cross).real
-#    max_r1_f2 = r1_f2_phase.max()
-#    max_r2_f2 = r2_f2_phase.max()
-#    if max_r1_f2 > max_r2_f2:
-#        x, y = np.unravel_index(r1_f2_phase.argmax(), r1_f2_phase.shape)
-#        r = r1
-#    else:
-#        x, y = np.unravel_index(r2_f2_phase.argmax(), r2_f2_phase.shape)
-#        if theta < 180:
-#            theta = theta + 180
-#        else:
-#            theta = theta - 180
-#        r = r2
-#    print(r, x, y)
-#    tx = x - 1
-#    ty = y - 1
-#    if x > image1.shape[0] / 2:
-#        tx = tx - image1.shape[0]
-#    if y > image1.shape[1] / 2:
-#        ty = ty - image1.shape[1]
-#    input2_rectified = r
-#    move_ht = ty
-#    move_wd = tx
-#    total_height = max(size(I1, 1), (abs(move_ht) + size(input2_rectified, 1)))
-#    total_width =  max(size(I1, 2), (abs(move_wd) + size(input2_rectified, 2)))
-#    combImage = zeros(total_height, total_width)
-#    registered1 = zeros(total_height,total_width)
-#    registered2 = zeros(total_height,total_width)
-#    if move_ht >= 0 and move_wd >= 0:
-#        registered1[1:size(I1, 1), 1:size(I1, 2)] = I1
-#        registered2[1 + move_ht:move_ht + size(input2_rectified, 1), 1 + move_wd
-#        :move_wd + size(input2_rectified, 2)] = input2_rectified 
-#    elif move_ht < 0 and move_wd < 0:
-#        registered2[1:size(input2_rectified, 1), 1:size(input2_rectified, 2)] = input2_rectified
-#        registered1[1 + abs(move_ht):abs(move_ht) + size(I1, 1),1 + abs(move_wd):abs(move_wd) + size(I1,2)] = I1
-#    elif move_ht >= 0 and move_wd < 0:
-#        registered2[move_ht + 1:move_ht + size(input2_rectified, 1), 1:size(input2_rectified, 2)] = input2_rectified
-#        registered1[1:size(I1,1), abs(move_wd) + 1:abs(move_wd) + size(I1, 2)] = I1
-#    elif move_ht < 0 and move_wd >= 0:
-#        registered1[abs(move_ht) + 1:abs(move_ht)+size(I1,1), 1:size(I1,2)) = I1
-#        registered2[1:size(input2_rectified, 1), move_wd + 1:move_wd +size(input2_rectified, 2)] = input2_rectified
-#    if sum(sum(registered1 == 0)) > sum(sum(registered2==0)):
-#        plant = registered1
-#        bleed = registered2
-#    else:
-#        plant = registered2
-#        bleed = registered1
-#    combImage = plant
-#    for p in range(1, total_height):
-#        for q in range(1, total_width):
-#            if combImage(p, q) == 0:
-#                combImage(p,q) = bleed(p,q)
-#    showimage(combImage)
+    correlation = correlate2d(get_intensity(fmt1), get_intensity(fmt2))
+    argmax = np.unravel_index(correlation.argmax(), correlation.shape)
+    peak = correlation[argmax]
+    relrow = argmax[0] - correlation.shape[0] / 2.
+    relcol = argmax[1] - correlation.shape[1] / 2.
+    return peak, (relrow, relcol)
