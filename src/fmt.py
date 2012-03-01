@@ -10,8 +10,9 @@ fmt = fft(lp_ft_magnitude)
 """
 
 from automask import get_mask
+from autopipe import showimage
 from cache import Cache
-from enhance import get_intensity, get_centered
+from enhance import get_intensity, get_centered, logscale, equalize
 from numpy import fft
 from numpy import ndarray as atype
 from numpy import sin, cos, exp, log, arctan2
@@ -123,7 +124,6 @@ def cv_logpolar(array, interpolation=1, inverse=False):
     return np.asarray(logpolar)
 
 
-
 @Cache("fmt.hi_pass_filter.pickle")
 def hi_pass_filter(array, radius=0.2):
     radius = min(array.shape) * radius
@@ -132,6 +132,7 @@ def hi_pass_filter(array, radius=0.2):
     masked = array * mask
     return masked
     
+
 @Cache("fmt.get_fmt.pickle")
 def get_fmt(array):
     """
@@ -184,6 +185,7 @@ def get_fmt_correlation(image1, image2):
     fmt1 = get_fmt(image1)
     fmt2 = get_fmt(image2)
     correlation = correlate2d(get_intensity(fmt1), get_intensity(fmt2))
+    showimage(equalize(get_shiftedifft(correlation)))
     argmax = np.unravel_index(correlation.argmax(), correlation.shape)
     peak = correlation[argmax]
     relrow = argmax[0] - correlation.shape[0] / 2.
