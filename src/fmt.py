@@ -137,25 +137,6 @@ def get_fmt(array):
     return fmt
 
 
-def get_correlation(image1, image2):
-    """
-    Todo esto es un invento y debe ser revisado
-    """
-    return get_fmt_correlation(image1, image2)
-    min_rows = min(image1.shape[0], image2.shape[0])
-    min_cols = min(image1.shape[1], image2.shape[1])
-    image1 = misc.imresize(image1, (min_rows, min_cols))
-    image2 = misc.imresize(image2, (min_rows, min_cols))
-    fmt1 = get_fmt(image1)
-    fmt2 = get_fmt(image2)
-    intensity1 = get_intensity(fmt1)
-    intensity2 = get_intensity(fmt2)
-    intensitydiff = (intensity2 - intensity1) ** 2
-    diff = intensitydiff.mean()
-    correlation = (54**2 / (1 + diff)) ** 2
-    return correlation
-
-
 @Cache("fmt.get_fmt_correlation.pickle", 60)
 def get_fmt_correlation(image1, image2):
     image1 = get_centered(image1)
