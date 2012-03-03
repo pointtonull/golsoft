@@ -10,7 +10,7 @@ fmt = fft(lp_ft_magnitude)
 """
 
 from autopipe import showimage
-from enhance import equalize, logscale, get_intensity
+from enhance import equalize, logscale
 from fmt import get_logpolar, get_fmt, get_fmt_correlation
 from itertools import product, combinations, permutations
 from random import sample
@@ -40,8 +40,8 @@ def main():
     for image1, image2 in combinations(transformations, 2):
         print("\nCompare images:")
         showimage(image1, image2)
-        fmt1 = equalize(get_intensity(get_fmt(image1)))
-        fmt2 = equalize(get_intensity(get_fmt(image2)))
+        fmt1 = equalize(get_fmt(image1))
+        fmt2 = equalize(get_fmt(image2))
         showimage(fmt1, fmt2)
         print(get_fmt_correlation(image1, image2))
 
