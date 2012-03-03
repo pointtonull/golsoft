@@ -77,6 +77,7 @@ class Tkpipe(Frame):
     def __del__(self, *args):
         self.close()
 
+
     def writeimage(self, image):
         if ImageTk:
             self.images.append(ImageTk.PhotoImage(image))
