@@ -24,12 +24,12 @@ def main():
     if not images:
         lena = misc.imresize(misc.lena(), .5)
         images = [lena]
-    angles = (0., 22.5, 45, 90., 135., 180., 270)
-    scales = (.5, .75, 1.)
+    angles = (-15., -10., -5., 0., 5., 10., 15.)
+    scales = (.75, 1., 1.25)
     translations = product((-15, 0, 15), (-15, 0, 15))
 
     transformations = []
-    samples = sample(list(product(images, scales, angles, translations)), 5)
+    samples = sample(list(product(images, scales, angles, translations)), 3)
     for combination in samples:
         image, scale, angle, translation = combination
         image = misc.imrotate(image, angle)
