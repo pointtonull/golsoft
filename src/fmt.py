@@ -24,27 +24,32 @@ import numpy as np
 tau = 2 * np.pi
 
 
-@Cache("fmt.correlate2d.pickle")
+#@Cache("fmt.correlate2d.pickle")
 def correlate2d(array1, array2):
     """
     Performs cross correlation between array1 and array2.
     Returns a array of shape h1*2+h2-2, w1*2+w2-2
     """
-    rows_1, cols_1 = array1.shape
-    rows_2, cols_2 = array2.shape
+    rows1, cols1 = array1.shape
+    rows2, cols2 = array2.shape
+    minrows = min(rows1, rows2)
+    mincols = min(cols1, cols2)
+    marginrows = (max(rows1, rows2) - 1) / 2.
+    margincols = (max(cols1, cols2) - 1) / 2.
     matrix1 = cv.fromarray(np.float32(array1))
 
-    correlation_shape = rows_1 * 2 + rows_2 - 2, cols_1 * 2 + cols_2 - 2
+    correlation_shape = rows1 * 2 + rows2 - 2, cols1 * 2 + cols2 - 2
     correlation = np.zeros(correlation_shape)
-    correlation[rows_1 - 1:rows_1 - 1 + rows_2,cols_1-1:cols_1-1+cols_2] = array2
+    correlation[rows1 - 1:rows1 - 1 + rows2,cols1-1:cols1-1+cols2] = array2
     correlation_matrix = cv.fromarray(np.float32(correlation))
 
-    result = np.zeros((rows_1 + rows_2 - 1, cols_1 + cols_2 - 1))
+    result = np.zeros((rows1 + rows2 - 1, cols1 + cols2 - 1))
     result_matrix = cv.fromarray(np.float32(result))
 
     cv.MatchTemplate(matrix1, correlation_matrix, result_matrix,
         cv.CV_TM_CCORR_NORMED)
     result = np.asarray(result_matrix)
+    result = result[marginrows:marginrows + minrows, margincols:margincols + mincols]
     return result
 
 
