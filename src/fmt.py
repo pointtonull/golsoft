@@ -125,17 +125,14 @@ def get_fmt(array):
     """
     Follows this algoritm:
         * FFT with centered frecuencies
-        * convolucionar la magnitud con un filtro high pass #TODO
+        * convolucionar la magnitud con un filtro high pass
         * Logpolar
         * FFT with centered frecuencies
     """
     fourier = get_shiftedfft(array)
-
-    real_hi_passed = hi_pass_filter(fourier.real, .25)
-    imag_hi_passed = hi_pass_filter(fourier.imag, .25)
-    real_logpolar = get_logpolar(real_hi_passed, 3)
-    imag_logpolar = get_logpolar(imag_hi_passed, 3)
-    logpolar = real_logpolar + 1j * imag_logpolar
+    magnitude = np.abs(fourier)
+    hi_passed = hi_pass_filter(magnitude, .15, 2)
+    logpolar = get_logpolar(hi_passed, 3)
     fmt = get_shiftedfft(logpolar)
     return fmt
 
