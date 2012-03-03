@@ -10,7 +10,7 @@ fmt = fft(lp_ft_magnitude)
 """
 
 from autopipe import showimage
-from fmt import get_logpolar, cv_logpolar
+from fmt import get_logpolar
 from itertools import product
 from scipy import misc
 import sys
