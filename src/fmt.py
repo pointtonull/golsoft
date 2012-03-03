@@ -142,15 +142,37 @@ def get_fmt_correlation(image1, image2):
     image1 = get_centered(image1)
     image2 = get_centered(image2)
 
-#    min_rows = min(image1.shape[0], image2.shape[0])
-#    min_cols = min(image1.shape[1], image2.shape[1])
-#    image1 = misc.imresize(image1, (min_rows, min_cols))
-#    image2 = misc.imresize(image2, (min_rows, min_cols))
-
+    #1 Apply same 2D windowing to both the images
+    #2 Fourier-Mellin transform (which is translation invariant:
+    #  is a 2D Fourier transform followed by abs()) (sic)
+    #3 map the transformed images to log-polar space, so that rotation / scaling
+    #  become Dx/Dy translations on the new axes
+    #4 take 2D Fourier transform to results
     fmt1 = get_fmt(image1)
     fmt2 = get_fmt(image2)
-    correlation = correlate2d(get_intensity(fmt1), get_intensity(fmt2))
-    showimage(equalize(get_shiftedifft(correlation)))
+
+    # Multiply one for the coniugate of the other
+    #5 divide (element by element) this product by its abs()
+
+#    correlation = correlate2d(get_intensity(fmt1), get_intensity(fmt2))
+    correlation = correlate2d(np.abs(fmt1), np.abs(fmt2)) #magnitude
+#    correlation = correlate2d(np.angle(fmt1), np.angle(fmt2)) #phase
+    showimage(logscale(correlation), equalize(correlation))
+
+    #6 reverse 2D Fourier transform of result of step 5; note that steps 4+6 are
+    #  equivalent to perform a correlation on results of step 3; step 5
+    #  introduces a normalization; all together is the "cross power spectrum"
+    #  calculation
+
+    #7 calculate the position of peaks; after appropriate conversion these are
+    #  candidates for rotation and scale parameters. Note that:
+    #  a. for scale it will be probably necessary to test more than one peak
+    #  b. rotation is affected by a 180 degree ambiguity therefore at least two 
+    #     cases shell be tested.
+    #8 adjust images for scale and rotation
+    #9 find Dx/Dy and adjust for translation (more or less the same steps 4 to 7,
+    #  but applied to results of step 8 and with less problems).
+
     argmax = np.unravel_index(correlation.argmax(), correlation.shape)
     peak = correlation[argmax]
     relrow = argmax[0] - correlation.shape[0] / 2.
