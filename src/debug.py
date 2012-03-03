@@ -17,7 +17,7 @@ class Verbose:
     def __call__(self, *args):
         if self.verbosity:
             message = " ".join((unicode(e) for e in args))
-            sys.stderr.write("%s%s%s\n" % ("  " * self.get_depth(), self.prefix,
+            sys.stderr.write("%s%s%s\n" % (" " * self.get_depth(), self.prefix,
                 message))
 
 

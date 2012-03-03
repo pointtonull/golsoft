@@ -10,7 +10,7 @@ fmt = fft(lp_ft_magnitude)
 """
 
 from autopipe import showimage
-from enhance import equalize, logscale, get_intensity
+from enhance import equalize, logscale
 from fmt import get_logpolar, get_fmt, get_fmt_correlation
 from itertools import product, combinations, permutations
 from random import sample
@@ -24,12 +24,12 @@ def main():
     if not images:
         lena = misc.imresize(misc.lena(), .5)
         images = [lena]
-    angles = (0., 22.5, 45, 90., 135., 180., 270)
-    scales = (.5, .75, 1.)
+    angles = (-15., -10., -5., 0., 5., 10., 15.)
+    scales = (.75, 1., 1.25)
     translations = product((-15, 0, 15), (-15, 0, 15))
 
     transformations = []
-    samples = sample(list(product(images, scales, angles, translations)), 5)
+    samples = sample(list(product(images, scales, angles, translations)), 3)
     for combination in samples:
         image, scale, angle, translation = combination
         image = misc.imrotate(image, angle)
@@ -40,8 +40,8 @@ def main():
     for image1, image2 in combinations(transformations, 2):
         print("\nCompare images:")
         showimage(image1, image2)
-        fmt1 = equalize(get_intensity(get_fmt(image1)))
-        fmt2 = equalize(get_intensity(get_fmt(image2)))
+        fmt1 = equalize(get_fmt(image1))
+        fmt2 = equalize(get_fmt(image2))
         showimage(fmt1, fmt2)
         print(get_fmt_correlation(image1, image2))
 
