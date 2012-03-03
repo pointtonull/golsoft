@@ -40,22 +40,18 @@ class Cache:
         self.deadline = deadline
         self.filename = filename
         self.flush_frequency = flush_frequency
-
-        if filename:
-            try:
-                self.cache = pickle.load(open(self.filename))
-            except IOError:
-                self.cache = {}
-            except EOFError:
-                self.cache = {}
-        else:
-            self.cache = {}
+        self._ready = False
+        self._updated = False
+        _ZOMBI.append(self)
 
 
     def __call__(self, func):
 
         @wraps(func)
-        def decorated(*args, **kw):
+        def decorated(*args, **kwargs):
+            if not self._ready:
+                self.load()
+
             hasheable = _hash_arg(args)
             if hasheable:
                 rtime, result = self.cache.get(hasheable, (None, None))
@@ -123,11 +119,11 @@ class Cache:
 
 
     def flush(self):
-        if self.filename:
+        if self.filename and self._ready and self._updated:
             file = open(self.filename, "wb")
             pickle.dump(self.cache, file, -1)
             file.close()
-            debug("Cache escrito exitosamente en %s" % self.filename)
+            self._updated = False
 
 
 def main():
