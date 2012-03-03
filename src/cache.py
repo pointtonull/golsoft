@@ -7,7 +7,7 @@ import os
 import pickle
 import sys
 import time
-import debug
+from debug import error, warning, debug, info
 import hashlib
 
 debug.VERBOSE = 0
@@ -54,27 +54,61 @@ class Cache:
                 rtime, result = self.cache.get(hasheable, (None, None))
             else:
                 result = None
-            if result is not None and time.time() - rtime < self.deadline:
-                debug(" Cache load: %s %s %s : %s" % (func.func_name, args,
-                    kw, result))
-                return result
-            else:
-                debug(" Cache: No load")
-                result = func(*args, **kw)
-                if result is not None:
-                    hasheable = _hash_arg(args)
-                    if hasheable:
-                        self.cache[hasheable] = time.time(), result
-                        self.count += 1
-                        debug(" Cache save: %s %s %s : %s" % (func.func_name,
-                            args, kw, result))
-                        if self.flush_frequency:
-                            if self.count % self.flush_frequency == 0:
-                                self.flush()
+
+            if result is not None:
+                if not self.deadline or time.time() - rtime < self.deadline:
+                    debug("Cache load: %s %s %s" % (func.func_name, args,
+                        kwargs))
+                    return result
                 else:
-                    debug(" %s result is None" % func.func_name)
-                return result
+                    debug("Discarting caduced result")
+            else:
+                debug("Cache: No load")
+            result = func(*args, **kwargs)
+            if result is not None:
+                self.put(args, kwargs, result)
+            else:
+                debug("%s result is None" % func.func_name)
+            return result
+
+        self.func = decorated
         return decorated
+
+
+    def load(self):
+        if self.filename:
+            try:
+                debug("Opening file cache")
+                self.cache = pickle.load(open(self.filename))
+            except IOError:
+                debug("IOError, creating new empty cache")
+                self.cache = {}
+            except EOFError:
+                debug("EOFError, creating new empty cache2")
+                self.cache = {}
+        else:
+            debug("Creating new empty cache")
+            self.cache = {}
+        self._ready = True
+
+
+    def put(self, args, kwargs, result):
+        if not self._ready:
+            self.load()
+
+        hasheable = _hash_arg(args)
+        if hasheable:
+            self.cache[hasheable] = time.time(), result
+            self.count += 1
+            debug("Cache save: %s %s %s" % (self.func.func_name, args, kwargs))
+            self._updated = True
+            if self.flush_frequency:
+                if self.count % self.flush_frequency == 0:
+                    debug("Cache autoflushing")
+                    self.flush()
+        else:
+            debug("Cache no hasheable: %s %s %s" % (self.func.func_name,
+                args, kwargs))
 
 
     def __del__(self, *args):
@@ -91,11 +125,12 @@ class Cache:
 
 def main():
 
-    @Cache("fibonar.pickle")
+    @Cache("fibonar.pickle", 60)
     def fibonar(n):
         if n < 2: return n
         else: return fibonar(n - 1) + fibonar(n - 2)
 
+    print(fibonar(5))
     print(fibonar(50))
     print(fibonar(250))
     print(fibonar(500))
