@@ -10,9 +10,16 @@ import time
 from debug import error, warning, debug, info
 import hashlib
 
-debug.VERBOSE = 0
-debug = debug.debug
+class Zombi:
+    def __init__(self):
+        self.instances = []
+    def append(self, instance):
+        self.instances.append(instance)
+    def __del__(self):
+        for instance in self.instances:
+            instance.flush()
 
+_ZOMBI = Zombi()
 
 def _hash_arg(args):
     try:
