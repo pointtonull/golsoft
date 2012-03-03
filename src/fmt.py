@@ -111,34 +111,10 @@ def get_logpolar(array, interpolation=0, reverse=False):
 
 
 
-def cv_logpolar(array, interpolation=1, inverse=False):
-    """
-    Returns a new array with the logpolar transfamation of array.
-    Scale is the factor (see below).
-        rho = scale  * log(sqrt{x**2 + y**2})
-        phi = atan(y/x)
-    Interpolation can be:
-        0 None
-        1 Linear
-        2 Cubic
-        3 Area
-    """
-    #TODO: very fast but bogus (manual scale, no-initialized variables), a shame
-    assert interpolation in range(4)
-    if not isinstance(array, cv.cvmat):
-        array = cv.fromarray(array)
-    center = array.rows / 2, array.cols / 2
-    scale = array.cols * .1925
-    logpolar = cv.CreateMat(array.rows, array.cols, array.type)
-    flags = interpolation + inverse * cv.CV_WARP_INVERSE_MAP
-    cv.LogPolar(array, logpolar, center, scale, flags)
-    return np.asarray(logpolar)
-
-
 @Cache("fmt.hi_pass_filter.pickle")
-def hi_pass_filter(array, radius=0.2):
-    radius = min(array.shape) * radius
-    window = np.bartlett(radius)
+def hi_pass_filter(array, radius=0.2, softness=4):
+    radius = round(min(array.shape) * radius)
+    window = np.kaiser(radius, softness)
     mask = np.ones_like(array) - get_mask(array.shape, window)
     masked = array * mask
     return masked
