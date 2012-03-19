@@ -15,12 +15,11 @@ from scipy.ndimage import maximum_filter1d, rotate
 import matplotlib.pyplot as plt
 import numpy as np
 
-#np.seterr(all='raise')
 tau = np.pi * 2
 VERBOSE = 0
 
 
-def graf(*arrays):
+def graph(*arrays):
     if VERBOSE:
         for array in arrays:
             plt.plot(array)
@@ -35,7 +34,7 @@ def get_localmaxs(array, count=3, window=25):
     """
     maxs = maximum_filter1d(array, window)
     maxs[maxs > array] = array.min()
-    graf(array, maxs)
+    graph(array, maxs)
     top_positions = maxs.argsort()[::-1][:count]
     return sorted(top_positions)
 

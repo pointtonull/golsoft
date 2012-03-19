@@ -3,10 +3,6 @@
 
 """
 This is a simple implementation of the Fourier-Mellin Trasform
-image = [m, n]
-ft_magnitude = |fft(image)|
-lp_ft_magnitude = logpolar(ft_magnitude)
-fmt = fft(lp_ft_magnitude)
 """
 
 from automask import get_mask
@@ -24,7 +20,7 @@ import numpy as np
 tau = 2 * np.pi
 
 
-#@Cache("fmt.correlate2d.pickle")
+@Cache("fmt.correlate2d.pickle")
 def correlate2d(array1, array2):
     """
     Performs cross correlation between array1 and array2.
@@ -49,7 +45,8 @@ def correlate2d(array1, array2):
     cv.MatchTemplate(matrix1, correlation_matrix, result_matrix,
         cv.CV_TM_CCORR_NORMED)
     result = np.asarray(result_matrix)
-    result = result[marginrows:marginrows + minrows, margincols:margincols + mincols]
+    result = result[marginrows:marginrows + minrows,
+        margincols:margincols + mincols]
     return result
 
 

@@ -1,27 +1,67 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
+from debug import error, warning, debug, info
 from functools import wraps
+import hashlib
 import inspect
 import os
 import pickle
 import sys
 import time
-from debug import error, warning, debug, info
-import hashlib
 
-class Zombi:
+
+HOME = os.path.expanduser("~")
+DIRNAME = os.path.join(HOME, ".pycache")
+try:
+    os.makedirs(DIRNAME)
+except OSError, message:
+    pass
+
+
+class Zombie:
+    """
+    helper to force flush on deleting (instance as a global _* variable)
+    """
+
     def __init__(self):
         self.instances = []
+
     def append(self, instance):
         self.instances.append(instance)
+
     def __del__(self):
         for instance in self.instances:
             instance.flush()
 
-_ZOMBI = Zombi()
 
-def _hash_arg(args):
+_ZOMBIE = Zombie()
+
+
+class Pickled:
+    """
+    based on the assumption of that all instances are inmutables respect to 
+    their hashes. Is quite reasonable, isnt it?
+    """
+
+    def __init__(self, object):
+        self.hash = hash(_hash_args(object))
+        self.filename = os.path.join(DIRNAME, str(self.hash) + ".pickle")
+        if not os.path.exists(self.filename):
+            with open(self.filename, "w") as file:
+                pickle.dump(object, file, -1)
+
+
+    def load(self):
+        try:
+            object = pickle.load(open(self.filename))
+        except IOError:
+            object = None
+        return object
+
+
+
+def _hash_args(args):
     try:
         hash(args)
         return args
@@ -30,19 +70,35 @@ def _hash_arg(args):
             ahash = hashlib.sha1(args).hexdigest()
             return ahash
         except TypeError:
-            values = tuple((_hash_arg(arg) for arg in args))
+            values = tuple((_hash_args(arg) for arg in args))
             return values
+
+
+
+def _hash_kwargs(kwargs):
+    try:
+        hash(args)
+        return args
+    except TypeError:
+        try:
+            ahash = hashlib.sha1(args).hexdigest()
+            return ahash
+        except TypeError:
+            values = tuple((_hash_args(arg) for arg in args))
+            return values
+
 
 
 class Cache:
     def __init__(self, filename=None, deadline=0, flush_frequency=0):
+        #TODO: add ratio time/size bound
         self.count = 0
         self.deadline = deadline
         self.filename = filename
         self.flush_frequency = flush_frequency
         self._ready = False
         self._updated = False
-        _ZOMBI.append(self)
+        _ZOMBIE.append(self)
 
 
     def __call__(self, func):
@@ -52,17 +108,17 @@ class Cache:
             if not self._ready:
                 self.load()
 
-            hasheable = _hash_arg(args)
+            hasheable = _hash_args(args)
             if hasheable:
-                rtime, result = self.cache.get(hasheable, (None, None))
+                rtime, pickled = self.cache.get(hasheable, (None, None))
             else:
-                result = None
+                pickled = None
 
-            if result is not None:
+            if pickled is not None:
                 if not self.deadline or time.time() - rtime < self.deadline:
                     debug("Cache load: %s %s %s" % (func.func_name, args,
                         kwargs))
-                    return result
+                    return pickled.load()
                 else:
                     debug("Discarting caduced result")
             else:
@@ -96,12 +152,14 @@ class Cache:
 
 
     def put(self, args, kwargs, result):
+        #TODO: must include hash(func.func_code.co_code) as first key value
+        #FIXME: must include kawargs as part of key value
         if not self._ready:
             self.load()
 
-        hasheable = _hash_arg(args)
+        hasheable = _hash_args(args)
         if hasheable:
-            self.cache[hasheable] = time.time(), result
+            self.cache[hasheable] = time.time(), Pickled(result)
             self.count += 1
             debug("Cache save: %s %s %s" % (self.func.func_name, args, kwargs))
             self._updated = True

@@ -1,14 +1,6 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
-"""
-This is a simple implementation of the Fourier-Mellin Trasform
-image = [m, n]
-ft_magnitude = |fft(image)|
-lp_ft_magnitude = logpolar(ft_magnitude)
-fmt = fft(lp_ft_magnitude)
-"""
-
 from autopipe import showimage
 from enhance import equalize, logscale
 from fmt import get_logpolar, get_fmt, get_fmt_correlation
@@ -16,7 +8,6 @@ from itertools import product, combinations, permutations
 from random import sample
 from scipy import misc, ndimage
 import sys
-
 
 
 def main():

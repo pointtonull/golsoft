@@ -1,36 +1,82 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
+from cache import Cache
+from cache import Cache
 from itertools import groupby, izip, count
 from scipy import ndimage
 import Image as pil
 import ImageOps
+import matplotlib.pyplot as plt
 import numpy as np
 import operator
+
+VERBOSE = 0
+
+def graph(*arrays):
+    if VERBOSE:
+        for array in arrays:
+            plt.plot(array)
+        plt.show()
+        plt.close()
 
 
 def get_centered(array, center=None, mode='wrap'):
     """
     Shift the given array to make the given point be the new center.
     If center is None the center of mass is used.
+    mode can be 'constant', 'nearest', 'reflect' or 'wrap'.
     """
-    center = center or ndimage.center_of_mass(array)
-    rows, cols = array.shape
-    rowcc = rows / 2.
-    colcc = cols / 2
-    rowc, colc = center
-    drows = -(rowc - rowcc)
-    dcols = -(colc - colcc)
-    
-    centered = ndimage.shift(array, (drows, dcols), mode=mode)
 
-#    def out2in((outrow, outcol)):
-#        return outrow + drows, outcol + dcols
+    if center:
+        rows, cols = array.shape
+        rowcc = rows / 2.
+        colcc = cols / 2
+        rowc, colc = center
+        drows = rowcc - rowc
+        dcols = colcc - colc
+        shift = (drows, dcols)
 
-#    centered = ndimage.geometric_transform(array, out2in, array.shape, 
-#        mode="wrap")
+    else:
+        if issubclass(array.dtype.type, complex):
+            intensity = get_intensity(array)
+            shift = get_shift_to_center_of_mass(intensity, mode)
+        else:
+            shift = get_shift_to_center_of_mass(array, mode)
+
+    if issubclass(array.dtype.type, complex):
+        real = ndimage.shift(array.real, shift, mode=mode)
+        imag = ndimage.shift(array.imag, shift, mode=mode)
+        centered = real + 1j * imag
+    else:
+        centered = ndimage.shift(array, shift, mode=mode)
 
     return centered
+
+
+@Cache("enhance_center_of_mass.pickle")
+def get_shift_to_center_of_mass(array, mode="wrap"):
+    """
+    Calcules the shift of the center of mass relative to the center of the image
+    """
+    if array.ndim > 1:
+        shift = [get_shift_to_center_of_mass(array.sum(dim))
+            for dim in range(array.ndim)][::-1]
+        return shift
+    else:
+        graph(array)
+        center = array.shape[0] / 2.
+        total_shift = 0
+        centered = array
+        for step in xrange(100):
+            center_of_mass = ndimage.center_of_mass(centered)
+            shift = center - center_of_mass[0]
+            eshift = shift * 2 ** .5
+            if abs(eshift) < 1:
+                break
+            total_shift += eshift
+            centered = ndimage.shift(centered, eshift, mode=mode)
+        return total_shift
 
 
 def get_intensity(array):
@@ -40,25 +86,18 @@ def get_intensity(array):
 def logscale(array):
     if issubclass(array.dtype.type, complex):
         array = get_intensity(array)
+    array = array.astype(float)
     array -= array.min()
     array *= np.expm1(1) / array.max()
     array = np.log1p(array)
-    array *= 255
+    array *= 255.
     return array
-
-
-#def toLmode(image):
-#    image = image.convert("F")
-#    array = np.asarray(image, dtype=float)
-#    array -= array.min()
-#    array *= 255 / array.max()
-#    image = pil.fromarray(array.astype('uint8'))
-#    return image
 
 
 def equalizearray(array):
     if issubclass(array.dtype.type, complex):
         array = get_intensity(array)
+    array = array.astype(float)
     shape = array.shape
     array = array.flatten()
     sorters = array.argsort()
@@ -85,11 +124,3 @@ def equalize(image):
         return ImageOps.equalize(image)
     else:
         return equalizearray(image)
-
-
-#def autocontrast(image):
-#    if image.mode in ("F"):
-#        image = toLmode(image)
-#    elif image.mode in ("RBGA"):
-#        image = image.convert("RBG")
-#    return ImageOps.autocontrast(image)
