@@ -90,8 +90,10 @@ def _hash_kwargs(kwargs):
 
 
 class Cache:
-    def __init__(self, filename=None, deadline=0, flush_frequency=0):
+    def __init__(self, todisk=None, deadline=0, flush_frequency=0, 
+        filename=None):
         #TODO: add ratio time/size bound
+        self.todisk = todisk
         self.count = 0
         self.deadline = deadline
         self.filename = filename
@@ -100,8 +102,9 @@ class Cache:
         self._updated = False
         _ZOMBIE.append(self)
 
-
-    def __call__(self, func):
+    @wraps(self.__init__)
+    def __call__(self, func=None, todisk=None, deadline=None,
+        flush_frequency=None, filename=None):
 
         @wraps(func)
         def decorated(*args, **kwargs):
@@ -184,9 +187,10 @@ class Cache:
             self._updated = False
 
 
+
 def main():
 
-    @Cache("fibonar.pickle", 60)
+    @todisk
     def fibonar(n):
         if n < 2: return n
         else: return fibonar(n - 1) + fibonar(n - 2)
