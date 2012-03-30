@@ -8,8 +8,7 @@ import cache
 from image import equalize, logscale, get_intensity, get_centered, imread
 from fmt import get_shiftedfft, get_shiftedifft, get_fft, get_ifft
 from numpy import exp, cos, sin, sqrt, angle
-from random import sample
-from scipy import misc, ndimage
+from scipy import ndimage, optimize
 import numpy as np
 import sys
 
@@ -23,47 +22,40 @@ MASK_SOFTNESS = 2
 MASK_R_SCALE = 3
 
 
+@cache.hybrid
 def apply_mask(array):
     oarray = array
     array = get_centered(array) # TODO: validate (ACM)
     shape = array.shape
     intensity = equalize(array)
 
-    print("Intensity map on apply_mask:")
-    showimage(intensity)
-
     windowmaker = lambda x: np.kaiser(x, MASK_SOFTNESS)
     circles = sorted(get_circles(intensity, 3))
     virtual_order, real_order, zero_order = circles
 
-    for circle in circles:
-        print("Circle %s, %s, %s:" % circle)
-        centered = get_centered(intensity, circle[1])
-        showimage(centered)
-
     centered = get_centered(array, real_order[1])
-    showimage(equalize(centered))
 
     window = get_holed_window(windowmaker, real_order[2] * MASK_R_SCALE, 10)
-    mask = get_mask(shape, window, real_order[1])
-
-#    window = windowmaker(zero_order[2] * MASK_R_SCALE)
-#    mask *= 1 - get_mask(shape, window, zero_order[1])
+    mask = get_mask(shape, window)
 
     masked = get_centered(mask * array)
-
-#    showimage(logscale(mask * 255))
-#    showimage(equalize(masked))
 
     return masked
 
 
-@Cache("pea.ifft.pickle")
-def ifft(array):
-    return np.fft.ifft2(array)
+@cache.hybrid
+def get_ref_beam(shape, alpha=90, beta=90):
+    maxrow = shape[0] / 2
+    maxcol = shape[1] / 2
+    minrow, mincol = -maxrow, -maxcol
+    row, col = np.ogrid[minrow:maxrow:1., mincol:maxcol:1.]
+    cosa = cos(alpha)
+    cosb = cos(beta)
+    ref_beam = exp(1j * K * (cosa * col * DX + cosb * row * DY))
+    return ref_beam
 
 
-@Cache("pea.get_pea")
+@cache.hybrid
 def get_pea(hologram, distance, alpha=90, beta=90):
     """
     1. hologram x ref_beam
@@ -74,55 +66,91 @@ def get_pea(hologram, distance, alpha=90, beta=90):
     6. shifted_ifft(5)
     """
 
-#    showimage(logscale(hologram))
     shape = hologram.shape
-    row, col = np.ogrid[-256:256:1., -256:256:1.]
-    reference = exp(1j * K * (cos(alpha) * col * DX + cos(beta) * row * DY))
-    rhologram = reference * hologram
-#    showimage(logscale(reference))
+    ref_beam = get_ref_beam(shape, alpha, beta)
+    rhologram = ref_beam * hologram
+
     frh = get_shiftedfft(rhologram)
     cfrh = get_centered(frh)
     masked = apply_mask(frh)
+    maxrow = shape[0] / 2
+    maxcol = shape[1] / 2
+    minrow, mincol = -maxrow, -maxcol
+    row, col = np.ogrid[minrow:maxrow:1., mincol:maxcol:1.]
     phase_correction_factor = sqrt(K * 1 - (LAMBDA * 232.7920143 * row) -
         (LAMBDA * 230.8658393 * col))
     propagation_array = exp(1j * phase_correction_factor * distance)
     propagation_array = get_centered(propagation_array)
     propagated = propagation_array * masked
-    reconstructed = ifft(propagated)
-    wrapped = angle(reconstructed)
-    return wrapped
+    reconstructed = get_ifft(propagated)
+    wrapped_phase = angle(reconstructed)
+    return wrapped_phase
     unwrapped = unwrap(wrapped)
 
 
-def frange(start, stop, step=None, amount=None):
-    assert not step or not amount
-
-    if amount == None:
-        if step == None:
-            step = 1.
-        amount = int((stop - start) / step)
-    elif amount == 1:
-        start += (stop - start) / 2.
+def frange(mean, radius, amount):
+    if amount == 1:
+        start = mean
         step = 0.
     else:
-        step = (stop - start) / (amount - 1.)
+        start = mean - radius
+        step = (radius * 2) / (amount - 1.)
 
     for stepn in xrange(amount):
         yield start + stepn * step
 
 
+def get_strips_angle_radius(array):
+    shape = array.shape
+    diagonal = sum((dim ** 2 for dim in shape)) ** .5
+    center = [dim / 2. for dim in shape]
+
+    fft = get_intensity(get_shiftedfft(array))
+    peak = get_circles(fft, 2)[1][1]
+    peak = peak[0] - center[0], peak[1] - center[1]
+    radius = (peak[0] ** 2 + peak[1] ** 2) ** .5 / diagonal * 2.
+    angle = (1.570796325 - np.arctan2(*peak)) % 3.1415926536
+    return angle, radius 
+
+
+@cache.hybrid
+def guess_angles(array):
+    angle, radius = get_strips_angle_radius(array)
+    ref_shape = [dim / 2 for dim in array.shape]
+
+    def get_angles_fitness(args):
+        ref_beam = get_ref_beam(ref_shape, args[0], args[1])
+        new_angle, new_radius = get_strips_angle_radius(ref_beam)
+        angle_diff = (new_angle - angle) / 3.14159265
+        radius_diff = new_radius - radius
+        distance = (angle_diff ** 2 + radius_diff ** 2) ** .5
+        print distance, args
+        return distance
+
+    xinit = np.array([tau/4., tau/4.])
+
+#    optimizer = optimize.anneal # much
+#    optimizer = optimize.fmin_powell # 198
+    optimizer = optimize.fmin # 66
+
+
+    xend = optimizer(get_angles_fitness, xinit)
+    return xend[0], xend[1]
+
+
+
+
 def main():
-    images = [misc.imread(filename, True) for filename in sys.argv[1:]]
+
+    images = [imread(filename, True) for filename in sys.argv[1:]]
     for image in images:
-        for alpha in frange(89.39-1.25, 89.39+1.25, amount=01):
-            for beta in frange(110.57-02.5, 110.57+02.5, amount=10):
-                for distance in frange(.09, .13, amount=1):
-                    print("Distance: %0.2f, Alpha: %0.2fº, Beta: %0.2fº:" %
-                        (distance, alpha, beta))
-                    alphar = alpha / (180 / tau)
-                    betar = beta / (180 / tau)
-                    pea = get_pea(image, distance, alphar, betar)
-                    showimage(equalize(pea))
+        showimage(equalize(image))
+        for distance in frange(.11, .11, 1):
+            print distance
+            alpha, beta = guess_angles(image)
+            pea = get_pea(image, distance, alpha, beta)
+            showimage(equalize(angle(pea)))
+            showimage(logscale(pea))
 
 
 if __name__ == "__main__":
