@@ -77,64 +77,80 @@ def _hash_args(args):
 
 def _hash_kwargs(kwargs):
     try:
-        hash(args)
-        return args
+        hash(kwargs)
+        return kwargs
     except TypeError:
         try:
-            ahash = hashlib.sha1(args).hexdigest()
+            ahash = hashlib.sha1(kwargs).hexdigest()
             return ahash
         except TypeError:
-            values = tuple((_hash_args(arg) for arg in args))
+            values = tuple((_hash_args(kwarg) for kwarg in kwargs))
             return values
 
 
 
+def make_hasheable(args, kwargs):
+    hasheable_args = _hash_args(args)
+    hasheable_kwargs = _hash_kwargs(kwargs)
+    if hasheable_args is not None and hasheable_kwargs is not None:
+        return (hasheable_args, hasheable_kwargs)
+    else:
+        debug("make_hasheable: %s" % str((hasheable_args, hasheable_kwargs)))
+        return None
+
+
+
 class Cache:
-    def __init__(self, todisk=None, deadline=0, flush_frequency=0, 
-        filename=None):
-        #TODO: add ratio time/size bound
-        self.todisk = todisk
+    def __init__(self, func, ramratio=.5, diskratio=5, deadline=0,
+        flush_freq=0):
+        """
+        Diskratio and ramratio are memsize/cputime on MiBs/Secs. A result  
+        will be keeped only if size(result) <= cputime * ratio. If a ratio
+        value is False this medium will be not used.
+
+        eg:
+          todisk = Cache(func, ramratio=False, diskratio=7)
+          toram = Cache(func, ramratio=1, diskratio=False)
+        """
+        debug("Instanced Cache(%s, %s, %s, %s, %s)" % (func, ramratio,
+            diskratio, deadline, flush_freq))
+        self.func = func
         self.count = 0
         self.deadline = deadline
-        self.filename = filename
-        self.flush_frequency = flush_frequency
+        self.flush_freq = flush_freq
         self._ready = False
         self._updated = False
+        self.filename = os.path.join(DIRNAME,
+            str(hash(func.func_code.co_code)) + ".index")
         _ZOMBIE.append(self)
 
-    @wraps(self.__init__)
-    def __call__(self, func=None, todisk=None, deadline=None,
-        flush_frequency=None, filename=None):
 
-        @wraps(func)
-        def decorated(*args, **kwargs):
-            if not self._ready:
-                self.load()
+    def __call__(self, *args, **kwargs):
+        if not self._ready:
+            self.load()
 
-            hasheable = _hash_args(args)
-            if hasheable:
-                rtime, pickled = self.cache.get(hasheable, (None, None))
+        hasheable = make_hasheable(args, kwargs)
+        if hasheable is not None:
+            rtime, pickled = self.cache.get(hasheable, (None, None))
+        else:
+            pickled = None
+
+        if pickled is not None:
+            if not self.deadline or time.time() - rtime < self.deadline:
+                result = pickled.load()
+                debug("Cache load: %s %s -> %s" % (args, kwargs, result))
             else:
-                pickled = None
+                debug("Discarting caduced result")
+                result = None
+        else:
+            debug("Cache: No load: %s %s" % (args, kwargs))
+            result = None
 
-            if pickled is not None:
-                if not self.deadline or time.time() - rtime < self.deadline:
-                    debug("Cache load: %s %s %s" % (func.func_name, args,
-                        kwargs))
-                    return pickled.load()
-                else:
-                    debug("Discarting caduced result")
-            else:
-                debug("Cache: No load")
-            result = func(*args, **kwargs)
+        if result is None:
+            result = self.func(*args, **kwargs)
             if result is not None:
                 self.put(args, kwargs, result)
-            else:
-                debug("%s result is None" % func.func_name)
-            return result
-
-        self.func = decorated
-        return decorated
+        return result
 
 
     def load(self):
@@ -155,19 +171,17 @@ class Cache:
 
 
     def put(self, args, kwargs, result):
-        #TODO: must include hash(func.func_code.co_code) as first key value
-        #FIXME: must include kawargs as part of key value
         if not self._ready:
             self.load()
 
-        hasheable = _hash_args(args)
-        if hasheable:
+        hasheable = make_hasheable(args, kwargs)
+        if hasheable is not None:
             self.cache[hasheable] = time.time(), Pickled(result)
             self.count += 1
             debug("Cache save: %s %s %s" % (self.func.func_name, args, kwargs))
             self._updated = True
-            if self.flush_frequency:
-                if self.count % self.flush_frequency == 0:
+            if self.flush_freq:
+                if self.count % self.flush_freq == 0:
                     debug("Cache autoflushing")
                     self.flush()
         else:
@@ -188,19 +202,39 @@ class Cache:
 
 
 
+class Configurer:
+    def __init__(self, **kwargs):
+        debug("Instanced Configurer(%s)" % kwargs)
+        self.kwargs = kwargs
+
+    def __call__(self, func=None, **kwargs):
+        if func:
+            return Cache(func, **self.kwargs)
+        else:
+            return self.kwargs.update(kwargs)
+
+
+toram = Configurer(diskratio=False)
+todisk = Configurer(ramratio=False)
+hybrid = Configurer()
+
+
 def main():
 
-    @todisk
+    debug("Main routine")
+    @toramdisk
     def fibonar(n):
         if n < 2: return n
         else: return fibonar(n - 1) + fibonar(n - 2)
 
     print(fibonar(5))
     print(fibonar(50))
-    print(fibonar(250))
+    print(fibonar(100))
+    print(fibonar(200))
+    print(fibonar(300))
+    print(fibonar(400))
     print(fibonar(500))
-    print(fibonar(750))
-    print(fibonar(1000))
+    print(fibonar(600))
 
 if __name__ == "__main__":
     exit(main())
