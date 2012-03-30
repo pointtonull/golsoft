@@ -2,7 +2,7 @@
 #-*- coding: UTF-8 -*-
 
 from itertools import groupby, izip, count
-from scipy import ndimage
+from scipy import ndimage, misc
 import Image as pil
 import ImageOps
 import cache
@@ -11,12 +11,25 @@ import operator
 
 VERBOSE = 0
 
-def graph(*arrays):
-    if VERBOSE:
-        for array in arrays:
-            plt.plot(array)
-        plt.show()
-        plt.close()
+
+def open_raw(filename, aspectratio=1):
+    bits = open("../docs/holos/32h3_400.raw").read()
+    length = len(bits)
+    cols = int(round((length * aspectratio) ** .5))
+    rows = length / cols
+    if length != cols * rows:
+        raise ValueError("incorrect aspectratio")
+    array = np.array([ord(char) for char in bits])
+    array = array.reshape((rows, cols))
+    return array
+
+
+def imread(filename, flatten=True, aspectratio=1):
+    try:
+        array = misc.imread(filename, flatten)
+    except IOError:
+        array = open_raw(filename, aspectratio)
+    return array
 
 
 @cache.hybrid
