@@ -7,8 +7,7 @@ This is a simple implementation of the Fourier-Mellin Trasform
 
 from automask import get_mask
 from autopipe import showimage
-from cache import Cache
-from enhance import get_intensity, get_centered, logscale, equalize
+from image import get_intensity, get_centered, logscale, equalize
 from numpy import fft
 from numpy import ndarray as atype
 from numpy import sin, cos, exp, log, arctan2
