@@ -1,13 +1,11 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
-from cache import Cache
-from cache import Cache
 from itertools import groupby, izip, count
 from scipy import ndimage
 import Image as pil
 import ImageOps
-import matplotlib.pyplot as plt
+import cache
 import numpy as np
 import operator
 
@@ -21,6 +19,7 @@ def graph(*arrays):
         plt.close()
 
 
+@cache.hybrid
 def get_centered(array, center=None, mode='wrap'):
     """
     Shift the given array to make the given point be the new center.
@@ -54,7 +53,7 @@ def get_centered(array, center=None, mode='wrap'):
     return centered
 
 
-@Cache("enhance_center_of_mass.pickle")
+@cache.hybrid
 def get_shift_to_center_of_mass(array, mode="wrap"):
     """
     Calcules the shift of the center of mass relative to the center of the image
@@ -64,7 +63,6 @@ def get_shift_to_center_of_mass(array, mode="wrap"):
             for dim in range(array.ndim)][::-1]
         return shift
     else:
-        graph(array)
         center = array.shape[0] / 2.
         total_shift = 0
         centered = array
@@ -115,6 +113,7 @@ def equalizearray(array):
     return array
 
 
+@cache.hybrid
 def equalize(image):
     if isinstance(image, pil.Image):
         if image.mode in ("F"):
