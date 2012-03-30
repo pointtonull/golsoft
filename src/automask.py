@@ -9,18 +9,17 @@ View run_automask to see a complete example.
 
 from autopipe import showimage
 from collections import defaultdict
-from enhance import get_centered
+from image import get_centered
 from scipy.ndimage import geometric_transform
 from scipy.ndimage import maximum_filter1d, rotate
 import matplotlib.pyplot as plt
 import numpy as np
 
-#np.seterr(all='raise')
 tau = np.pi * 2
 VERBOSE = 0
 
 
-def graf(*arrays):
+def graph(*arrays):
     if VERBOSE:
         for array in arrays:
             plt.plot(array)
@@ -30,12 +29,13 @@ def graf(*arrays):
 
 def get_localmaxs(array, count=3, window=25):
     """
+    array must be one-dimensional
     Individualize the locals maxs relatives to a window of the given length.
     Returns theirs coodenates.
     """
     maxs = maximum_filter1d(array, window)
     maxs[maxs > array] = array.min()
-    graf(array, maxs)
+    graph(array, maxs)
     top_positions = maxs.argsort()[::-1][:count]
     return sorted(top_positions)
 
@@ -72,6 +72,7 @@ def get_circles(array, count=3, window=25):
         Center: row, col position
         Radius: radius
     """
+
     rowsums = array.sum(1)
     rowpeaks = get_localmaxs(rowsums, count, window)
     rowsstd = np.std([rowsums[pos] for pos in rowpeaks])
@@ -137,7 +138,14 @@ def get_mask(shape, window, center=None):
     radius = window.shape[0] / 2.
     top, bottom = (crow - radius), (crow + radius)
     left, right = (ccol - radius), (ccol + radius)
-    array[top:bottom, left:right] = window2d
+    try:
+        array[top:bottom, left:right] = window2d
+    except ValueError:
+        print center
+        print array[top:bottom, left:right].shape, window2d.shape
+        print "array[%d:%d, %d:%d] = [](%s)" % (top, bottom, left, right, 
+            window2d.shape)
+        raise
     return array
 
 
@@ -159,7 +167,7 @@ def get_holed_window(winfunc, length, holelen=0):
 def main():
     import sys
     from scipy import misc
-    from enhance import logscale
+    from image import logscale
     softness = 2
     r_scale = 3
     windowmaker = lambda x: np.kaiser(x, softness)

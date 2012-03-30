@@ -3,28 +3,24 @@
 
 """
 This is a simple implementation of the Fourier-Mellin Trasform
-image = [m, n]
-ft_magnitude = |fft(image)|
-lp_ft_magnitude = logpolar(ft_magnitude)
-fmt = fft(lp_ft_magnitude)
 """
 
 from automask import get_mask
 from autopipe import showimage
-from cache import Cache
-from enhance import get_intensity, get_centered, logscale, equalize
+from image import get_intensity, get_centered, logscale, equalize
 from numpy import fft
 from numpy import ndarray as atype
 from numpy import sin, cos, exp, log, arctan2
 from scipy import misc, signal
 from scipy.ndimage import geometric_transform
+import cache
 import cv2.cv as cv
 import numpy as np
 
 tau = 2 * np.pi
 
 
-#@Cache("fmt.correlate2d.pickle")
+@cache.hybrid
 def correlate2d(array1, array2):
     """
     Performs cross correlation between array1 and array2.
@@ -49,23 +45,41 @@ def correlate2d(array1, array2):
     cv.MatchTemplate(matrix1, correlation_matrix, result_matrix,
         cv.CV_TM_CCORR_NORMED)
     result = np.asarray(result_matrix)
-    result = result[marginrows:marginrows + minrows, margincols:margincols + mincols]
+    result = result[marginrows:marginrows + minrows,
+        margincols:margincols + mincols]
     return result
 
 
-@Cache("fmt.ifft.pickle")
-def get_shiftedifft(array):
-    shiftedifft = fft.ifftshift(fft.ifft2(array))
-    return shiftedifft
+@cache.hybrid
+def get_fft(array):
+    fft = np.fft.fft2(array)
+
+#    fft = np.zeros(array.shape)
+#    fft_matrix = cv.fromarray(fft)
+#    matrix = cv.fromarray(np.float32(array))
+#    cv.DFT(matrix, fft_matrix, 0)
+#    fft = np.asarray(fft_matrix)
+#    showimage(equalize(fft))
+
+    return fft
 
 
-@Cache("fmt.fft.pickle")
 def get_shiftedfft(array):
-    shiftedfft = fft.fftshift(fft.fft2(array))
+    shiftedfft = fft.fftshift(get_fft(array))
     return shiftedfft
 
 
-@Cache("fmt.logpolar.pickle")
+@cache.hybrid
+def get_ifft(array):
+    return np.fft.ifft2(array)
+
+
+def get_shiftedifft(array):
+    shiftedifft = fft.ifftshift(get_ifft(array))
+    return shiftedifft
+
+
+@cache.hybrid
 def get_logpolar(array, interpolation=0, reverse=False):
     """
     Returns a new array with the logpolar transfamation of array.
@@ -111,7 +125,7 @@ def get_logpolar(array, interpolation=0, reverse=False):
 
 
 
-@Cache("fmt.hi_pass_filter.pickle")
+@cache.hybrid
 def hi_pass_filter(array, radius=0.2, softness=4):
     radius = round(min(array.shape) * radius)
     window = np.kaiser(radius, softness)
@@ -120,7 +134,7 @@ def hi_pass_filter(array, radius=0.2, softness=4):
     return masked
     
 
-@Cache("fmt.get_fmt.pickle")
+@cache.hybrid
 def get_fmt(array):
     """
     Follows this algoritm:
@@ -137,7 +151,7 @@ def get_fmt(array):
     return fmt
 
 
-@Cache("fmt.get_fmt_correlation.pickle", 60)
+@cache.hybrid
 def get_fmt_correlation(image1, image2):
     image1 = get_centered(image1)
     image2 = get_centered(image2)

@@ -3,7 +3,7 @@
 
 from automask import get_mask, get_circles, get_holed_window
 from autopipe import showimage, red, blue
-from enhance import equalize, logscale
+from image import equalize, logscale
 from itertools import product
 from numpy import kaiser
 from scipy import misc

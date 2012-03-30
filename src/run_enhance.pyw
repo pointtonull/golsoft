@@ -2,32 +2,38 @@
 #-*- coding: UTF-8 -*-
 
 from autopipe import red, blue, showimage
-from enhance import logscale, equalize
-import Image
+from image import logscale, equalize, get_centered, imread
+import numpy as np
 import sys
+from scipy.misc import imresize
 
 
 def main():
-    images = [misc.imread(filename, True) for filename in sys.argv[1:]]
+    images = [(filename, imread(filename)) for filename in sys.argv[1:]]
     if not images:
-        lena = misc.imresize(misc.lena(), .5)
+        lena = imresize(misc.lena(), .5)
         images = [lena]
 
-    for image in images:
-        width, height = image.size
+    for filename, image in images:
+        print(filename)
+        width, height = image.shape
         if max(width, height) > 600:
             print("Resizing...")
-            prop = max(width, height) / 600.
-            image = image.resize((int(width / prop), int(height / prop)), 1)
+            prop = 600. / max(width, height)
+            image = imresize(image, prop)
 
-        print("Original image:")
-        showimage(image)
+#        print("Original image:")
+#        showimage(image)
+
+#        print("With center of mass to center of image:")
+#        centered = get_centered(image)
+#        showimage(centered)
 
         print("With logscale:")
         showimage(logscale(image))
 
-        print("With equalized histogram:")
-        showimage(Image.fromarray(equalize(image)))
+#        print("With equalized histogram:")
+#        showimage(equalize(image))
 
 if __name__ == "__main__":
     exit(main())
