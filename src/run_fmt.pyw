@@ -2,7 +2,7 @@
 #-*- coding: UTF-8 -*-
 
 from autopipe import showimage
-from enhance import equalize, logscale
+from image import equalize, logscale
 from fmt import get_logpolar, get_fmt, get_fmt_correlation
 from itertools import product, combinations, permutations
 from random import sample

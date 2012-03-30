@@ -9,7 +9,7 @@ View run_automask to see a complete example.
 
 from autopipe import showimage
 from collections import defaultdict
-from enhance import get_centered
+from image import get_centered
 from scipy.ndimage import geometric_transform
 from scipy.ndimage import maximum_filter1d, rotate
 import matplotlib.pyplot as plt
@@ -158,7 +158,7 @@ def get_holed_window(winfunc, length, holelen=0):
 def main():
     import sys
     from scipy import misc
-    from enhance import logscale
+    from image import logscale
     softness = 2
     r_scale = 3
     windowmaker = lambda x: np.kaiser(x, softness)

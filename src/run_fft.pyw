@@ -11,11 +11,10 @@ fmt = fft(lp_ft_magnitude)
 
 from automask import get_circles, get_holed_window, get_mask
 from autopipe import showimage, blue, red, green
-from enhance import equalize, get_intensity, logscale
 from fmt import get_shiftedfft
+from image import equalize, get_intensity, logscale, get_centered
 from scipy import misc, ndimage
 import numpy as np
-from enhance import get_centered
 import sys
 
 

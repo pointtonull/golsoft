@@ -4,9 +4,9 @@
 
 from automask import get_circles, get_holed_window, get_mask
 from autopipe import showimage, blue
-from cache import Cache
-from enhance import equalize, logscale, get_intensity, get_centered
-from fmt import get_shiftedfft, get_shiftedifft
+import cache
+from image import equalize, logscale, get_intensity, get_centered, imread
+from fmt import get_shiftedfft, get_shiftedifft, get_fft, get_ifft
 from numpy import exp, cos, sin, sqrt, angle
 from random import sample
 from scipy import misc, ndimage
