@@ -129,8 +129,6 @@ def guess_angles(array):
 
     xinit = np.array([tau/4., tau/4.])
 
-#    optimizer = optimize.anneal # much
-#    optimizer = optimize.fmin_powell # 198
     optimizer = optimize.fmin # 66
 
 
@@ -149,7 +147,6 @@ def main():
             print distance
             alpha, beta = guess_angles(image)
             pea = get_pea(image, distance, alpha, beta)
-            showimage(equalize(angle(pea)))
             showimage(logscale(pea))
 
 

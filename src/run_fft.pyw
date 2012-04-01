@@ -59,7 +59,6 @@ def main():
         fft_complex = get_shiftedfft(image)
         fft_intensity = equalize(fft_complex)
         showimage(image, fft_intensity)
-#        apply_mask(fft_complex)
 
 if __name__ == "__main__":
     exit(main())
