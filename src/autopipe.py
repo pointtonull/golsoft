@@ -3,7 +3,11 @@
 
 import os
 import sys
-import numpy as np
+
+try:
+    from numpy import ndarray
+except:
+    ndarray = None
 
 
 if os.name in ("nt") or "TKPIPE" in os.environ:
@@ -20,7 +24,7 @@ else:
 def showimage(*images):
     if TKPIPE:
         for image in images:
-            if isinstance(image, np.ndarray):
+            if isinstance(image, ndarray):
                 image = pil.fromarray(image)
             TKPIPE.writeimage(image)
         print("")

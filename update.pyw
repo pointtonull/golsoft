@@ -19,7 +19,9 @@ import sys
 import webbrowser
 
 REPO_URL = "git://github.com/pointtonull/golsoft.git"
-GIT_INSTALLER = "http://msysgit.googlecode.com/files/Git-1.7.9-preview20120201.exe"
+GIT_INSTALLER = ("https://msysgit.googlecode.com/files/"
+    "msysGit-fullinstall-1.7.9-preview20120201.exe")
+
 
 def enqueue_output(out, queue):
     for line in iter(out.read, ''):
@@ -94,10 +96,12 @@ def download(url, destpath=None):
     downloader(url, destpath)
     return non_blocking_proc([destpath])
 
+
 def easy_install(module):
     easy_install_paths = get_paths("easy_install")
     command = [easy_install_paths[0], module]
     non_blocking_proc(command)
+
 
 def pip_install(module):
     pip_paths = get_paths(r"pip")
@@ -109,7 +113,7 @@ def main():
     "The main routine"
 
     blue("Verifing git: ")
-    git_paths = get_paths(r"git\cmd\git")
+    git_paths = get_paths(r"cmd\git")
     if git_paths:
         print("pass")
     else:
