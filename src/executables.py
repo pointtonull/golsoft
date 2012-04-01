@@ -13,17 +13,19 @@ def get_paths(command):
     except NameError:
         my_path = None
 
-    # because windows sucks  ╮（╯＿╰）╭
+    # because windows sucks
     dirs = os.environ["PATH"].split(os.pathsep)
     if os.name in ("posix",):
         exts = ["%s"]
     elif os.name == "nt":
         exts = ["%s" + ext for ext in os.environ["PATHEXT"].split(";")]
-        python_scripts = (os.path.join(path, "Scripts") for path in sys.path)
+        python_scripts = [os.path.join(path, "Scripts") for path in sys.path]
         python_scripts = [path for path in python_scripts
             if os.path.isdir(path)]
         dirs += python_scripts
+        dirs.append(r"C:\msysgit\msysgit") #default msygit path
         dirs.append(os.environ["PROGRAMFILES"])
+        dirs.append(os.environ["PROGRAMFILES(X86)"])
     else:
         raise NotImplementedError("Operative system not recognized.")
     
