@@ -48,13 +48,13 @@ class Pickled:
         self.hash = hash(_hash_args(object))
         self.filename = os.path.join(DIRNAME, str(self.hash) + ".pickle")
         if not os.path.exists(self.filename):
-            with open(self.filename, "w") as file:
+            with open(self.filename, "wb") as file:
                 pickle.dump(object, file, -1)
 
 
     def load(self):
         try:
-            object = pickle.load(open(self.filename))
+            object = pickle.load(open(self.filename, "rb"))
         except IOError:
             object = None
         return object
@@ -157,7 +157,7 @@ class Cache:
         if self.filename:
             try:
                 debug("Opening file cache")
-                self.cache = pickle.load(open(self.filename))
+                self.cache = pickle.load(open(self.filename, "rb"))
             except IOError:
                 debug("IOError, creating new empty cache")
                 self.cache = {}
