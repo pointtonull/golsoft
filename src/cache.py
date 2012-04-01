@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+
 #-*- coding: UTF-8 -*-
 
 from debug import error, warning, debug, info
@@ -222,7 +222,7 @@ hybrid = Configurer()
 def main():
 
     debug("Main routine")
-    @toramdisk
+    @hybrid
     def fibonar(n):
         if n < 2: return n
         else: return fibonar(n - 1) + fibonar(n - 2)
