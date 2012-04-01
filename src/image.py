@@ -13,7 +13,7 @@ VERBOSE = 0
 
 
 def open_raw(filename, aspectratio=1):
-    bits = open("../docs/holos/32h3_400.raw").read()
+    bits = open(filename).read()
     length = len(bits)
     cols = int(round((length * aspectratio) ** .5))
     rows = length / cols
