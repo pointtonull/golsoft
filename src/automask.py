@@ -153,13 +153,18 @@ def get_holed_window(winfunc, length, holelen=0):
     """
     Create a window with a centered hole.
     """
+    assert holelen <= length
     length = int(round(length))
     window = winfunc(length)
     center = length / 2.
     if holelen:
         holelen -= holelen % 2 #FIXME: only evens for now
         hole = np.ones(holelen) - winfunc(holelen)
-        window[center - holelen / 2:center + holelen / 2] *= hole
+        try:
+            window[center - holelen / 2:center + holelen / 2] *= hole
+        except ValueError:
+            print(length, holelen)
+            raise
     return window
 
 

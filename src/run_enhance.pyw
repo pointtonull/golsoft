@@ -22,8 +22,8 @@ def main():
             prop = 600. / max(width, height)
             image = imresize(image, prop)
 
-#        print("Original image:")
-#        showimage(image)
+        print("Original image:")
+        showimage(image)
 
 #        print("With center of mass to center of image:")
 #        centered = get_centered(image)
@@ -34,6 +34,7 @@ def main():
 
 #        print("With equalized histogram:")
 #        showimage(equalize(image))
+    return 0
 
 if __name__ == "__main__":
     exit(main())
