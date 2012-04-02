@@ -131,9 +131,7 @@ def guess_angles(hologram):
         return distance
 
     xinit = np.array([tau/4., tau/4.])
-
     optimizer = optimize.fmin # 66
-
 
     xend = optimizer(get_angles_fitness, xinit)
     return xend[0], xend[1]
