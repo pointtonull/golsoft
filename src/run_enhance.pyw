@@ -29,11 +29,12 @@ def main():
 #        centered = get_centered(image)
 #        showimage(centered)
 
-        print("With logscale:")
-        showimage(logscale(image))
+#        print("With logscale:")
+#        showimage(logscale(image))
 
-#        print("With equalized histogram:")
-#        showimage(equalize(image))
+        print("With equalized histogram:")
+        showimage(equalize(image))
+
     return 0
 
 if __name__ == "__main__":
