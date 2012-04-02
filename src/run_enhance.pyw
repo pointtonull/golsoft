@@ -34,6 +34,7 @@ def main():
 
 #        print("With equalized histogram:")
 #        showimage(equalize(image))
+    return 0
 
 if __name__ == "__main__":
     exit(main())

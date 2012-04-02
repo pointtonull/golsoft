@@ -148,6 +148,7 @@ def main():
             alpha, beta = guess_angles(image)
             pea = get_pea(image, distance, alpha, beta)
             showimage(logscale(pea))
+    return 0
 
 
 if __name__ == "__main__":

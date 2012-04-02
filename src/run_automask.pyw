@@ -75,6 +75,7 @@ def main():
                 showimage(mask * 255)
                 image = pil.fromarray(np.float32(mask))
                 image.save(filename + " Right.tiff")
+    return 0
 
 if __name__ == "__main__":
     exit(main())
