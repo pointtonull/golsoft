@@ -105,6 +105,16 @@ def logscale(array):
     return array
 
 
+def normalize(array):
+    """
+    Apply linears tranformations to ensure all the values are in (0, 255)
+    """
+    array -= array.min()
+    array /= array.max()
+    array *= 255
+    return array
+
+
 def equalizearray(array):
     if issubclass(array.dtype.type, complex):
         array = get_intensity(array)
