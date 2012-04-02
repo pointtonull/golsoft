@@ -109,6 +109,8 @@ def normalize(array):
     """
     Apply linears tranformations to ensure all the values are in (0, 255)
     """
+    if issubclass(array.dtype.type, complex):
+        array = get_intensity(array)
     array -= array.min()
     array /= array.max()
     array *= 255
