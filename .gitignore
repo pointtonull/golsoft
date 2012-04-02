@@ -1,3 +1,4 @@
 *.py[coCO]
 *.sw?
 .todo.*
+*.pickle
