@@ -5,6 +5,7 @@ import os
 import sys
 
 try:
+    import numpy as np
     from numpy import ndarray
 except:
     ndarray = None
@@ -25,7 +26,10 @@ def showimage(*images):
     if TKPIPE:
         for image in images:
             if isinstance(image, ndarray):
-                image = pil.fromarray(image)
+                try:
+                    image = pil.fromarray(image)
+                except TypeError:
+                    image = pil.fromarray(np.float64(image))
             TKPIPE.writeimage(image)
         print("")
     else:
