@@ -7,10 +7,11 @@ holograms
 """
 
 from automask import get_circles, get_holed_window, get_mask
-from fmt import get_shiftedfft, get_ifft
-from image import equalize, get_intensity, get_centered
+from fmt import get_shiftedfft, get_ifft, get_shiftedifft
+from image import equalize, get_intensity, get_centered, normalize
 from numpy import exp, cos, sqrt
 from scipy import optimize
+from autopipe import showimage
 import cache
 import numpy as np
 
@@ -32,9 +33,11 @@ def apply_mask(array):
     array = get_centered(array)
     shape = array.shape
     intensity = equalize(array)
+    showimage(intensity)
 
     windowmaker = lambda x: np.kaiser(x, MASK_SOFTNESS)
     circles = sorted(get_circles(intensity, 3))
+    print(circles)
     virtual_order, real_order, zero_order = circles
 
     centered = get_centered(array, real_order[1])
@@ -43,10 +46,11 @@ def apply_mask(array):
     mask = get_mask(shape, window)
 
     masked = get_centered(mask * centered)
+    showimage(normalize(masked))
     return masked
 
 
-@cache.hybrid
+#@cache.hybrid
 def get_ref_beam(shape, alpha=90, beta=90):
     """
     Generate a reference beam array given the shape of the hologram and the
@@ -59,10 +63,11 @@ def get_ref_beam(shape, alpha=90, beta=90):
     cosa = cos(alpha)
     cosb = cos(beta)
     ref_beam = exp(1j * K * (cosa * col * DX + cosb * row * DY))
+#    ref_beam = np.ones(shape)
     return ref_beam
 
 
-@cache.hybrid
+#@cache.hybrid
 def get_pea(hologram, distance, alpha=90, beta=90):
     """
     1. hologram x ref_beam
@@ -80,6 +85,7 @@ def get_pea(hologram, distance, alpha=90, beta=90):
     frh = get_shiftedfft(rhologram)
     frh = get_centered(frh)
     masked = apply_mask(frh)
+
     maxrow = shape[0] / 2
     maxcol = shape[1] / 2
     minrow, mincol = -maxrow, -maxcol
@@ -88,8 +94,12 @@ def get_pea(hologram, distance, alpha=90, beta=90):
         (LAMBDA * 230.8658393 * col))
     propagation_array = exp(1j * phase_correction_factor * distance)
     propagation_array = get_centered(propagation_array)
+    print("Propagation array")
+    showimage(equalize(propagation_array.real))
     propagated = propagation_array * masked
+
     reconstructed = get_ifft(propagated)
+    return reconstructed
     wrapped_phase = np.angle(reconstructed)
     return wrapped_phase
 
@@ -110,7 +120,7 @@ def get_strips_angle_radius(hologram):
     return angle, radius
 
 
-@cache.hybrid
+#@cache.hybrid
 def guess_angles(hologram):
     """
     Uses ML algoritms to guess the corrects directors angles for the given
