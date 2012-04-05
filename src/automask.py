@@ -153,7 +153,8 @@ def get_holed_window(winfunc, length, holelen=0):
     """
     Create a window with a centered hole.
     """
-    assert holelen <= length
+    if holelen > length:
+        holelen = 0
     length = int(round(length))
     window = winfunc(length)
     center = length / 2.
