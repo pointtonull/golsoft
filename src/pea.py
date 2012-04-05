@@ -22,10 +22,10 @@ DX = 8.39e-6
 DY = 8.46e-6
 K = tau / LAMBDA # wave number
 MASK_SOFTNESS = 2
-MASK_R_SCALE = 3
+MASK_R_SCALE = 2 # FIXME
 
 
-@cache.hybrid
+#@cache.hybrid
 def apply_mask(array):
     """
     Try to filter out spurious data.
@@ -35,14 +35,14 @@ def apply_mask(array):
     intensity = equalize(array)
     showimage(intensity)
 
-    windowmaker = lambda x: np.kaiser(x, MASK_SOFTNESS)
-    circles = sorted(get_circles(intensity, 3))
+    windowmaker = lambda x: np.kaiser(x, 0)#FIXME
+    circles = sorted(get_circles(intensity, 3, 50))
     print(circles)
     virtual_order, real_order, zero_order = circles
 
     centered = get_centered(array, real_order[1])
 
-    window = get_holed_window(windowmaker, real_order[2] * MASK_R_SCALE, 10)
+    window = get_holed_window(windowmaker, real_order[2] * MASK_R_SCALE, 0)#FIXME
     mask = get_mask(shape, window)
 
     masked = get_centered(mask * centered)
@@ -83,7 +83,7 @@ def get_pea(hologram, distance, alpha=90, beta=90):
     rhologram = ref_beam * hologram
 
     frh = get_shiftedfft(rhologram)
-    frh = get_centered(frh)
+#    frh = get_centered(frh)
     masked = apply_mask(frh)
 
     maxrow = shape[0] / 2
@@ -93,9 +93,9 @@ def get_pea(hologram, distance, alpha=90, beta=90):
     phase_correction_factor = sqrt(K * 1 - (LAMBDA * 232.7920143 * row) -
         (LAMBDA * 230.8658393 * col))
     propagation_array = exp(1j * phase_correction_factor * distance)
-    propagation_array = get_centered(propagation_array)
     print("Propagation array")
     showimage(equalize(propagation_array.real))
+#    propagation_array = get_centered(propagation_array)
     propagated = propagation_array * masked
 
     reconstructed = get_ifft(propagated)
