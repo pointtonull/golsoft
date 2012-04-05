@@ -10,7 +10,7 @@ fmt = fft(lp_ft_magnitude)
 """
 
 from autopipe import showimage
-from image import imread, normalize
+from image import imread, equalize
 from scipy import misc
 from pea import guess_angles, get_ref_beam
 import sys
@@ -26,11 +26,11 @@ def main():
 
     for filename, image in images:
         print("Original image: %s" % filename)
-        showimage(image)
+        showimage(equalize(image))
         alpha, beta = guess_angles(image)
         print alpha, beta
         ref_beam = get_ref_beam(image.shape, alpha, beta)
-        showimage(normalize(ref_beam))
+        showimage(equalize(ref_beam.real))
 
     return 0
 
