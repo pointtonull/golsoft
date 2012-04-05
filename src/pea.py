@@ -90,8 +90,8 @@ def get_pea(hologram, distance, alpha=90, beta=90):
     maxcol = shape[1] / 2
     minrow, mincol = -maxrow, -maxcol
     row, col = np.ogrid[minrow:maxrow:1., mincol:maxcol:1.]
-    phase_correction_factor = sqrt(K * 1 - (LAMBDA * 232.7920143 * row) -
-        (LAMBDA * 230.8658393 * col))
+    phase_correction_factor = K * sqrt(1 - (LAMBDA * 232.7920143 * row)**2 -
+        (LAMBDA * 230.8658393 * col)**2)
     propagation_array = exp(1j * phase_correction_factor * distance)
     print("Propagation array")
     showimage(equalize(propagation_array.real))
