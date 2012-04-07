@@ -125,6 +125,12 @@ def get_peak_coords(hologram):
     return peaks_row, peaks_col
 
 
+@cache.hybrid(reset=False)
+def get_refbeam_peak_coords(alpha, beta):
+    ref_beam = get_ref_beam((256, 256), alpha, beta)
+    row, col = get_peak_coords(ref_beam)
+    return row, col
+
 
 #@cache.hybrid
 def guess_director_angles(hologram):
