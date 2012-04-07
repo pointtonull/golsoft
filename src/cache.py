@@ -120,8 +120,11 @@ class Cache:
         self.flush_freq = flush_freq
         self._ready = False
         self._updated = False
-        self.filename = os.path.join(DIRNAME,
-            str(hash(func.func_code.co_code)) + ".index")
+        if diskratio is False:
+            self.filename = False
+        else:
+            self.filename = os.path.join(DIRNAME,
+                str(hash(func.func_code.co_code)) + ".index")
         _ZOMBIE.append(self)
 
 
@@ -222,7 +225,7 @@ hybrid = Configurer()
 def main():
 
     debug("Main routine")
-    @hybrid
+    @toram
     def fibonar(n):
         if n < 2: return n
         else: return fibonar(n - 1) + fibonar(n - 2)
