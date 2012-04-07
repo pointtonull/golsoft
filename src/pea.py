@@ -103,12 +103,13 @@ def get_pea(hologram, distance, alpha=tau/4, cos_beta=tau/4):
     return wrapped_phase
 
 
-def get_strips_angle_radius(hologram):
+def get_distance(point1, point2):
+    distance = ((point1[0] - point2[0]) ** 2
+        + (point1[1] - point2[1]) ** 2) ** .5
+    return distance
     """
-    Calculate the inclination angle and raiun for the given hologram strips
     """
     shape = hologram.shape
-    diagonal = sum((dim ** 2 for dim in shape)) ** .5
     center = [dim / 2. for dim in shape]
 
     fft = get_intensity(get_shiftedfft(hologram))
@@ -124,22 +125,37 @@ def guess_director_angles(hologram):
     """
     guess the optimums directors angles for the given hologram
     """
-    angle, radius = get_strips_angle_radius(hologram)
-    ref_shape = [dim / 2 for dim in hologram.shape]
+    ref_peak = get_peak_coords(hologram)
 
-    def get_angles_fitness(args):
+    def get_fitness(args):
         """
         Learning fitness function
         """
-        ref_beam = get_ref_beam(ref_shape, args[0], args[1])
-        new_angle, new_radius = get_strips_angle_radius(ref_beam)
-        angle_diff = (new_angle - angle) / 3.14159265
-        radius_diff = new_radius - radius
-        distance = (angle_diff ** 2 + radius_diff ** 2) ** .5
+        new_peak = get_refbeam_peak_coords(*args)
+        distance = get_distance(ref_peak, new_peak)
         return distance
 
-    xinit = np.array([tau/4., tau/4.])
-    optimizer = optimize.fmin # 66
-
-    xend = optimizer(get_angles_fitness, xinit)
+    xinit = np.array([tau / 4, tau /4])
+    xend = generic_minimizer(get_fitness, xinit)
     return xend[0], xend[1]
+
+
+def generic_minimizer(fitness_func, initial_guess, epsilon=5e-3):
+    optimizers = [
+        optimize.fmin, # 66
+        optimize.fmin_bfgs,
+        optimize.fmin_powell
+    ]
+
+    best_result = None
+    for optimizer in optimizers:
+        xend = optimizer(fitness_func, initial_guess, disp=False)
+        last_result = fitness_func(xend)
+        if best_result is None or last_result < best_result:
+            best_guess = xend
+            best_result = last_result
+            print(best_guess, last_result)
+        if last_result < epsilon:
+            break
+
+    return best_guess
