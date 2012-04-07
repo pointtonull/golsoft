@@ -216,7 +216,8 @@ class Configurer:
         if func:
             return Cache(func, **self.kwargs)
         else:
-            return self.kwargs.update(kwargs)
+            self.kwargs.update(kwargs)
+            return self
 
 
 toram = Configurer(diskratio=False)
