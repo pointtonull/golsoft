@@ -52,24 +52,23 @@ def apply_mask(array):
 
 
 #@cache.hybrid
-def get_ref_beam(shape, alpha=90, beta=90):
+def get_ref_beam(shape, alpha=tau/4, beta=tau/4):
     """
     Generate a reference beam array given the shape of the hologram and the
     directors angles
     """
+    cos_alpha = cos(alpha)
+    cos_beta = cos(beta)
     maxrow = shape[0] / 2
     maxcol = shape[1] / 2
     minrow, mincol = -maxrow, -maxcol
     row, col = np.ogrid[minrow:maxrow:1., mincol:maxcol:1.]
-    cosa = cos(alpha)
-    cosb = cos(beta)
-    ref_beam = exp(1j * K * (cosa * col * DX + cosb * row * DY))
-#    ref_beam = np.ones(shape)
+    ref_beam = exp(1j * K * (cos_alpha * col * DX + cos_beta * row * DY))
     return ref_beam
 
 
 #@cache.hybrid
-def get_pea(hologram, distance, alpha=90, beta=90):
+def get_pea(hologram, distance, alpha=tau/4, cos_beta=tau/4):
     """
     1. hologram x ref_beam
     2. shifted_fft(1)
@@ -79,6 +78,8 @@ def get_pea(hologram, distance, alpha=90, beta=90):
     6. shifted_ifft(5)
     """
 
+    cos_alpha = cos(alpha)
+    cos_beta = cos(beta)
     shape = hologram.shape
     ref_beam = get_ref_beam(shape, alpha, beta)
     rhologram = ref_beam * hologram
@@ -122,10 +123,9 @@ def get_strips_angle_radius(hologram):
 
 
 #@cache.hybrid
-def guess_angles(hologram):
+def guess_director_angles(hologram):
     """
-    Uses ML algoritms to guess the corrects directors angles for the given
-    hologram
+    guess the optimums directors angles for the given hologram
     """
     angle, radius = get_strips_angle_radius(hologram)
     ref_shape = [dim / 2 for dim in hologram.shape]
