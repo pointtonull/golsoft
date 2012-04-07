@@ -51,7 +51,6 @@ def apply_mask(array):
     return masked
 
 
-#@cache.hybrid
 def get_ref_beam(shape, alpha=tau/4, beta=tau/4):
     """
     Generate a reference beam array given the shape of the hologram and the
