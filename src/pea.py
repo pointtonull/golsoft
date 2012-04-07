@@ -84,7 +84,6 @@ def get_pea(hologram, distance, alpha=tau/4, cos_beta=tau/4):
     rhologram = ref_beam * hologram
 
     frh = get_shiftedfft(rhologram)
-#    frh = get_centered(frh)
     masked = apply_mask(frh)
 
     maxrow = shape[0] / 2
@@ -96,7 +95,6 @@ def get_pea(hologram, distance, alpha=tau/4, cos_beta=tau/4):
     propagation_array = exp(1j * phase_correction_factor * distance)
     print("Propagation array")
     showimage(equalize(propagation_array.real))
-#    propagation_array = get_centered(propagation_array)
     propagated = propagation_array * masked
 
     reconstructed = get_ifft(propagated)
