@@ -42,7 +42,8 @@ def apply_mask(array):
 
     centered = get_centered(array, real_order[1])
 
-    window = get_holed_window(windowmaker, real_order[2] * MASK_R_SCALE, 0)#FIXME
+    window = get_holed_window(windowmaker, real_order[2] * MASK_R_SCALE,
+        0)#FIXME
     mask = get_mask(shape, window)
 
     masked = get_centered(mask * centered)
@@ -50,25 +51,23 @@ def apply_mask(array):
     return masked
 
 
-#@cache.hybrid
-def get_ref_beam(shape, alpha=90, beta=90):
+def get_ref_beam(shape, alpha=tau/4, beta=tau/4):
     """
     Generate a reference beam array given the shape of the hologram and the
     directors angles
     """
+    cos_alpha = cos(alpha)
+    cos_beta = cos(beta)
     maxrow = shape[0] / 2
     maxcol = shape[1] / 2
     minrow, mincol = -maxrow, -maxcol
     row, col = np.ogrid[minrow:maxrow:1., mincol:maxcol:1.]
-    cosa = cos(alpha)
-    cosb = cos(beta)
-    ref_beam = exp(1j * K * (cosa * col * DX + cosb * row * DY))
-#    ref_beam = np.ones(shape)
+    ref_beam = exp(1j * K * (cos_alpha * col * DX + cos_beta * row * DY))
     return ref_beam
 
 
 #@cache.hybrid
-def get_pea(hologram, distance, alpha=90, beta=90):
+def get_pea(hologram, distance, alpha=tau/4, cos_beta=tau/4):
     """
     1. hologram x ref_beam
     2. shifted_fft(1)
@@ -78,12 +77,13 @@ def get_pea(hologram, distance, alpha=90, beta=90):
     6. shifted_ifft(5)
     """
 
+    cos_alpha = cos(alpha)
+    cos_beta = cos(beta)
     shape = hologram.shape
     ref_beam = get_ref_beam(shape, alpha, beta)
     rhologram = ref_beam * hologram
 
     frh = get_shiftedfft(rhologram)
-#    frh = get_centered(frh)
     masked = apply_mask(frh)
 
     maxrow = shape[0] / 2
@@ -95,7 +95,6 @@ def get_pea(hologram, distance, alpha=90, beta=90):
     propagation_array = exp(1j * phase_correction_factor * distance)
     print("Propagation array")
     showimage(equalize(propagation_array.real))
-#    propagation_array = get_centered(propagation_array)
     propagated = propagation_array * masked
 
     reconstructed = get_ifft(propagated)
@@ -104,44 +103,71 @@ def get_pea(hologram, distance, alpha=90, beta=90):
     return wrapped_phase
 
 
-def get_strips_angle_radius(hologram):
+def get_distance(point1, point2):
+    distance = ((point1[0] - point2[0]) ** 2
+        + (point1[1] - point2[1]) ** 2) ** .5
+    return distance
+
+
+def get_peak_coords(hologram):
     """
-    Calculate the inclination angle and raiun for the given hologram strips
     """
     shape = hologram.shape
-    diagonal = sum((dim ** 2 for dim in shape)) ** .5
     center = [dim / 2. for dim in shape]
 
-    fft = get_intensity(get_shiftedfft(hologram))
-    peak = get_circles(fft, 2)[1][1]
-    peak = peak[0] - center[0], peak[1] - center[1]
-    radius = (peak[0] ** 2 + peak[1] ** 2) ** .5 / diagonal * 2.
-    angle = (1.570796325 - np.arctan2(*peak)) % 3.1415926536
-    return angle, radius
+    fft = get_intensity(get_shiftedfft(hologram.real))
+    circles = [(-get_distance(center, circle[1]), circle[0], circle[1])
+        for circle in get_circles(fft, 2, 20)]
+    circles.sort()
+    peak = circles[0][2]
+    peaks_row = (peak[0] - center[0]) / float(center[0])
+    peaks_col = (peak[1] - center[1]) / float(center[1])
+    return peaks_row, peaks_col
+
+
+@cache.hybrid(reset=False)
+def get_refbeam_peak_coords(alpha, beta):
+    ref_beam = get_ref_beam((256, 256), alpha, beta)
+    row, col = get_peak_coords(ref_beam)
+    return row, col
 
 
 #@cache.hybrid
-def guess_angles(hologram):
+def guess_director_angles(hologram):
     """
-    Uses ML algoritms to guess the corrects directors angles for the given
-    hologram
+    guess the optimums directors angles for the given hologram
     """
-    angle, radius = get_strips_angle_radius(hologram)
-    ref_shape = [dim / 2 for dim in hologram.shape]
+    ref_peak = get_peak_coords(hologram)
 
-    def get_angles_fitness(args):
+    def get_fitness(args):
         """
         Learning fitness function
         """
-        ref_beam = get_ref_beam(ref_shape, args[0], args[1])
-        new_angle, new_radius = get_strips_angle_radius(ref_beam)
-        angle_diff = (new_angle - angle) / 3.14159265
-        radius_diff = new_radius - radius
-        distance = (angle_diff ** 2 + radius_diff ** 2) ** .5
+        new_peak = get_refbeam_peak_coords(*args)
+        distance = get_distance(ref_peak, new_peak)
         return distance
 
-    xinit = np.array([tau/4., tau/4.])
-    optimizer = optimize.fmin # 66
-
-    xend = optimizer(get_angles_fitness, xinit)
+    xinit = np.array([tau / 4, tau /4])
+    xend = generic_minimizer(get_fitness, xinit)
     return xend[0], xend[1]
+
+
+def generic_minimizer(fitness_func, initial_guess, epsilon=5e-3):
+    optimizers = [
+        optimize.fmin, # 66
+        optimize.fmin_bfgs,
+        optimize.fmin_powell
+    ]
+
+    best_result = None
+    for optimizer in optimizers:
+        xend = optimizer(fitness_func, initial_guess, disp=False)
+        last_result = fitness_func(xend)
+        if best_result is None or last_result < best_result:
+            best_guess = xend
+            best_result = last_result
+            print(best_guess, last_result)
+        if last_result < epsilon:
+            break
+
+    return best_guess

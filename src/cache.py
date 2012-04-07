@@ -102,7 +102,7 @@ def make_hasheable(args, kwargs):
 
 class Cache:
     def __init__(self, func, ramratio=.5, diskratio=5, deadline=0,
-        flush_freq=0):
+        flush_freq=0, reset=False):
         """
         Diskratio and ramratio are memsize/cputime on MiBs/Secs. A result  
         will be keeped only if size(result) <= cputime * ratio. If a ratio
@@ -120,8 +120,13 @@ class Cache:
         self.flush_freq = flush_freq
         self._ready = False
         self._updated = False
-        self.filename = os.path.join(DIRNAME,
-            str(hash(func.func_code.co_code)) + ".index")
+        if diskratio is False:
+            self.filename = False
+        else:
+            self.filename = os.path.join(DIRNAME,
+                str(hash(func.func_code.co_code)) + ".index")
+            if reset:
+                os.remove(self.filename)
         _ZOMBIE.append(self)
 
 
@@ -211,7 +216,8 @@ class Configurer:
         if func:
             return Cache(func, **self.kwargs)
         else:
-            return self.kwargs.update(kwargs)
+            self.kwargs.update(kwargs)
+            return self
 
 
 toram = Configurer(diskratio=False)
@@ -222,7 +228,7 @@ hybrid = Configurer()
 def main():
 
     debug("Main routine")
-    @hybrid
+    @toram
     def fibonar(n):
         if n < 2: return n
         else: return fibonar(n - 1) + fibonar(n - 2)
