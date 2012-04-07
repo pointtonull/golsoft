@@ -107,17 +107,23 @@ def get_distance(point1, point2):
     distance = ((point1[0] - point2[0]) ** 2
         + (point1[1] - point2[1]) ** 2) ** .5
     return distance
+
+
+def get_peak_coords(hologram):
     """
     """
     shape = hologram.shape
     center = [dim / 2. for dim in shape]
 
-    fft = get_intensity(get_shiftedfft(hologram))
-    peak = get_circles(fft, 2)[1][1]
-    peak = peak[0] - center[0], peak[1] - center[1]
-    radius = (peak[0] ** 2 + peak[1] ** 2) ** .5 / diagonal * 2.
-    angle = (1.570796325 - np.arctan2(*peak)) % 3.1415926536
-    return angle, radius
+    fft = get_intensity(get_shiftedfft(hologram.real))
+    circles = [(-get_distance(center, circle[1]), circle[0], circle[1])
+        for circle in get_circles(fft, 2, 20)]
+    circles.sort()
+    peak = circles[0][2]
+    peaks_row = (peak[0] - center[0]) / float(center[0])
+    peaks_col = (peak[1] - center[1]) / float(center[1])
+    return peaks_row, peaks_col
+
 
 
 #@cache.hybrid
