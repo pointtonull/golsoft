@@ -42,7 +42,8 @@ def apply_mask(array):
 
     centered = get_centered(array, real_order[1])
 
-    window = get_holed_window(windowmaker, real_order[2] * MASK_R_SCALE, 0)#FIXME
+    window = get_holed_window(windowmaker, real_order[2] * MASK_R_SCALE,
+        0)#FIXME
     mask = get_mask(shape, window)
 
     masked = get_centered(mask * centered)
