@@ -102,7 +102,7 @@ def make_hasheable(args, kwargs):
 
 class Cache:
     def __init__(self, func, ramratio=.5, diskratio=5, deadline=0,
-        flush_freq=0):
+        flush_freq=0, reset=False):
         """
         Diskratio and ramratio are memsize/cputime on MiBs/Secs. A result  
         will be keeped only if size(result) <= cputime * ratio. If a ratio
@@ -125,6 +125,8 @@ class Cache:
         else:
             self.filename = os.path.join(DIRNAME,
                 str(hash(func.func_code.co_code)) + ".index")
+            if reset:
+                os.remove(self.filename)
         _ZOMBIE.append(self)
 
 
