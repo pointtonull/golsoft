@@ -79,8 +79,6 @@ def get_pea(hologram, distance, alpha=tau/4, cos_beta=tau/4):
     6. shifted_ifft(5)
     """
 
-    cos_alpha = cos(alpha)
-    cos_beta = cos(beta)
     shape = hologram.shape
     ref_beam = get_ref_beam(shape, alpha, beta)
     rhologram = ref_beam * hologram
@@ -92,17 +90,24 @@ def get_pea(hologram, distance, alpha=tau/4, cos_beta=tau/4):
     maxcol = shape[1] / 2
     minrow, mincol = -maxrow, -maxcol
     row, col = np.ogrid[minrow:maxrow:1., mincol:maxcol:1.]
-    phase_correction_factor = K * sqrt(1 - (LAMBDA * 232.7920143 * row)**2 -
-        (LAMBDA * 230.8658393 * col)**2)
-    propagation_array = exp(1j * phase_correction_factor * distance)
-    print("Propagation array")
-#    showimage(equalize(propagation_array.real))
+    propagation_array = get_propagation_array(shape, distance)
     propagated = propagation_array * masked
 
     reconstructed = get_ifft(propagated)
     return reconstructed
     wrapped_phase = np.angle(reconstructed)
     return wrapped_phase
+
+
+def get_propagation_array(shape, distance):
+    maxrow = shape[0] / 2
+    maxcol = shape[1] / 2
+    minrow, mincol = -maxrow, -maxcol
+    row, col = np.ogrid[minrow:maxrow:1, mincol:maxcol:1]
+    phase_correction_factor = K * sqrt(1 - (LAMBDA * 232.7920143 * row) ** 2
+        - (LAMBDA * 230.8658393 * col) ** 2)
+    propagation_array = exp(1j * phase_correction_factor * distance)
+    return propagation_array
 
 
 def get_distance(point1, point2):
