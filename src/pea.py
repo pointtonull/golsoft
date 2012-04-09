@@ -6,9 +6,10 @@ Simple implementation of the Angular Spectrum Method to reconstruct lensless
 holograms
 """
 
+#from autopipe import showimage
 from automask import get_circles, get_holed_window, get_mask
 from fmt import get_shiftedfft, get_ifft, get_shiftedifft
-from image import equalize, get_intensity, get_centered, normalize
+from image import equalize, get_intensity, get_centered, normalize, logscale
 from numpy import exp, cos, sqrt
 from scipy import optimize
 import cache
@@ -40,13 +41,15 @@ def apply_mask(array):
     virtual_order, real_order, zero_order = circles
 
     centered = get_centered(array, real_order[1])
+#    showimage(equalize(centered))
 
     window = get_holed_window(windowmaker, real_order[2] * MASK_R_SCALE,
         0)#FIXME
     mask = get_mask(shape, window)
+#    showimage(normalize(mask))
 
     masked = get_centered(mask * centered)
-#    showimage(normalize(masked))
+#    showimage(logscale(masked))
     return masked
 
 
@@ -76,8 +79,6 @@ def get_pea(hologram, distance, alpha=tau/4, cos_beta=tau/4):
     6. shifted_ifft(5)
     """
 
-    cos_alpha = cos(alpha)
-    cos_beta = cos(beta)
     shape = hologram.shape
     ref_beam = get_ref_beam(shape, alpha, beta)
     rhologram = ref_beam * hologram
@@ -89,17 +90,24 @@ def get_pea(hologram, distance, alpha=tau/4, cos_beta=tau/4):
     maxcol = shape[1] / 2
     minrow, mincol = -maxrow, -maxcol
     row, col = np.ogrid[minrow:maxrow:1., mincol:maxcol:1.]
-    phase_correction_factor = K * sqrt(1 - (LAMBDA * 232.7920143 * row)**2 -
-        (LAMBDA * 230.8658393 * col)**2)
-    propagation_array = exp(1j * phase_correction_factor * distance)
-    print("Propagation array")
-#    showimage(equalize(propagation_array.real))
+    propagation_array = get_propagation_array(shape, distance)
     propagated = propagation_array * masked
 
     reconstructed = get_ifft(propagated)
     return reconstructed
     wrapped_phase = np.angle(reconstructed)
     return wrapped_phase
+
+
+def get_propagation_array(shape, distance):
+    maxrow = shape[0] / 2
+    maxcol = shape[1] / 2
+    minrow, mincol = -maxrow, -maxcol
+    row, col = np.ogrid[minrow:maxrow:1, mincol:maxcol:1]
+    phase_correction_factor = K * sqrt(1 - (LAMBDA * 232.7920143 * row) ** 2
+        - (LAMBDA * 230.8658393 * col) ** 2)
+    propagation_array = exp(1j * phase_correction_factor * distance)
+    return propagation_array
 
 
 def get_distance(point1, point2):
@@ -124,14 +132,14 @@ def get_peak_coords(hologram):
     return peaks_row, peaks_col
 
 
-@cache.hybrid(reset=False)
+@cache.hybrid(reset=0)
 def get_refbeam_peak_coords(alpha, beta):
     ref_beam = get_ref_beam((256, 256), alpha, beta)
     row, col = get_peak_coords(ref_beam)
     return row, col
 
 
-#@cache.hybrid
+@cache.hybrid(reset=0)
 def guess_director_angles(hologram):
     """
     guess the optimums directors angles for the given hologram

@@ -9,22 +9,8 @@ from autopipe import showimage
 from image import equalize, imread, normalize
 from pea import get_pea, guess_directors_angles
 from numpy import angle
+from ranges import frange
 import sys
-
-
-def frange(mean, radius, amount):
-    """
-    Aid for binary search of floats values
-    """
-    if amount == 1:
-        start = mean
-        step = 0.
-    else:
-        start = mean - radius
-        step = (radius * 2) / (amount - 1.)
-
-    for stepn in xrange(amount):
-        yield start + stepn * step
 
 
 def main():
