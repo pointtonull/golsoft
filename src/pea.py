@@ -6,9 +6,10 @@ Simple implementation of the Angular Spectrum Method to reconstruct lensless
 holograms
 """
 
+#from autopipe import showimage
 from automask import get_circles, get_holed_window, get_mask
 from fmt import get_shiftedfft, get_ifft, get_shiftedifft
-from image import equalize, get_intensity, get_centered, normalize
+from image import equalize, get_intensity, get_centered, normalize, logscale
 from numpy import exp, cos, sqrt
 from scipy import optimize
 import cache
@@ -40,13 +41,15 @@ def apply_mask(array):
     virtual_order, real_order, zero_order = circles
 
     centered = get_centered(array, real_order[1])
+#    showimage(equalize(centered))
 
     window = get_holed_window(windowmaker, real_order[2] * MASK_R_SCALE,
         0)#FIXME
     mask = get_mask(shape, window)
+#    showimage(normalize(mask))
 
     masked = get_centered(mask * centered)
-#    showimage(normalize(masked))
+#    showimage(logscale(masked))
     return masked
 
 
@@ -124,14 +127,14 @@ def get_peak_coords(hologram):
     return peaks_row, peaks_col
 
 
-@cache.hybrid(reset=False)
+@cache.hybrid(reset=0)
 def get_refbeam_peak_coords(alpha, beta):
     ref_beam = get_ref_beam((256, 256), alpha, beta)
     row, col = get_peak_coords(ref_beam)
     return row, col
 
 
-#@cache.hybrid
+@cache.hybrid(reset=0)
 def guess_director_angles(hologram):
     """
     guess the optimums directors angles for the given hologram
