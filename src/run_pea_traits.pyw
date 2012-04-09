@@ -2,8 +2,9 @@
 #-*- coding: UTF-8 -*-
 
 
-from traits.api import HasTraits, Int, Button, Float, File
-from traitsui.api import FileEditor, View, Item
+from traits.api import HasTraits, Int, Button, Float, File, Range
+from traitsui.api import View, Item, Group
+from traitsui.menu import OKButton
 from math import cos
 from pea import get_pea, guess_director_angles
 from image import equalize, imread, normalize
@@ -28,10 +29,16 @@ class Counter(HasTraits):
 
 
     view = View(
-        Item('filename'),
-        "cos_alpha",
-        "cos_beta",
-        Item('calculate_angles', show_label=False),
+        Item('filename', emphasized=True),
+        Group(
+            "alpha",
+            "beta",
+            Item('calculate_angles', show_label=False),
+            label = "Reference beam",
+#            show_border = True,
+        ),
+        buttons = [OKButton], 
+        resizable = True,
     )
 
 
