@@ -10,17 +10,20 @@ from pea import get_pea, guess_director_angles
 from image import equalize, imread, normalize
 import random
 
+tau = 6.283185307179586
+gra2deg = 360 / tau
+
 class Counter(HasTraits):
-    cos_alpha =  Float()
-    cos_beta = Float()
+    alpha = Range(0., 180., 90., mode="xslider")
+    beta = Range(0., 180., 90., mode="xslider")
     calculate_angles = Button()
     filename = File(filter=["*.raw"])
     image = None
 
     def _calculate_angles_fired(self):
         alpha, beta = guess_director_angles(self.image)
-        self.cos_alpha = cos(alpha)
-        self.cos_beta = cos(beta)
+        self.alpha = alpha * gra2deg
+        self.beta = beta * gra2deg
 
 
     def _filename_changed(self):
