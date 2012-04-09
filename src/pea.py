@@ -21,36 +21,34 @@ LAMBDA = 6.328e-07 # wave length
 DX = 8.39e-6
 DY = 8.46e-6
 K = tau / LAMBDA # wave number
-MASK_SOFTNESS = 2
-MASK_R_SCALE = 2 # FIXME
 
 
-#@cache.hybrid
-def apply_mask(array):
+@cache.hybrid(reset=0)
+def apply_mask(array, softness=0, radius_scale=2):
     """
     Try to filter out spurious data.
     """
+#    return array
     array = get_centered(array)
     shape = array.shape
     intensity = equalize(array)
-#    showimage(intensity)
 
-    windowmaker = lambda x: np.kaiser(x, 0)#FIXME
+    windowmaker = lambda x: np.kaiser(x, softness)
+    windowmaker = np.hamming
     circles = sorted(get_circles(intensity, 3, 50))
     print(circles)
     virtual_order, real_order, zero_order = circles
 
     centered = get_centered(array, real_order[1])
-#    showimage(equalize(centered))
 
-    window = get_holed_window(windowmaker, real_order[2] * MASK_R_SCALE,
+    window = get_holed_window(windowmaker, real_order[2] * radius_scale,
         0)#FIXME
     mask = get_mask(shape, window)
-#    showimage(normalize(mask))
 
-    masked = get_centered(mask * centered)
-#    showimage(logscale(masked))
-    return masked
+    masked = mask * centered
+#    return masked
+    masked_centered = get_centered(masked)
+    return masked_centered
 
 
 def get_ref_beam(shape, alpha=tau/4, beta=tau/4):
