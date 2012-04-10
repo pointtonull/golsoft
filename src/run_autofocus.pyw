@@ -1,14 +1,6 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
-"""
-This is a simple implementation of the Fourier-Mellin Trasform
-image = [m, n]
-ft_magnitude = |fft(image)|
-lp_ft_magnitude = logpolar(ft_magnitude)
-fmt = fft(lp_ft_magnitude)
-"""
-
 from autopipe import showimage
 from dft import get_shifted_dft, get_idft
 from image import imread, equalize, normalize, logscale, get_intensity
@@ -23,7 +15,7 @@ import sys
 
 
 
-def get_fitness(masked_spectrum, distance, func):
+def get_fitness(masked_spectrum, distance):
     """
     Learning fitness function
     """
@@ -32,23 +24,19 @@ def get_fitness(masked_spectrum, distance, func):
     reconstructed = get_idft(propagated)
     intensity = get_intensity(reconstructed)
     diff = np.diff(intensity)
-    fitness = func(intensity)
+    fitness = ndimage.variance(intensity)
     return fitness
 
 
 def guess_focus_distance(masked_spectrum):
-    shape = masked_spectrum.shape
 
-    get_fitness = lambda args: get_ptp(masked_spectrum, args[0])
+    def fitness(args):
+        return get_fitness(masked_spectrum, args)
 
     xinit = np.array([0])
-    xend = generic_minimizer(get_fitness, xinit)
+    xend = generic_minimizer(fitness, xinit)
     return xend
 
-funcs = [
-    ("var", ndimage.variance),
-#    ("std", ndimage.standard_deviation),
-]
 
 def main():
     images = [(filename, imread(filename, True)) for filename in sys.argv[1:]]
@@ -73,32 +61,18 @@ def main():
         spectrum = get_shifted_dft(rhologram)
         masked_spectrum = apply_mask(spectrum, softness=0, radius_scale=3)
 
-#        for distance in frange(-0.0359375 , 2**-4, 5):
-
-#        if True:
-#            distance = guess_focus_distance(masked_spectrum)
-
-#            print(distance)
-#            print(get_ptp(masked_spectrum, distance))
-
-#            propagation_array = get_propagation_array(shape, distance)
-#            propagated = propagation_array * masked_spectrum
-#            showimage(equalize(propagated.imag))
-
-#            showimage(equalize(propagated))
-#            showimage(logscale(np.angle(propagated)))
-#            showimage(equalize(propagated.real))
-
-    
         distances = [distance for distance in frange(-0.05 , 2**-2, 100)]
-        for name, func in funcs:
-            print(name)
-            fitness_values = [get_fitness(masked_spectrum, distance, func)
-                for distance in distances]
-            plt.cla()
-#        plt.plot(distances, ptp_values)
-            plt.scatter(distances, fitness_values)
-            showimage(figure)
+        fitness_values = [get_fitness(masked_spectrum, distance)
+            for distance in distances]
+        plt.cla()
+        plt.scatter(distances, fitness_values)
+
+        distance = guess_focus_distance(masked_spectrum)
+        if abs(distance) > 2: distance = 0
+        fitness = get_fitness(masked_spectrum, distance)
+        plt.scatter(distance, fitness, c="red")
+        showimage(figure)
+        print("Calculated distance: %1.5fm" % distance)
 
 #            reconstructed = get_idft(propagated)
 
