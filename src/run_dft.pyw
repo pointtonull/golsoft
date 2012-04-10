@@ -8,10 +8,12 @@ Simple aplication of to show the Fourier transforms of images
 from autopipe import showimage
 from dft import get_shifted_dft, get_shifted_idft
 from dft import get_dft, get_idft
-from image import equalize, imread
+from image import equalize, imread, get_intensity, normalize
 from scipy import misc
 import sys
+import numpy as np
 
+equalize2 = lambda array: equalize(get_intensity(array))
 
 def main():
     """
