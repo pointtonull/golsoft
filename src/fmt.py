@@ -112,11 +112,11 @@ def get_fmt(array):
         * Logpolar
         * FFT with centered frecuencies
     """
-    fourier = get_shiftedfft(array)
+    fourier = get_shifted_dft(array)
     magnitude = np.abs(fourier)
     hi_passed = hi_pass_filter(magnitude, .15, 2)
     logpolar = get_logpolar(hi_passed, 3)
-    fmt = get_shiftedfft(logpolar)
+    fmt = get_shifted_dft(logpolar)
     return fmt
 
 
