@@ -9,7 +9,6 @@ lp_ft_magnitude = logpolar(ft_magnitude)
 fmt = fft(lp_ft_magnitude)
 """
 
-from StringIO import StringIO
 from autopipe import showimage
 from fmt import get_shiftedfft, get_ifft
 from image import imread, equalize, normalize, logscale, get_intensity
@@ -22,14 +21,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys
 
-
-
-def fig2image(figure):
-    fileo = StringIO()
-    figure.savefig(fileo)
-    fileo.seek(0)
-    image = Image.open(fileo)
-    return image
 
 
 def get_fitness(masked_spectrum, distance):
