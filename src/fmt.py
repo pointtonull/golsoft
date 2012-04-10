@@ -5,19 +5,17 @@
 This is a simple implementation of the Fourier-Mellin Trasform
 """
 
-from automask import get_mask
 #from autopipe import showimage
-from image import get_intensity, get_centered, logscale, equalize
-from numpy import fft
-from numpy import ndarray as atype
-from numpy import sin, cos, exp, log, arctan2
-from scipy import misc, signal
+from automask import get_mask
+from dft import get_shifted_dft
+from image import get_centered
+from numpy import sin, cos, exp, log
 from scipy.ndimage import geometric_transform
 import cache
 import cv2.cv as cv
 import numpy as np
 
-tau = 2 * np.pi
+tau = 6.283185307179586
 
 
 @cache.hybrid
@@ -36,7 +34,7 @@ def correlate2d(array1, array2):
 
     correlation_shape = rows1 * 2 + rows2 - 2, cols1 * 2 + cols2 - 2
     correlation = np.zeros(correlation_shape)
-    correlation[rows1 - 1:rows1 - 1 + rows2,cols1-1:cols1-1+cols2] = array2
+    correlation[rows1 - 1:rows1 - 1 + rows2, cols1-1:cols1 - 1 + cols2] = array2
     correlation_matrix = cv.fromarray(np.float32(correlation))
 
     result = np.zeros((rows1 + rows2 - 1, cols1 + cols2 - 1))
@@ -48,35 +46,6 @@ def correlate2d(array1, array2):
     result = result[marginrows:marginrows + minrows,
         margincols:margincols + mincols]
     return result
-
-
-@cache.hybrid
-def get_fft(array):
-    fft = np.fft.fft2(array)
-
-#    fft = np.zeros(array.shape)
-#    fft_matrix = cv.fromarray(fft)
-#    matrix = cv.fromarray(np.float32(array))
-#    cv.DFT(matrix, fft_matrix, 0)
-#    fft = np.asarray(fft_matrix)
-#    showimage(equalize(fft))
-
-    return fft
-
-
-def get_shiftedfft(array):
-    shiftedfft = fft.fftshift(get_fft(array))
-    return shiftedfft
-
-
-@cache.hybrid
-def get_ifft(array):
-    return np.fft.ifft2(array)
-
-
-def get_shiftedifft(array):
-    shiftedifft = fft.ifftshift(get_ifft(array))
-    return shiftedifft
 
 
 @cache.hybrid
@@ -143,11 +112,11 @@ def get_fmt(array):
         * Logpolar
         * FFT with centered frecuencies
     """
-    fourier = get_shiftedfft(array)
+    fourier = get_shifted_dft(array)
     magnitude = np.abs(fourier)
     hi_passed = hi_pass_filter(magnitude, .15, 2)
     logpolar = get_logpolar(hi_passed, 3)
-    fmt = get_shiftedfft(logpolar)
+    fmt = get_shifted_dft(logpolar)
     return fmt
 
 
@@ -184,7 +153,7 @@ def get_fmt_correlation(image1, image2):
     #  b. rotation is affected by a 180 degree ambiguity therefore at least two 
     #     cases shell be tested.
     #8 adjust images for scale and rotation
-    #9 find Dx/Dy and adjust for translation (more or less the same steps 4 to 7,
+    #9 find Dx/Dy and adjust for translation, more or less the same as 4 to 7,
     #  but applied to results of step 8 and with less problems).
 
     argmax = np.unravel_index(correlation.argmax(), correlation.shape)

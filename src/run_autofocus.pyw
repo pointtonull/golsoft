@@ -9,27 +9,18 @@ lp_ft_magnitude = logpolar(ft_magnitude)
 fmt = fft(lp_ft_magnitude)
 """
 
-from StringIO import StringIO
 from autopipe import showimage
-from fmt import get_shiftedfft, get_ifft
+from dft import get_shifted_dft, get_idft
 from image import imread, equalize, normalize, logscale, get_intensity
 from pea import apply_mask, generic_minimizer
 from pea import guess_director_angles, get_ref_beam, get_propagation_array
+from ranges import frange
 from scipy import misc, ndimage
 import Image
-from ranges import frange
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
 
-
-
-def fig2image(figure):
-    fileo = StringIO()
-    figure.savefig(fileo)
-    fileo.seek(0)
-    image = Image.open(fileo)
-    return image
 
 
 def get_fitness(masked_spectrum, distance):
@@ -38,12 +29,11 @@ def get_fitness(masked_spectrum, distance):
     """
     propagation_array = get_propagation_array(masked_spectrum.shape, distance)
     propagated = propagation_array * masked_spectrum
-    reconstructed = get_ifft(propagated)
+    reconstructed = get_idft(propagated)
     intensity = get_intensity(reconstructed)
 #    showimage(equalize(intensity))
     diff = np.diff(intensity)
     fitness = ndimage.variance(intensity)
-    print(distance, fitness)
     return fitness
 
 
@@ -75,7 +65,7 @@ def main():
         ref_beam = get_ref_beam(shape, alpha, beta)
         rhologram = ref_beam * image
 
-        spectrum = get_shiftedfft(rhologram)
+        spectrum = get_shifted_dft(rhologram)
         masked_spectrum = apply_mask(spectrum, softness=0, radius_scale=3)
 
 #        for distance in frange(-0.0359375 , 2**-4, 5):
@@ -100,17 +90,16 @@ def main():
         plt.cla()
 #        plt.plot(distances, ptp_values)
         plt.scatter(distances, fitness_values)
-        graph = fig2image(figure)
-        showimage(graph)
+        showimage(figure)
 
-#            reconstructed = get_ifft(propagated)
+#            reconstructed = get_idft(propagated)
 
 #            showimage(equalize(np.angle(reconstructed))) # phase
 
 #            intensity = get_intensity(reconstructed)
 #            showimage(equalize(intensity)) # module
 
-#            showimage(equalize(get_shiftedfft(intensity)))
+#            showimage(equalize(get_shifted_dft(intensity)))
 
     return 0
 

@@ -4,7 +4,7 @@ Python Imaging Library;Image;easy_install;pil
 NumPy;numpy;easy_install;numpy
 SciPy;scipy;download;http://ufpr.dl.sourceforge.net/project/scipy/scipy/0.10.0/scipy-0.10.0-win32-superpack-python2.7.exe
 Scikit Learn;sklearn;download;http://ufpr.dl.sourceforge.net/project/scikit-learn/scikit-learn-0.10.win32-py2.7.exe 
-PyFFTW;pyfftw;download;http://pypi.python.org/packages/2.7/p/pyFFTW/pyFFTW-0.7.0.win32-py2.7.msi
+AnFFT;anfft;download;https://anfft.googlecode.com/files/anfft-0.2.win32.msi
 #PyGame;pygame;download;http://pygame.org/ftp/pygame-1.9.1.win32-py2.7.msi
 #Matplotlib;matplotlib;easy_install;matplotlib
 #Mayavi;mayavi;easy_install;Sphinx EnvisageCore EnvisagePlugins configobj

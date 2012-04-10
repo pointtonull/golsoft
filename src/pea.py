@@ -8,7 +8,7 @@ holograms
 
 #from autopipe import showimage
 from automask import get_circles, get_holed_window, get_mask
-from fmt import get_shiftedfft, get_ifft, get_shiftedifft
+from dft import get_shifted_dft, get_idft
 from image import equalize, get_intensity, get_centered, normalize, logscale
 from numpy import exp, cos, sqrt
 from scipy import optimize
@@ -81,7 +81,7 @@ def get_pea(hologram, distance, alpha=tau/4, cos_beta=tau/4):
     ref_beam = get_ref_beam(shape, alpha, beta)
     rhologram = ref_beam * hologram
 
-    frh = get_shiftedfft(rhologram)
+    frh = get_shifted_dft(rhologram)
     masked = apply_mask(frh)
 
     maxrow = shape[0] / 2
@@ -91,7 +91,7 @@ def get_pea(hologram, distance, alpha=tau/4, cos_beta=tau/4):
     propagation_array = get_propagation_array(shape, distance)
     propagated = propagation_array * masked
 
-    reconstructed = get_ifft(propagated)
+    reconstructed = get_idft(propagated)
     return reconstructed
     wrapped_phase = np.angle(reconstructed)
     return wrapped_phase
@@ -120,9 +120,9 @@ def get_peak_coords(hologram):
     shape = hologram.shape
     center = [dim / 2. for dim in shape]
 
-    fft = get_intensity(get_shiftedfft(hologram.real))
+    dft = get_intensity(get_shifted_dft(hologram.real))
     circles = [(-get_distance(center, circle[1]), circle[0], circle[1])
-        for circle in get_circles(fft, 2, 20)]
+        for circle in get_circles(dft, 2, 20)]
     circles.sort()
     peak = circles[0][2]
     peaks_row = (peak[0] - center[0]) / float(center[0])
