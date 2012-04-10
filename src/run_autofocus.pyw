@@ -14,9 +14,9 @@ from dft import get_shifted_dft, get_idft
 from image import imread, equalize, normalize, logscale, get_intensity
 from pea import apply_mask, generic_minimizer
 from pea import guess_director_angles, get_ref_beam, get_propagation_array
+from ranges import frange
 from scipy import misc, ndimage
 import Image
-from ranges import frange
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
