@@ -5,19 +5,17 @@
 This is a simple implementation of the Fourier-Mellin Trasform
 """
 
-from automask import get_mask
 #from autopipe import showimage
-from image import get_intensity, get_centered, logscale, equalize
-from numpy import fft
-from numpy import ndarray as atype
-from numpy import sin, cos, exp, log, arctan2
-from scipy import misc, signal
+from automask import get_mask
+from dft import get_shifted_dft
+from image import get_centered
+from numpy import sin, cos, exp, log
 from scipy.ndimage import geometric_transform
 import cache
 import cv2.cv as cv
 import numpy as np
 
-tau = 2 * np.pi
+tau = 6.283185307179586
 
 
 @cache.hybrid
