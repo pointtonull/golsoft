@@ -34,7 +34,7 @@ def correlate2d(array1, array2):
 
     correlation_shape = rows1 * 2 + rows2 - 2, cols1 * 2 + cols2 - 2
     correlation = np.zeros(correlation_shape)
-    correlation[rows1 - 1:rows1 - 1 + rows2,cols1-1:cols1-1+cols2] = array2
+    correlation[rows1 - 1:rows1 - 1 + rows2, cols1-1:cols1 - 1 + cols2] = array2
     correlation_matrix = cv.fromarray(np.float32(correlation))
 
     result = np.zeros((rows1 + rows2 - 1, cols1 + cols2 - 1))
@@ -182,7 +182,7 @@ def get_fmt_correlation(image1, image2):
     #  b. rotation is affected by a 180 degree ambiguity therefore at least two 
     #     cases shell be tested.
     #8 adjust images for scale and rotation
-    #9 find Dx/Dy and adjust for translation (more or less the same steps 4 to 7,
+    #9 find Dx/Dy and adjust for translation, more or less the same as 4 to 7,
     #  but applied to results of step 8 and with less problems).
 
     argmax = np.unravel_index(correlation.argmax(), correlation.shape)
