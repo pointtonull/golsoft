@@ -49,35 +49,6 @@ def correlate2d(array1, array2):
 
 
 @cache.hybrid
-def get_fft(array):
-    fft = np.fft.fft2(array)
-
-#    fft = np.zeros(array.shape)
-#    fft_matrix = cv.fromarray(fft)
-#    matrix = cv.fromarray(np.float32(array))
-#    cv.DFT(matrix, fft_matrix, 0)
-#    fft = np.asarray(fft_matrix)
-#    showimage(equalize(fft))
-
-    return fft
-
-
-def get_shiftedfft(array):
-    shiftedfft = fft.fftshift(get_fft(array))
-    return shiftedfft
-
-
-@cache.hybrid
-def get_ifft(array):
-    return np.fft.ifft2(array)
-
-
-def get_shiftedifft(array):
-    shiftedifft = fft.ifftshift(get_ifft(array))
-    return shiftedifft
-
-
-@cache.hybrid
 def get_logpolar(array, interpolation=0, reverse=False):
     """
     Returns a new array with the logpolar transfamation of array.
