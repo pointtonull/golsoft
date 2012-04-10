@@ -28,8 +28,8 @@ def fig2raster(figure):
         fileo = StringIO()
         figure.savefig(fileo)
         fileo.seek(0)
-        image = pil.open(fileo)
-    return image
+        figure = pil.open(fileo)
+    return figure
 
 
 def showimage(*images):
