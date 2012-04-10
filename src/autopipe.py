@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
+from StringIO import StringIO
 import os
 import sys
 
@@ -22,7 +23,17 @@ else:
     TKPIPE = False
 
 
+def fig2raster(figure):
+    if hasattr(figure, "savefig"):
+        fileo = StringIO()
+        figure.savefig(fileo)
+        fileo.seek(0)
+        image = pil.open(fileo)
+    return image
+
+
 def showimage(*images):
+    images = (fig2raster(image) for image in images)
     if TKPIPE:
         for image in images:
             if isinstance(image, ndarray):
