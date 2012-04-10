@@ -112,8 +112,7 @@ def normalize(array):
     if issubclass(array.dtype.type, complex):
         array = get_intensity(array)
     array -= array.min()
-    array /= array.max()
-    array *= 255
+    array *= 255. / array.max()
     return array
 
 

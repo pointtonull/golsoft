@@ -23,7 +23,7 @@ import sys
 
 
 
-def get_fitness(masked_spectrum, distance):
+def get_fitness(masked_spectrum, distance, func):
     """
     Learning fitness function
     """
@@ -31,9 +31,8 @@ def get_fitness(masked_spectrum, distance):
     propagated = propagation_array * masked_spectrum
     reconstructed = get_idft(propagated)
     intensity = get_intensity(reconstructed)
-#    showimage(equalize(intensity))
     diff = np.diff(intensity)
-    fitness = ndimage.variance(intensity)
+    fitness = func(intensity)
     return fitness
 
 
@@ -46,6 +45,10 @@ def guess_focus_distance(masked_spectrum):
     xend = generic_minimizer(get_fitness, xinit)
     return xend
 
+funcs = [
+    ("var", ndimage.variance),
+#    ("std", ndimage.standard_deviation),
+]
 
 def main():
     images = [(filename, imread(filename, True)) for filename in sys.argv[1:]]
@@ -59,6 +62,8 @@ def main():
 
         print("Original image: %s" % filename)
         shape = image.shape
+        showimage(image)
+        image = normalize(image)
         showimage(image)
 
         alpha, beta = guess_director_angles(image)
@@ -84,13 +89,16 @@ def main():
 #            showimage(logscale(np.angle(propagated)))
 #            showimage(equalize(propagated.real))
 
+    
         distances = [distance for distance in frange(-0.05 , 2**-2, 100)]
-        fitness_values = [get_fitness(masked_spectrum, distance)
-            for distance in distances]
-        plt.cla()
+        for name, func in funcs:
+            print(name)
+            fitness_values = [get_fitness(masked_spectrum, distance, func)
+                for distance in distances]
+            plt.cla()
 #        plt.plot(distances, ptp_values)
-        plt.scatter(distances, fitness_values)
-        showimage(figure)
+            plt.scatter(distances, fitness_values)
+            showimage(figure)
 
 #            reconstructed = get_idft(propagated)
 
