@@ -41,6 +41,9 @@ def showimage(*images):
                     image = pil.fromarray(image)
                 except TypeError:
                     image = pil.fromarray(np.float64(image))
+                except IndexError:
+                    print image
+                    raise
             TKPIPE.writeimage(image)
         print("")
     else:
