@@ -34,7 +34,6 @@ def get_fitness(masked_spectrum, distance):
 #    showimage(equalize(intensity))
     diff = np.diff(intensity)
     fitness = ndimage.variance(intensity)
-    print(distance, fitness)
     return fitness
 
 
@@ -91,8 +90,7 @@ def main():
         plt.cla()
 #        plt.plot(distances, ptp_values)
         plt.scatter(distances, fitness_values)
-        graph = fig2image(figure)
-        showimage(graph)
+        showimage(figure)
 
 #            reconstructed = get_idft(propagated)
 
