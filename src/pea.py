@@ -157,6 +157,9 @@ def guess_director_cosines(hologram):
 
 
 def generic_minimizer(fitness_func, initial_guess, epsilon=5e-3):
+    """
+    A common interface to various minimization algorithms
+    """
     optimizers = [
         optimize.fmin, # 66
         optimize.fmin_powell,
