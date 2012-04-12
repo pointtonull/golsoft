@@ -141,6 +141,7 @@ def guess_director_cosines(hologram):
     guess the optimums directors angles for the given hologram
     """
     ref_peak = get_peak_coords(hologram)
+    print("ref_peak: %4.3f, %4.3f" % ref_peak)
 
     def get_fitness(args):
         """
