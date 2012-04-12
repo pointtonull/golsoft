@@ -23,7 +23,7 @@ def main():
         showimage(equalize(image))
         for distance in frange(.0, .05, 2):
             print(distance)
-            alpha, beta = guess_director_angles(image)
+            alpha, beta = guess_directors_angles(image)
             pea = get_pea(image, distance, alpha, beta)
             showimage(equalize(pea))
             showimage(normalize(angle(pea)))
