@@ -177,3 +177,18 @@ def generic_minimizer(fitness_func, initial_guess, epsilon=5e-3):
                 break
 
     return best_guess
+
+
+@cache.hybrid(reset=0)
+def calculate_director_cosines(hologram):
+    """
+    Calculate the director cosines using the spectral proyection formula
+    """
+    peak = get_peak_coords(hologram)
+    freq_rows, freq_cols = peak
+    freq_rows /= 2 * DY
+    freq_cols /= 2 * DX
+    cos_alpha = freq_cols * LAMBDA
+    cos_beta = freq_rows * LAMBDA
+
+    return cos_alpha, cos_beta
