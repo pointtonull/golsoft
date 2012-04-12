@@ -21,6 +21,7 @@ LAMBDA = 6.328e-07 # wave length
 DX = 8.39e-6
 DY = 8.46e-6
 K = tau / LAMBDA # wave number
+EPSILON = 1e-16
 
 
 @cache.hybrid(reset=0)
@@ -51,13 +52,11 @@ def apply_mask(array, softness=0, radius_scale=2):
     return masked_centered
 
 
-def get_ref_beam(shape, alpha=tau/4, beta=tau/4):
+def get_ref_beam(shape, cos_alpha=EPSILON, cos_beta=EPSILON):
     """
     Generate a reference beam array given the shape of the hologram and the
     directors angles
     """
-    cos_alpha = cos(alpha)
-    cos_beta = cos(beta)
     maxrow = shape[0] / 2
     maxcol = shape[1] / 2
     minrow, mincol = -maxrow, -maxcol
@@ -66,8 +65,7 @@ def get_ref_beam(shape, alpha=tau/4, beta=tau/4):
     return ref_beam
 
 
-#@cache.hybrid
-def get_pea(hologram, distance, alpha=tau/4, cos_beta=tau/4):
+def get_pea(hologram, distance, cos_alpha=EPSILON, cos_beta=EPSILON):
     """
     1. hologram x ref_beam
     2. shifted_fft(1)
