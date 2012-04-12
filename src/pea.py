@@ -21,6 +21,7 @@ LAMBDA = 6.328e-07 # wave length
 DX = 8.39e-6
 DY = 8.46e-6
 K = tau / LAMBDA # wave number
+EPSILON = 1e-16
 
 
 @cache.hybrid(reset=0)
@@ -51,13 +52,11 @@ def apply_mask(array, softness=0, radius_scale=2):
     return masked_centered
 
 
-def get_ref_beam(shape, alpha=tau/4, beta=tau/4):
+def get_ref_beam(shape, cos_alpha=EPSILON, cos_beta=EPSILON):
     """
     Generate a reference beam array given the shape of the hologram and the
     directors angles
     """
-    cos_alpha = cos(alpha)
-    cos_beta = cos(beta)
     maxrow = shape[0] / 2
     maxcol = shape[1] / 2
     minrow, mincol = -maxrow, -maxcol
@@ -66,8 +65,7 @@ def get_ref_beam(shape, alpha=tau/4, beta=tau/4):
     return ref_beam
 
 
-#@cache.hybrid
-def get_pea(hologram, distance, alpha=tau/4, cos_beta=tau/4):
+def get_pea(hologram, distance, cos_alpha=EPSILON, cos_beta=EPSILON):
     """
     1. hologram x ref_beam
     2. shifted_fft(1)
@@ -78,7 +76,7 @@ def get_pea(hologram, distance, alpha=tau/4, cos_beta=tau/4):
     """
 
     shape = hologram.shape
-    ref_beam = get_ref_beam(shape, alpha, beta)
+    ref_beam = get_ref_beam(shape, cos_alpha, cos_beta)
     rhologram = ref_beam * hologram
 
     frh = get_shifted_dft(rhologram)
@@ -138,11 +136,12 @@ def get_refbeam_peak_coords(alpha, beta):
 
 
 @cache.hybrid(reset=0)
-def guess_director_angles(hologram):
+def guess_director_cosines(hologram):
     """
     guess the optimums directors angles for the given hologram
     """
     ref_peak = get_peak_coords(hologram)
+    print("ref_peak: %4.3f, %4.3f" % ref_peak)
 
     def get_fitness(args):
         """
@@ -158,12 +157,12 @@ def guess_director_angles(hologram):
 
 
 def generic_minimizer(fitness_func, initial_guess, epsilon=5e-3):
+    """
+    A common interface to various minimization algorithms
+    """
     optimizers = [
         optimize.fmin, # 66
         optimize.fmin_powell,
-#        optimize.fmin_cg,
-#        optimize.fmin_slsqp,
-#        optimize.fmin_bfgs,
     ]
 
     best_result = None
@@ -178,3 +177,18 @@ def generic_minimizer(fitness_func, initial_guess, epsilon=5e-3):
                 break
 
     return best_guess
+
+
+@cache.hybrid(reset=0)
+def calculate_director_cosines(hologram):
+    """
+    Calculate the director cosines using the spectral proyection formula
+    """
+    peak = get_peak_coords(hologram)
+    freq_rows, freq_cols = peak
+    freq_rows /= 2 * DY
+    freq_cols /= 2 * DX
+    cos_alpha = freq_cols * LAMBDA
+    cos_beta = freq_rows * LAMBDA
+
+    return cos_alpha, cos_beta

@@ -1,15 +1,20 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
+
 from StringIO import StringIO
 import os
 import sys
 
+
+NP = False
 try:
     import numpy as np
-    from numpy import ndarray
+    NP = True
 except:
-    ndarray = None
+    pass
+
+ndarray = not NP or np.ndarray
 
 
 if os.name in ("nt") or "TKPIPE" in os.environ:
@@ -24,6 +29,9 @@ else:
 
 
 def fig2raster(figure):
+    """
+    Convert a matplotlib to a raster PIL image
+    """
     if hasattr(figure, "savefig"):
         fileo = StringIO()
         figure.savefig(fileo)
@@ -49,6 +57,7 @@ def showimage(*images):
     else:
         for image in images:
             imshow(image)
+    return images
 
 
 def color(message, color="blue"):
@@ -56,6 +65,7 @@ def color(message, color="blue"):
         TKPIPE.write(message, color)
     else:
         sys.stderr.write(message)
+    return message
 
 
 blue = lambda message:color(message, "blue")

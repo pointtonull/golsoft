@@ -2,13 +2,12 @@
 #-*- coding: UTF-8 -*-
 
 from autopipe import showimage
-from image import equalize, logscale
-from fmt import get_logpolar, get_fmt, get_fmt_correlation
-from itertools import product, combinations, permutations
+from image import equalize
+from fmt import get_fmt, get_fmt_correlation
+from itertools import product, combinations
 from random import sample
 from scipy import misc, ndimage
 import sys
-
 
 def main():
     images = [misc.imread(filename, True) for filename in sys.argv[1:]]

@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
-from autopipe import red, blue, showimage
-from image import logscale, equalize, get_centered, imread
-import numpy as np
-import sys
+from autopipe import showimage
+from image import equalize, imread
 from scipy.misc import imresize
+import sys
 
 
 def main():
