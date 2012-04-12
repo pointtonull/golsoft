@@ -11,6 +11,10 @@ import operator
 
 VERBOSE = 0
 
+#TODO:
+#  * implement:
+#    - imshow   as in autopipe
+#    - imsave
 
 def open_raw(filename, aspectratio=1):
     bits = open(filename, "rb").read()
@@ -32,7 +36,6 @@ def imread(filename, flatten=True, aspectratio=1):
     return array
 
 
-@cache.hybrid
 def get_centered(array, center=None, mode='wrap'):
     """
     Shift the given array to make the given point be the new center.
@@ -137,7 +140,6 @@ def equalizearray(array):
     return array
 
 
-@cache.hybrid
 def equalize(image):
     if isinstance(image, pil.Image):
         if image.mode in ("F"):
