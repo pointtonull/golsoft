@@ -163,9 +163,6 @@ def generic_minimizer(fitness_func, initial_guess, epsilon=5e-3):
     optimizers = [
         optimize.fmin, # 66
         optimize.fmin_powell,
-#        optimize.fmin_cg,
-#        optimize.fmin_slsqp,
-#        optimize.fmin_bfgs,
     ]
 
     best_result = None
