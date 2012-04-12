@@ -76,7 +76,7 @@ def get_pea(hologram, distance, cos_alpha=EPSILON, cos_beta=EPSILON):
     """
 
     shape = hologram.shape
-    ref_beam = get_ref_beam(shape, alpha, beta)
+    ref_beam = get_ref_beam(shape, cos_alpha, cos_beta)
     rhologram = ref_beam * hologram
 
     frh = get_shifted_dft(rhologram)
@@ -136,7 +136,7 @@ def get_refbeam_peak_coords(alpha, beta):
 
 
 @cache.hybrid(reset=0)
-def guess_director_angles(hologram):
+def guess_director_cosines(hologram):
     """
     guess the optimums directors angles for the given hologram
     """
