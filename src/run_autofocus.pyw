@@ -3,12 +3,12 @@
 
 from autopipe import showimage
 from dft import get_shifted_dft, get_idft
-from image import imread, equalize, normalize, logscale, get_intensity
+from image import imread, normalize, logscale, get_intensity
 from pea import apply_mask, generic_minimizer
 from pea import guess_director_angles, get_ref_beam, get_propagation_array
 from ranges import frange
 from scipy import misc, ndimage
-import Image
+#import Image
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
@@ -23,7 +23,6 @@ def get_fitness(masked_spectrum, distance):
     propagated = propagation_array * masked_spectrum
     reconstructed = get_idft(propagated)
     intensity = get_intensity(reconstructed)
-    diff = np.diff(intensity)
     fitness = ndimage.variance(intensity)
     return fitness
 
@@ -68,20 +67,19 @@ def main():
         plt.scatter(distances, fitness_values)
 
         distance = guess_focus_distance(masked_spectrum)
-        if abs(distance) > 2: distance = 0
+        if abs(distance) > 2:
+            distance = 0
+
         fitness = get_fitness(masked_spectrum, distance)
         plt.scatter(distance, fitness, c="red")
         showimage(figure)
         print("Calculated distance: %1.5fm" % distance)
 
-#            reconstructed = get_idft(propagated)
-
-#            showimage(equalize(np.angle(reconstructed))) # phase
-
-#            intensity = get_intensity(reconstructed)
-#            showimage(equalize(intensity)) # module
-
-#            showimage(equalize(get_shifted_dft(intensity)))
+#        reconstructed = get_idft(propagated)
+#        showimage(equalize(np.angle(reconstructed))) # phase
+#        intensity = get_intensity(reconstructed)
+#        showimage(equalize(intensity)) # module
+#        showimage(equalize(get_shifted_dft(intensity)))
 
     return 0
 
