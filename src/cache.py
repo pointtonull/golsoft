@@ -191,11 +191,8 @@ class Cache:
                     debug("Discarting caduced result")
                     result = None
             else:
-                debug("Discarting caduced result")
+                debug("Cache: No load: %s %s" % (args, kwargs))
                 result = None
-        else:
-            debug("Cache: No load: %s %s" % (args, kwargs))
-            result = None
 
             if result is None:
                 result = self.func(*args, **kwargs)
@@ -209,7 +206,7 @@ class Cache:
     def load(self):
         if self.filename:
             try:
-                debug("Opening file cache")
+                debug("Opening index")
                 self.cache = pickle.load(open(self.filename, "rb"))
             except IOError:
                 debug("IOError, creating new empty cache")
