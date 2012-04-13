@@ -70,6 +70,8 @@ def get_lowpass_var(masked_spectrum, distance):
 def get_highpass_var(masked_spectrum, distance):
     propagation_array = get_propagation_array(masked_spectrum.shape, distance)
     propagated = propagation_array * masked_spectrum
+    highpass_mask = get_highpass_mask(propagated.shape, .4)
+    propagated = highpass_mask * propagated
     reconstructed = get_idft(propagated)
     intensity = get_intensity(reconstructed)
     fitness = intensity.var()
