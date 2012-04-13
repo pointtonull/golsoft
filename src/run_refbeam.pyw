@@ -29,7 +29,7 @@ def main():
         print("Original image: %s" % filename)
         image = normalize(image)
         image_dft = get_shifted_dft(image)
-        image_dft = equalize(get_shifted_dft(image))
+        image_dft = equalize(image_dft)
         methods = (
             ("Naïve aproximation", guess_director_cosines),
             ("Direct method", calculate_director_cosines),
