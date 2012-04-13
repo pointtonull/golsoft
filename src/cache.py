@@ -280,13 +280,9 @@ def main():
         else: return fibonar(n - 1) + fibonar(n - 2)
 
     print(fibonar(5))
-    print(fibonar(50))
-    print(fibonar(100))
-    print(fibonar(200))
-    print(fibonar(300))
-    print(fibonar(400))
+    print(fibonar(250))
     print(fibonar(500))
-    print(fibonar(600))
+    print(fibonar(750))
 
 if __name__ == "__main__":
     exit(main())
