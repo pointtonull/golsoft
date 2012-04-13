@@ -155,14 +155,16 @@ def guess_director_cosines(hologram):
     return xend[0], xend[1]
 
 
-def generic_minimizer(fitness_func, initial_guess, epsilon=5e-3):
+def generic_minimizer(fitness_func, initial_guess, optimizers=None):
     """
     A common interface to various minimization algorithms
     """
-    optimizers = [
-        optimize.fmin, # 66
-        optimize.fmin_powell,
-    ]
+
+    if optimizers == None:
+        optimizers = [
+            optimize.fmin, # 66
+            optimize.fmin_powell,
+        ]
 
     best_result = None
     for optimizer in optimizers:
@@ -171,9 +173,6 @@ def generic_minimizer(fitness_func, initial_guess, epsilon=5e-3):
         if best_result is None or last_result < best_result:
             best_guess = xend
             best_result = last_result
-            print(optimizer.func_name, best_guess, last_result)
-            if last_result < epsilon:
-                break
 
     return best_guess
 
