@@ -209,14 +209,14 @@ class Cache:
                 debug("Opening index")
                 self.cache = pickle.load(open(self.filename, "rb"))
             except IOError:
-                debug("IOError, creating new empty cache")
-                self.cache = {}
+                debug("IOError, creating new empty index")
+                self.cache = ThinDict()
             except EOFError:
-                debug("EOFError, creating new empty cache2")
-                self.cache = {}
+                debug("EOFError, creating new empty index")
+                self.cache = ThinDict()
         else:
-            debug("Creating new empty cache")
-            self.cache = {}
+            debug("Creating new empty index")
+            self.cache = ThinDict()
         self._ready = True
 
 
