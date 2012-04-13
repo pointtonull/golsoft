@@ -29,10 +29,9 @@ def apply_mask(array, softness=0, radius_scale=2):
     """
     Try to filter out spurious data.
     """
-#    return array
     array = get_centered(array)
     shape = array.shape
-    intensity = equalize(array)
+    intensity = get_intensity(array)
 
     windowmaker = lambda x: np.kaiser(x, softness)
     windowmaker = np.hamming
