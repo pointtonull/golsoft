@@ -16,6 +16,10 @@ import numpy as np
 import sys
 
 
+class Methods(list):
+    def __call__(self, func):
+        self.append(func)
+        return func
 
 def get_fitness(masked_spectrum, distance):
     """
