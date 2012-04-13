@@ -94,8 +94,8 @@ def get_logpolar(array, interpolation=0, reverse=False):
 
 
 
-@cache.hybrid
-def hi_pass_filter(array, radius=0.2, softness=4):
+@cache.hybrid(reset=0)
+def get_high_pass_filter(array, radius=0.2, softness=4):
     radius = round(min(array.shape) * radius)
     window = np.kaiser(radius, softness)
     mask = np.ones_like(array) - get_mask(array.shape, window)
@@ -114,8 +114,8 @@ def get_fmt(array):
     """
     fourier = get_shifted_dft(array)
     magnitude = np.abs(fourier)
-    hi_passed = hi_pass_filter(magnitude, .15, 2)
-    logpolar = get_logpolar(hi_passed, 3)
+    high_passed = get_high_pass_filter(magnitude, .15, 2)
+    logpolar = get_logpolar(high_passed, 3)
     fmt = get_shifted_dft(logpolar)
     return fmt
 

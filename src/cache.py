@@ -1,13 +1,11 @@
 
 #-*- coding: UTF-8 -*-
 
-from debug import error, warning, debug, info
+from debug import error, warning, debug
 from functools import wraps
 import hashlib
-import inspect
 import os
 import pickle
-import sys
 import time
 
 
@@ -17,6 +15,42 @@ try:
     os.makedirs(DIRNAME)
 except OSError, message:
     pass
+
+
+class ThinDict(dict):
+    """
+    Similar to builtins dicts except that save hash(key) insteat of key to
+    reduce mem/disk consumtion.
+    """
+
+    def __setitem__(self, key, value):
+        """
+        x.__setitem__(key, value) <==> x[key] = value
+        """
+        key_hash = hash(key)
+        debug("ThinDict.__setitem__.key_hash:: %s" % key_hash)
+        return dict.__setitem__(self, key_hash, value)
+
+
+    def __getitem__(self, key):
+        """
+        x.__getitem__(key) <==> x[key]
+        """
+        key_hash = hash(key)
+        debug("ThinDict.__getitem__.key_hash:: %s" % key_hash)
+        return dict.__getitem__(self, key_hash)
+
+
+    def get(self, key, default):
+        """
+        D.get(k[,d]) -> D[k] if k in D, else d.  d defaults to None.
+        """
+        key_hash = hash(key)
+        if key_hash in self:
+            return self.__getitem__(key)
+        else:
+            return default
+
 
 
 class Zombie:
@@ -124,54 +158,65 @@ class Cache:
             self.filename = False
         else:
             self.filename = os.path.join(DIRNAME,
-                str(hash(func.func_code.co_code)) + ".index")
+                str(hash(func.func_code)) + ".index")
             if reset and os.path.exists(self.filename):
                 os.remove(self.filename)
+        self.wrapped = self.get_wrapped()
         _ZOMBIE.append(self)
 
 
     def __call__(self, *args, **kwargs):
-        if not self._ready:
-            self.load()
-
-        hasheable = make_hasheable(args, kwargs)
-        if hasheable is not None:
-            rtime, pickled = self.cache.get(hasheable, (None, None))
-        else:
-            pickled = None
-
-        if pickled is not None:
-            if not self.deadline or time.time() - rtime < self.deadline:
-                result = pickled.load()
-                debug("Cache load: %s %s -> %s" % (args, kwargs, result))
-            else:
-                debug("Discarting caduced result")
-                result = None
-        else:
-            debug("Cache: No load: %s %s" % (args, kwargs))
-            result = None
-
-        if result is None:
-            result = self.func(*args, **kwargs)
-            if result is not None:
-                self.put(args, kwargs, result)
+        result = self.wrapped(*args, **kwargs)
         return result
+
+
+    def get_wrapped(self):
+
+        @wraps(self.func)
+        def wrapped(*args, **kwargs):
+            if not self._ready:
+                self.load()
+
+            hasheable = make_hasheable(args, kwargs)
+            if hasheable is not None:
+                rtime, pickled = self.cache.get(hasheable, (None, None))
+            else:
+                pickled = None
+
+            if pickled is not None:
+                if not self.deadline or time.time() - rtime < self.deadline:
+                    result = pickled.load()
+                    debug("Cache load: %s %s -> %s" % (args, kwargs, result))
+                else:
+                    debug("Discarting caduced result")
+                    result = None
+            else:
+                debug("Cache: No load: %s %s" % (args, kwargs))
+                result = None
+
+            if result is None:
+                result = self.func(*args, **kwargs)
+                if result is not None:
+                    self.put(args, kwargs, result)
+            return result
+
+        return wrapped
 
 
     def load(self):
         if self.filename:
             try:
-                debug("Opening file cache")
+                debug("Opening index")
                 self.cache = pickle.load(open(self.filename, "rb"))
             except IOError:
-                debug("IOError, creating new empty cache")
-                self.cache = {}
+                debug("IOError, creating new empty index")
+                self.cache = ThinDict()
             except EOFError:
-                debug("EOFError, creating new empty cache2")
-                self.cache = {}
+                debug("EOFError, creating new empty index")
+                self.cache = ThinDict()
         else:
-            debug("Creating new empty cache")
-            self.cache = {}
+            debug("Creating new empty index")
+            self.cache = ThinDict()
         self._ready = True
 
 
@@ -214,7 +259,8 @@ class Configurer:
 
     def __call__(self, func=None, **kwargs):
         if func:
-            return Cache(func, **self.kwargs)
+            wrapped = Cache(func, **self.kwargs).get_wrapped()
+            return wrapped
         else:
             self.kwargs.update(kwargs)
             return self
@@ -234,13 +280,9 @@ def main():
         else: return fibonar(n - 1) + fibonar(n - 2)
 
     print(fibonar(5))
-    print(fibonar(50))
-    print(fibonar(100))
-    print(fibonar(200))
-    print(fibonar(300))
-    print(fibonar(400))
+    print(fibonar(250))
     print(fibonar(500))
-    print(fibonar(600))
+    print(fibonar(750))
 
 if __name__ == "__main__":
     exit(main())
