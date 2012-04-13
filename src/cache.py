@@ -161,23 +161,35 @@ class Cache:
                 str(hash(func.func_code)) + ".index")
             if reset and os.path.exists(self.filename):
                 os.remove(self.filename)
+        self.wrapped = self.get_wrapped()
         _ZOMBIE.append(self)
 
 
     def __call__(self, *args, **kwargs):
-        if not self._ready:
-            self.load()
+        result = self.wrapped(*args, **kwargs)
+        return result
 
-        hasheable = make_hasheable(args, kwargs)
-        if hasheable is not None:
-            rtime, pickled = self.cache.get(hasheable, (None, None))
-        else:
-            pickled = None
 
-        if pickled is not None:
-            if not self.deadline or time.time() - rtime < self.deadline:
-                result = pickled.load()
-                debug("Cache load: %s %s -> %s" % (args, kwargs, result))
+    def get_wrapped(self):
+
+        @wraps(self.func)
+        def wrapped(*args, **kwargs):
+            if not self._ready:
+                self.load()
+
+            hasheable = make_hasheable(args, kwargs)
+            if hasheable is not None:
+                rtime, pickled = self.cache.get(hasheable, (None, None))
+            else:
+                pickled = None
+
+            if pickled is not None:
+                if not self.deadline or time.time() - rtime < self.deadline:
+                    result = pickled.load()
+                    debug("Cache load: %s %s -> %s" % (args, kwargs, result))
+                else:
+                    debug("Discarting caduced result")
+                    result = None
             else:
                 debug("Discarting caduced result")
                 result = None
@@ -185,11 +197,13 @@ class Cache:
             debug("Cache: No load: %s %s" % (args, kwargs))
             result = None
 
-        if result is None:
-            result = self.func(*args, **kwargs)
-            if result is not None:
-                self.put(args, kwargs, result)
-        return result
+            if result is None:
+                result = self.func(*args, **kwargs)
+                if result is not None:
+                    self.put(args, kwargs, result)
+            return result
+
+        return wrapped
 
 
     def load(self):
@@ -248,7 +262,8 @@ class Configurer:
 
     def __call__(self, func=None, **kwargs):
         if func:
-            return Cache(func, **self.kwargs)
+            wrapped = Cache(func, **self.kwargs).get_wrapped()
+            return wrapped
         else:
             self.kwargs.update(kwargs)
             return self
