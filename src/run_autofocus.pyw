@@ -86,7 +86,47 @@ def get_var_over_hpass_var(*args):
     return fitness
 
 
-def guess_focus_distance(masked_spectrum):
+
+@methods
+@cache.hybrid
+def get_lpass_var_over_hpass_var(*args):
+    fitness = get_lowpass_var(*args) / get_highpass_var(*args)
+    return fitness
+
+
+def get_groups(values, number):
+    if number == 1 or len(values) == 0:
+        yield [values]
+    else:
+        for cant in range(1, len(values) - number + 2):
+            left = [values[:cant]]
+            remainder = values[cant:]
+            for right in get_groups(remainder, number - 1):
+                yield left + right 
+
+
+def get_metavar(groups):
+    metavar = sum((np.var(group) for group in groups))
+    return metavar
+
+
+def autogroup(values):
+    if len(values) > 2:
+        values = sorted(values)
+        groupings = [groups for cant in range(1, len(values) + 1)
+            for groups in get_groups(values, cant)]
+        lengths = [len(groups) for groups in groupings]
+        variances = [get_metavar(groups) for groups in groupings]
+        slope, intercept, r_value = stats.linregress(lengths, variances)[:3]
+        regresion = [length * slope + intercept for length in lengths]
+        diffs = np.array(variances) - np.array(regresion)
+        pos = diffs.argmin()
+        return groupings[pos]
+    else:
+        return values
+
+
+def guess_focus_distance(masked_spectrum, extractor):
 
     def fitness(args):
         return extractor(masked_spectrum, args)
