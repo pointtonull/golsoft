@@ -131,9 +131,11 @@ def guess_focus_distance(masked_spectrum, extractor):
     def fitness(args):
         return extractor(masked_spectrum, args)
 
-    xinit = np.array([0])
-    xend = generic_minimizer(fitness, xinit)
-    return xend
+    results = []
+    for distance in frange(0, .15, 6):
+        xend = generic_minimizer(fitness, distance, [optimize.fmin])
+        results.append(xend)
+    return results
 
 
 def main():
