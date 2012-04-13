@@ -17,6 +17,42 @@ except OSError, message:
     pass
 
 
+class ThinDict(dict):
+    """
+    Similar to builtins dicts except that save hash(key) insteat of key to
+    reduce mem/disk consumtion.
+    """
+
+    def __setitem__(self, key, value):
+        """
+        x.__setitem__(key, value) <==> x[key] = value
+        """
+        key_hash = hash(key)
+        debug("ThinDict.__setitem__.key_hash:: %s" % key_hash)
+        return dict.__setitem__(self, key_hash, value)
+
+
+    def __getitem__(self, key):
+        """
+        x.__getitem__(key) <==> x[key]
+        """
+        key_hash = hash(key)
+        debug("ThinDict.__getitem__.key_hash:: %s" % key_hash)
+        return dict.__getitem__(self, key_hash)
+
+
+    def get(self, key, default):
+        """
+        D.get(k[,d]) -> D[k] if k in D, else d.  d defaults to None.
+        """
+        key_hash = hash(key)
+        if key_hash in self:
+            return self.__getitem__(key)
+        else:
+            return default
+
+
+
 class Zombie:
     """
     helper to force flush on deleting (instance as a global _* variable)
