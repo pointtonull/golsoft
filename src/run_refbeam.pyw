@@ -28,6 +28,7 @@ def main():
     for filename, image in images:
         print("Original image: %s" % filename)
         image = normalize(image)
+        image_dft = get_shifted_dft(image)
         image_dft = equalize(get_shifted_dft(image))
         methods = (
             ("Naïve aproximation", guess_director_cosines),
@@ -44,8 +45,12 @@ def main():
             showimage(equalize(image), equalize(ref_beam.real))
             showimage(equalize(ref_beam.real), equalize(image))
 
+
             ref_beam_dft = get_shifted_dft(ref_beam.real)
-            ref_beam_dft = equalize(ref_beam_dft)
+            ref_beam_dft_cmp = 7 * equalize(ref_beam_dft)
+            ref_beam_dft_cmp += 3 * logscale(ref_beam_dft)
+            ref_beam_dft = normalize(ref_beam_dft_cmp)
+
             showimage(image_dft, ref_beam_dft)
             showimage(ref_beam_dft, image_dft)
 
