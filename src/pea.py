@@ -24,8 +24,7 @@ K = tau / LAMBDA # wave number
 EPSILON = 1e-16
 
 
-@cache.hybrid(reset=0)
-def apply_mask(array, softness=0, radius_scale=2):
+def apply_mask(array, softness=0, radius_scale=2, holelen=0):
     """
     Try to filter out spurious data.
     """
@@ -42,12 +41,12 @@ def apply_mask(array, softness=0, radius_scale=2):
     centered = get_centered(array, real_order[1])
 
     window = get_holed_window(windowmaker, real_order[2] * radius_scale,
-        holelen=5)
+        holelen=holelen)
     mask = get_mask(shape, window)
 
     masked = mask * centered
 #    return masked
-    masked_centered = get_centered(masked)
+    masked_centered = get_centered(masked, mode="constant")
     return masked_centered
 
 

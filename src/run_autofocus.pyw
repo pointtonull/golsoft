@@ -52,16 +52,16 @@ def get_var(masked_spectrum, distance):
 
 
 #@methods
-@cache.hybrid
-def get_lowpass_var(masked_spectrum, distance):
-    propagation_array = get_propagation_array(masked_spectrum.shape, distance)
-    propagated = propagation_array * masked_spectrum
-    lowpass_mask = get_lowpass_mask(propagated.shape, .4)
-    propagated = lowpass_mask * propagated
-    reconstructed = get_idft(propagated)
-    intensity = get_intensity(reconstructed)
-    fitness = intensity.var()
-    return fitness
+#@cache.hybrid
+#def get_lowpass_var(masked_spectrum, distance):
+#    propagation_array = get_propagation_array(masked_spectrum.shape, distance)
+#    propagated = propagation_array * masked_spectrum
+#    lowpass_mask = get_lowpass_mask(propagated.shape, .4)
+#    propagated = lowpass_mask * propagated
+#    reconstructed = get_idft(propagated)
+#    intensity = get_intensity(reconstructed)
+#    fitness = intensity.var()
+#    return fitness
 
 
 
@@ -87,11 +87,11 @@ def get_var_over_hpass_var(*args):
 
 
 
-@methods
-@cache.hybrid
-def get_lpass_var_over_hpass_var(*args):
-    fitness = get_lowpass_var(*args) / get_highpass_var(*args)
-    return fitness
+#@methods
+#@cache.hybrid
+#def get_lpass_var_over_hpass_var(*args):
+#    fitness = get_lowpass_var(*args) / get_highpass_var(*args)
+#    return fitness
 
 
 def get_groups(values, number):
@@ -132,7 +132,7 @@ def guess_focus_distance(masked_spectrum, extractor):
         return extractor(masked_spectrum, args)
 
     results = []
-    for distance in frange(0, .15, 6):
+    for distance in frange(0, .15, 8):
         xend = generic_minimizer(fitness, distance, [optimize.fmin])
         results.append(xend)
     return results
@@ -155,42 +155,47 @@ def main():
         ref_beam = get_ref_beam(shape, alpha, beta)
         rhologram = ref_beam * image
         spectrum = get_shifted_dft(rhologram)
-        masked_spectrum = apply_mask(spectrum, softness=1, radius_scale=3)
-        distances = [distance for distance in frange(0.0, 2**-2, 50)]
+        distances = [distance for distance in frange(0.0, 2**-2, 25)]
+        for holelen in frange(20, 10, 3):
+            print("Holelen: %d" % holelen)
+            masked_spectrum = apply_mask(spectrum, softness=0, radius_scale=1.5,
+                holelen=holelen)
+            showimage(equalize(masked_spectrum))
 
-        for method in methods:
-            print("\nMethod: %s\n" % method.func_name)
+            for method in methods:
+                print("\nMethod: %s\n" % method.func_name)
 
-            fitness_values = [method(masked_spectrum, distance)
-                for distance in distances]
-            plt.cla()
-            plt.plot(distances, fitness_values, c="green")
+                fitness_values = [method(masked_spectrum, distance)
+                    for distance in distances]
+                plt.cla()
+                plt.plot(distances, fitness_values, c="green")
 
-            localmins = [dst for dst in guess_focus_distance(masked_spectrum,
-                method) if np.abs(dst) < .16]
-            fitness = [method(masked_spectrum, dst) for dst in localmins]
+                localmins = [dst
+                    for dst in guess_focus_distance(masked_spectrum, method)
+                        if np.abs(dst) < .16]
+                fitness = [method(masked_spectrum, dst) for dst in localmins]
 
-            plt.scatter(localmins, fitness, c="blue")
+                plt.scatter(localmins, fitness, c="blue")
 
-            strings = ["%6.5f" % distance for distance in localmins]
-            localmins = autogroup(localmins)
+                strings = ["%6.5f" % distance for distance in localmins]
+                localmins = autogroup(localmins)
 
-            localmins = [np.mean(group) for group in localmins]
-            fitness = [method(masked_spectrum, dst) for dst in localmins]
+                localmins = [np.mean(group) for group in localmins]
+                fitness = [method(masked_spectrum, dst) for dst in localmins]
 
-            plt.scatter(localmins, fitness, c="red")
+                plt.scatter(localmins, fitness, c="red")
 
-            showimage(figure)
-            print("All localmins: %s" % ", ".join(strings))
-            strings = ["%6.5f" % distance for distance in localmins]
-            print("Pre-selecteds localmins: %s" % ", ".join(strings))
-            for localmin in localmins:
-                propagation_array = get_propagation_array(shape, localmin)
-                propagated = masked_spectrum * propagation_array
-                reconstructed = get_idft(propagated)
-                showimage(equalize(np.abs(reconstructed)), 
-                    normalize(np.angle(reconstructed)))
-                print localmin, "\n"
+                showimage(figure)
+                print("All localmins: %s" % ", ".join(strings))
+                strings = ["%6.5f" % distance for distance in localmins]
+                print("Pre-selecteds localmins: %s" % ", ".join(strings))
+                for localmin in localmins:
+                    propagation_array = get_propagation_array(shape, localmin)
+                    propagated = masked_spectrum * propagation_array
+                    reconstructed = get_idft(propagated)
+                    showimage(normalize(np.abs(reconstructed)), 
+                        normalize(np.angle(reconstructed)))
+                    print localmin, "\n"
 
 #        reconstructed = get_idft(propagated)
 #        showimage(equalize(np.angle(reconstructed))) # phase
