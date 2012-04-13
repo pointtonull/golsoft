@@ -10,7 +10,7 @@ fmt = fft(lp_ft_magnitude)
 """
 
 from autopipe import showimage
-from image import imread, equalize, normalize
+from image import imread, equalize, normalize, logscale
 from scipy import misc
 from pea import guess_director_cosines, get_ref_beam, calculate_director_cosines
 from dft import get_shifted_dft
