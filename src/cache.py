@@ -158,7 +158,7 @@ class Cache:
             self.filename = False
         else:
             self.filename = os.path.join(DIRNAME,
-                str(hash(func.func_code.co_code)) + ".index")
+                str(hash(func.func_code)) + ".index")
             if reset and os.path.exists(self.filename):
                 os.remove(self.filename)
         _ZOMBIE.append(self)
