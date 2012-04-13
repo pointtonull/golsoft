@@ -160,7 +160,7 @@ def get_holed_window(winfunc, length, holelen=0):
     center = length / 2.
     if holelen:
         holelen -= holelen % 2 #FIXME: only evens for now
-        hole = np.ones(holelen) - winfunc(holelen)
+        hole = 1 - winfunc(holelen)
         try:
             window[center - holelen / 2:center + holelen / 2] *= hole
         except ValueError:
