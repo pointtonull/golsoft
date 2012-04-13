@@ -21,22 +21,73 @@ class Methods(list):
         self.append(func)
         return func
 
-def get_fitness(masked_spectrum, distance):
-    """
-    Learning fitness function
-    """
+methods = Methods()
+
+
+@cache.hybrid
+def get_highpass_mask(shape, radius=0.2, softness=0):
+    radius = round(min(shape) * (1 - radius))
+    window = np.kaiser(radius, softness)
+    mask = 1 - get_mask(shape, window)
+    return mask
+
+
+@cache.hybrid
+def get_lowpass_mask(shape, radius=0.2, softness=0):
+    radius = round(min(shape) * radius)
+    window = np.kaiser(radius, softness)
+    mask = get_mask(shape, window)
+    return mask
+
+
+@methods
+@cache.hybrid
+def get_var(masked_spectrum, distance):
     propagation_array = get_propagation_array(masked_spectrum.shape, distance)
     propagated = propagation_array * masked_spectrum
     reconstructed = get_idft(propagated)
     intensity = get_intensity(reconstructed)
-    fitness = ndimage.variance(intensity)
+    fitness = intensity.var()
+    return fitness
+
+
+#@methods
+@cache.hybrid
+def get_lowpass_var(masked_spectrum, distance):
+    propagation_array = get_propagation_array(masked_spectrum.shape, distance)
+    propagated = propagation_array * masked_spectrum
+    lowpass_mask = get_lowpass_mask(propagated.shape, .4)
+    propagated = lowpass_mask * propagated
+    reconstructed = get_idft(propagated)
+    intensity = get_intensity(reconstructed)
+    fitness = intensity.var()
+    return fitness
+
+
+
+#@methods
+@cache.hybrid(reset=0)
+def get_highpass_var(masked_spectrum, distance):
+    propagation_array = get_propagation_array(masked_spectrum.shape, distance)
+    propagated = propagation_array * masked_spectrum
+    reconstructed = get_idft(propagated)
+    intensity = get_intensity(reconstructed)
+    fitness = intensity.var()
+    return fitness
+
+
+
+@methods
+@cache.hybrid
+def get_var_over_hpass_var(*args):
+    fitness = get_var(*args) / get_highpass_var(*args)
     return fitness
 
 
 def guess_focus_distance(masked_spectrum):
 
     def fitness(args):
-        return get_fitness(masked_spectrum, args)
+        return extractor(masked_spectrum, args)
 
     xinit = np.array([0])
     xend = generic_minimizer(fitness, xinit)
