@@ -6,11 +6,11 @@ Simple implementation of the Angular Spectrum Method to reconstruct lensless
 holograms
 """
 
-#from autopipe import showimage
+from autopipe import showimage
 from automask import get_circles, get_holed_window, get_mask
 from dft import get_shifted_dft, get_idft
 from image import equalize, get_intensity, get_centered, normalize, logscale
-from numpy import exp, cos, sqrt
+from numpy import exp, cos, sqrt, sin
 from scipy import optimize
 import cache
 import numpy as np
@@ -28,25 +28,21 @@ def apply_mask(array, softness=0, radius_scale=2, holelen=0):
     """
     Try to filter out spurious data.
     """
-    array = get_centered(array)
     shape = array.shape
     intensity = get_intensity(array)
 
     windowmaker = lambda x: np.kaiser(x, softness)
-    windowmaker = np.hamming
     circles = sorted(get_circles(intensity, 3, 50))
-    print(circles)
     virtual_order, real_order, zero_order = circles
 
-    centered = get_centered(array, real_order[1])
+#    centered = get_centered(array, real_order[1])
 
     window = get_holed_window(windowmaker, real_order[2] * radius_scale,
         holelen=holelen)
-    mask = get_mask(shape, window)
+    mask = get_mask(shape, window, real_order[1])
 
-    masked = mask * centered
-#    return masked
-    masked_centered = get_centered(masked, mode="constant")
+    masked = mask * array
+    masked_centered = get_centered(masked)
     return masked_centered
 
 
@@ -59,7 +55,9 @@ def get_ref_beam(shape, cos_alpha=EPSILON, cos_beta=EPSILON):
     maxcol = shape[1] / 2
     minrow, mincol = -maxrow, -maxcol
     row, col = np.ogrid[minrow:maxrow:1., mincol:maxcol:1.]
+
     ref_beam = exp(1j * K * (cos_alpha * col * DX + cos_beta * row * DY))
+    
     return ref_beam
 
 
@@ -79,6 +77,7 @@ def get_pea(hologram, distance, cos_alpha=EPSILON, cos_beta=EPSILON):
 
     frh = get_shifted_dft(rhologram)
     masked = apply_mask(frh)
+    showimage(logscale(masked))
 
     maxrow = shape[0] / 2
     maxcol = shape[1] / 2
@@ -89,13 +88,11 @@ def get_pea(hologram, distance, cos_alpha=EPSILON, cos_beta=EPSILON):
 
     reconstructed = get_idft(propagated)
     return reconstructed
-    wrapped_phase = np.angle(reconstructed)
-    return wrapped_phase
-
+ 
 
 def get_propagation_array(shape, distance):
-    maxrow = shape[0] / 2
-    maxcol = shape[1] / 2
+    maxrow = shape[0] / 2.
+    maxcol = shape[1] / 2.
     minrow, mincol = -maxrow, -maxcol
     row, col = np.ogrid[minrow:maxrow:1, mincol:maxcol:1]
     phase_correction_factor = K * sqrt(1 - (LAMBDA * 232.7920143 * row) ** 2
