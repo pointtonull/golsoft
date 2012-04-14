@@ -36,22 +36,29 @@ def imread(filename, flatten=True, aspectratio=1):
     return array
 
 
-def get_centered(array, center=None, mode='wrap'):
+def get_centered(array, center=None, mode='wrap', inverse=False):
     """
     Shift the given array to make the given point be the new center.
     If center is None the center of mass is used.
     mode can be 'constant', 'nearest', 'reflect' or 'wrap'.
+    
+    inverse False:  center -> current_center
+    inverse True:   current_center -> center
+    
     """
 
     if center:
         rows, cols = array.shape
-        rowcc = rows / 2.
-        colcc = cols / 2
+        rowcc = int(round(rows / 2.))
+        colcc = int(round(cols / 2.))
         rowc, colc = center
-        drows = rowcc - rowc
-        dcols = colcc - colc
+        if inverse:           
+            drows = rowc - rowcc
+            dcols = colc - colcc
+        else:
+            drows = rowcc - rowc
+            dcols = colcc - colc
         shift = (drows, dcols)
-
     else:
         if issubclass(array.dtype.type, complex):
             intensity = get_intensity(array)
@@ -90,6 +97,7 @@ def get_shift_to_center_of_mass(array, mode="wrap"):
                 break
             total_shift += eshift
             centered = ndimage.shift(centered, eshift, mode=mode)
+        total_shift = int(round(total_shift))
         return total_shift
 
 

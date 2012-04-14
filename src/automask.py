@@ -132,12 +132,7 @@ def get_mask(shape, window, center=None):
     """
     array = np.zeros(shape)
     window2d = radial_extrusion(window)
-    if center is None:
-        center = shape[0] / 2., shape[1] / 2.
-    crow, ccol = center
-    radius = window.shape[0] / 2.
-    top, bottom = (crow - radius), (crow + radius)
-    left, right = (ccol - radius), (ccol + radius)
+
     try:
         array[top:bottom, left:right] = window2d
     except ValueError:
@@ -146,6 +141,18 @@ def get_mask(shape, window, center=None):
         print "array[%d:%d, %d:%d] = [](%s)" % (top, bottom, left, right, 
             window2d.shape)
         raise
+
+    if center is None:
+        center = shape[0] / 2., shape[1] / 2.
+
+    crow, ccol = center
+    radius = window.shape[0] / 2.
+    top, bottom = (crow - radius), (crow + radius)
+    left, right = (ccol - radius), (ccol + radius)
+
+    if center:
+        get_centered(array, center, inverse=True)
+
     return array
 
 
