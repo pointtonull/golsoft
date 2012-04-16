@@ -8,6 +8,7 @@ View run_automask to see a complete example.
 """
 
 #from autopipe import showimage
+#from image import normalize
 from collections import defaultdict
 from image import get_centered
 from scipy.ndimage import geometric_transform
@@ -130,8 +131,15 @@ def get_mask(shape, window, center=None):
     Draw a mask of the given shape and window.
     If center is not given it will be the shape center.
     """
+
     array = np.zeros(shape)
     window2d = radial_extrusion(window)
+
+    array_center = shape[0] / 2., shape[1] / 2.
+    c_row, c_col = array_center
+    radious = window.shape[0] / 2.
+    top, bottom = (c_row - radious), (c_row + radious)
+    left, right = (c_col - radious), (c_col + radious)
 
     try:
         array[top:bottom, left:right] = window2d
@@ -142,16 +150,8 @@ def get_mask(shape, window, center=None):
             window2d.shape)
         raise
 
-    if center is None:
-        center = shape[0] / 2., shape[1] / 2.
-
-    crow, ccol = center
-    radius = window.shape[0] / 2.
-    top, bottom = (crow - radius), (crow + radius)
-    left, right = (ccol - radius), (ccol + radius)
-
     if center:
-        get_centered(array, center, inverse=True)
+        get_centered(array, center, reverse=True)
 
     return array
 
@@ -180,7 +180,6 @@ def get_holed_window(winfunc, length, holelen=0):
 def main():
     import sys
     from scipy import misc
-    from image import logscale
     softness = 2
     r_scale = 3
     windowmaker = lambda x: np.kaiser(x, softness)
@@ -205,6 +204,7 @@ def main():
         mask *= 1 - get_mask(array.shape, window, r_pnoise[1])
         window = windowmaker(c_order[2] * r_scale)
         mask *= 1 - get_mask(array.shape, window, c_order[1])
+
 #        showimage(mask * 255)
 #        showimage(logscale(mask * array))
 

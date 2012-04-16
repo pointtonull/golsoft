@@ -15,34 +15,7 @@ In this example, the wx part is very simple. See
 embedding of Mayavi scenes in Wx applications.
 """
 
-from numpy import ogrid, sin
-
-from traits.api import HasTraits, Instance
-from traitsui.api import View, Item
-
-from mayavi.sources.api import ArraySource
-from mayavi.modules.api import IsoSurface
-
-from mayavi.core.ui.api import SceneEditor, MlabSceneModel
-
-
 class MayaviView(HasTraits):
-
-    scene = Instance(MlabSceneModel, ())
-
-    # The layout of the panel created by Traits
-    view = View(Item('scene', editor=SceneEditor(), resizable=True,
-                    show_label=False),
-                    resizable=True)
-
-    def __init__(self):
-        HasTraits.__init__(self)
-        # Create some data, and plot it using the embedded scene's engine
-        x, y, z = ogrid[-10:10:100j, -10:10:100j, -10:10:100j]
-        scalars = sin(x*y*z)/(x*y*z)
-        src = ArraySource(scalar_data=scalars)
-        self.scene.engine.add_source(src)
-        src.add_module(IsoSurface())
 
 #-----------------------------------------------------------------------------
 # Wx Code

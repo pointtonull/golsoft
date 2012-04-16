@@ -36,7 +36,11 @@ def imread(filename, flatten=True, aspectratio=1):
     return array
 
 
-def get_centered(array, center=None, mode='wrap', inverse=False):
+def imwrite(array, filename):
+    return misc.imsave(filename, array)
+
+
+def get_centered(array, center=None, mode='wrap', reverse=False):
     """
     Shift the given array to make the given point be the new center.
     If center is None the center of mass is used.
@@ -52,7 +56,7 @@ def get_centered(array, center=None, mode='wrap', inverse=False):
         rowcc = int(round(rows / 2.))
         colcc = int(round(cols / 2.))
         rowc, colc = center
-        if inverse:           
+        if reverse:
             drows = rowc - rowcc
             dcols = colc - colcc
         else:
@@ -120,6 +124,7 @@ def normalize(array):
     """
     Apply linears tranformations to ensure all the values are in (0, 255)
     """
+    array = array.copy()
     if issubclass(array.dtype.type, complex):
         array = get_intensity(array)
     array -= array.min()
