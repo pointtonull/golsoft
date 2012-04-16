@@ -7,16 +7,23 @@ try:
 except ImportError:
     ImageTk = False
 
+
 class Tkpipe(Frame):
 
     def __init__(self, title="Standard output", label="Propram progress"):
         Frame.__init__(self)
         self.master.title(title)
         self.grid(stick="nsew")
-        self.createWidgets()
         self.label = label
+        self.ready = False
         self.closed = False
         self.images = []
+
+
+    def open(self):
+        if not self.ready:
+            self.ready = True
+            self.createWidgets()
 
 
     def createWidgets(self):
@@ -48,6 +55,7 @@ class Tkpipe(Frame):
 
 
     def write(self, line, tag=None):
+        self.open()
         line = line.replace("\r\n", "\n")
         self.txt_messages.insert("end", line, tag)
         self.txt_messages.see("end")
@@ -80,11 +88,12 @@ class Tkpipe(Frame):
 
     def writeimage(self, image):
         if ImageTk:
+            self.open()
             self.images.append(ImageTk.PhotoImage(image))
             self.txt_messages.image_create("end", {"image" : self.images[-1]})
             self.update()
         else:
-            self.write("<Must install PIL to display images>\n")
+            self.write("<Must install PIL to display images>\n", "blue")
 
 
 class ColoredPipe:

@@ -158,7 +158,7 @@ def main():
         distances = [distance for distance in frange(0.0, 2**-2, 25)]
         for holelen in frange(20, 10, 3):
             print("Holelen: %d" % holelen)
-            masked_spectrum = apply_mask(spectrum, softness=0, radius_scale=1.5,
+            masked_spectrum = apply_mask(spectrum, softness=0, radious_scale=1.5,
                 holelen=holelen)
             showimage(equalize(masked_spectrum))
 
@@ -194,7 +194,8 @@ def main():
                     propagated = masked_spectrum * propagation_array
                     reconstructed = get_idft(propagated)
                     showimage(normalize(np.abs(reconstructed)), 
-                        normalize(np.angle(reconstructed)))
+                        normalize(np.arctan2(reconstructed.real,
+                        reconstructed.imag)))
                     print localmin, "\n"
 
 #        reconstructed = get_idft(propagated)

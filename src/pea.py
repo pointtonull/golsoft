@@ -24,26 +24,30 @@ K = tau / LAMBDA # wave number
 EPSILON = 1e-16
 
 
-def apply_mask(array, softness=0, radius_scale=2, holelen=0):
+def apply_mask(array, softness=0, radious_scale=1, cuttop=0.5):
     """
     Try to filter out spurious data.
     """
     shape = array.shape
     intensity = get_intensity(array)
 
-    windowmaker = lambda x: np.kaiser(x, softness)
     circles = sorted(get_circles(intensity, 3, 50))
     virtual_order, real_order, zero_order = circles
+    peak_height, peak_center, peak_radious = real_order
+    peak_radious = min([(abs(shape[0] / 3.5 - peak[2]), peak[2])
+        for peak in circles])[1]
 
-#    centered = get_centered(array, real_order[1])
-
-    window = get_holed_window(windowmaker, real_order[2] * radius_scale,
-        holelen=holelen)
-    mask = get_mask(shape, window, real_order[1])
+    windowmaker = lambda x: np.kaiser(x, softness)
+    window = get_holed_window(windowmaker, peak_radious * radious_scale)
+    mask = get_mask(shape, window, peak_center)
 
     masked = mask * array
-    masked_centered = get_centered(masked)
-    return masked_centered
+
+    intensity = get_intensity(masked)
+    cutoff = intensity > intensity.max() - intensity.ptp() * cuttop
+    masked[cutoff] = 0
+
+    return masked
 
 
 def get_ref_beam(shape, cos_alpha=EPSILON, cos_beta=EPSILON):
@@ -61,7 +65,8 @@ def get_ref_beam(shape, cos_alpha=EPSILON, cos_beta=EPSILON):
     return ref_beam
 
 
-def get_pea(hologram, distance, cos_alpha=EPSILON, cos_beta=EPSILON):
+def get_pea(hologram, distance, cos_alpha=EPSILON, cos_beta=EPSILON, radious_scale=1,
+    softness=1):
     """
     1. hologram x ref_beam
     2. shifted_fft(1)
@@ -76,8 +81,7 @@ def get_pea(hologram, distance, cos_alpha=EPSILON, cos_beta=EPSILON):
     rhologram = ref_beam * hologram
 
     frh = get_shifted_dft(rhologram)
-    masked = apply_mask(frh)
-    showimage(logscale(masked))
+    masked = apply_mask(frh, softness=softness, radious_scale=radious_scale)
 
     maxrow = shape[0] / 2
     maxcol = shape[1] / 2
