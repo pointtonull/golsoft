@@ -10,7 +10,7 @@ def main():
     if len(sys.argv) == 2:
         path = sys.argv[1]
     else:
-        path = "./"
+        path = os.path.expanduser("~")
 
     weighs = []
     for root, dirs, files in os.walk(path):
