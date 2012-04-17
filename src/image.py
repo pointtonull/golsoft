@@ -110,6 +110,7 @@ def get_intensity(array):
 
 
 def logscale(array):
+    array = array.copy()
     if issubclass(array.dtype.type, complex):
         array = get_intensity(array)
     array = array.astype(float)
@@ -133,6 +134,7 @@ def normalize(array):
 
 
 def equalizearray(array):
+    array = array.copy()
     if issubclass(array.dtype.type, complex):
         array = get_intensity(array)
     array = array.astype(float)

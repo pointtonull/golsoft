@@ -151,7 +151,7 @@ def get_mask(shape, window, center=None):
         raise
 
     if center:
-        get_centered(array, center, reverse=True)
+        array = get_centered(array, center, reverse=True)
 
     return array
 

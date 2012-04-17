@@ -34,12 +34,6 @@ def main():
         distance = .0375
         print("Distance: %3.2f" % distance)
 
-        softness = 0
-        print("Mask softness; %3.2f" % softness)
-
-        radious_scale = 1.
-        print("Radious scale; %3.2f" % radious_scale)
-
         print("Reference beam: normalized(imag == real)")
         ref_beam = get_ref_beam(shape, cos_alpha, cos_beta)
         showimage(normalize(ref_beam.imag))
@@ -53,11 +47,19 @@ def main():
         showimage(equalize(spectrum))
 
         print("Masked spectrum")
-        for cuttop in frange(.5, .025, 1):
+        for radious_scale in frange(1.5, .5, 1):
+            softness = 0
+            print("Mask softness; %3.2f" % softness)
+
+            print("Radious scale; %3.2f" % radious_scale)
+
+            cuttop = .5
             print("Cuttop: %2.2f" % cuttop)
+
             masked_spectrum = apply_mask(spectrum, softness=softness,
                 radious_scale=radious_scale, cuttop=cuttop)
-            showimage(equalize(masked_spectrum))
+            showmask = 2 * equalize(masked_spectrum) + equalize(spectrum)
+            showimage(normalize(showmask))
 
             propagation_array = get_propagation_array(shape, distance)
             propagated = propagation_array * masked_spectrum
@@ -65,10 +67,10 @@ def main():
             reconstructed = get_shifted_idft(propagated)
             module = normalize(abs(reconstructed))
             showimage(module)
-            imwrite(module, "%s-module.jpg" % (filename, cuttop))
+#            imwrite(module, "%s-module.jpg" % filename)
             phase = angle2(reconstructed)
             showimage(normalize(phase))
-            imwrite(phase, "%s-phase.jpg" % (filename, cuttop))
+#            imwrite(phase, "%s-phase.jpg" % filename)
     return 0
 
 

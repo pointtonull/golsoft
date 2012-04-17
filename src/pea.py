@@ -24,7 +24,7 @@ K = tau / LAMBDA # wave number
 EPSILON = 1e-16
 
 
-def apply_mask(array, softness=0, radious_scale=1, cuttop=0.5):
+def apply_mask(array, softness=0, radious_scale=1, zero_scale=1, cuttop=0.5):
     """
     Try to filter out spurious data.
     """
@@ -34,12 +34,20 @@ def apply_mask(array, softness=0, radious_scale=1, cuttop=0.5):
     circles = sorted(get_circles(intensity, 3, 50))
     virtual_order, real_order, zero_order = circles
     peak_height, peak_center, peak_radious = real_order
+
+    print("Peak center: (%d, %d)" % peak_center)
+    print("Peak radious: %d" % peak_radious)
+
     peak_radious = min([(abs(shape[0] / 3.5 - peak[2]), peak[2])
         for peak in circles])[1]
 
     windowmaker = lambda x: np.kaiser(x, softness)
     window = get_holed_window(windowmaker, peak_radious * radious_scale)
     mask = get_mask(shape, window, peak_center)
+
+    zerowindow = get_holed_window(windowmaker, peak_radious * zero_scale)
+    zeromask = 1 - get_mask(shape, zerowindow, zero_order[1])
+    mask *= zeromask
 
     masked = mask * array
 
