@@ -20,16 +20,53 @@ import scipy
 import sys
 
 
+
+from traits.api import HasTraits, Str, Trait
+from traitsui.api import Item, Group, View, ImageEnumEditor
+
+image_list = ['ref_beam', 'spectrum x ref_beam']
+
+class Dummy ( HasTraits ):
+    """ Dummy class for ImageEnumEditor
+    """
+    x = Str
+    view = View()
+
+
+class ImageEnumEditorDemo ( HasTraits ):
+    """ Defines the ImageEnumEditor demo class.
+    """
+    image_from_list = Trait(editor=ImageEnumEditor(values = image_list,
+        prefix = '@icons:', suffix='_origin', cols=4, klass=Dummy),
+        *image_list)
+    img_group = Group(
+        Item( 'image_from_list', style = 'simple',   label = 'Simple' ),
+        Item( '_' ),
+        Item( 'image_from_list', style = 'custom',   label = 'Custom' ),
+        Item( '_' ),
+        Item( 'image_from_list', style = 'text',     label = 'Text' ),
+        Item( '_' ),
+        Item( 'image_from_list', style = 'readonly', label = 'ReadOnly' )
+    )
+    view = View(
+        img_group,
+        title     = 'ImageEnumEditor',
+        buttons   = ['OK'],
+        resizable = True
+    )
+
+ImageEnumEditor().configure_traits()
+
 class PEA(HasTraits):
-    cos_alpha = Range(-1., 1., 0., mode="xslider")
-    cos_beta = Range(-1., 1., 0., mode="xslider")
-    calculatedirectorcosines = Button("Auto set best values")
+
     filename = File(filter=["*.raw"])
     hologram = scipy.lena()
-
     scene_hologram = Instance(MlabSceneModel, ())
     plot_hologram = Instance(PipelineBase)
 
+    cos_alpha = Range(-1., 1., 0., mode="xslider")
+    cos_beta = Range(-1., 1., 0., mode="xslider")
+    btn_director_cosines = Button("Calculate best values")
     scene_ref_beam = Instance(MlabSceneModel, ())
     plot_ref_beam = Instance(PipelineBase)
 
@@ -47,7 +84,7 @@ class PEA(HasTraits):
             self.update_image
 
 
-    @on_trait_change("calculatedirectorcosines")
+    @on_trait_change("btn_director_cosines")
     def calculate_director_cosines(self):
         cos_alpha, cos_beta = calculate_director_cosines(self.hologram)
         self.cos_alpha = cos_alpha
@@ -82,7 +119,7 @@ class PEA(HasTraits):
             Group(
                 "cos_alpha",
                 "cos_beta",
-                'calculatedirectorcosines',
+                Item('btn_director_cosines', show_label=False),
                 label = "Parameters",
                 show_border = True,
             ),
@@ -91,6 +128,7 @@ class PEA(HasTraits):
             label = "Reference beam",
         ),
 
+        title="PEA processor",
         buttons = [OKButton], 
         resizable = True,
     )
