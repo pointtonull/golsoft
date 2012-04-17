@@ -6,7 +6,7 @@ Testing case
 """
 
 from autopipe import showimage
-from image import equalize, imread, normalize, imwrite
+from image import equalize, imread, normalize, imwrite, get_intensity
 from pea import calculate_director_cosines, get_ref_beam, get_propagation_array
 from pea import apply_mask
 from numpy import abs, arctan2
@@ -44,7 +44,8 @@ def main():
 
         print("Spectrum:")
         spectrum = get_shifted_dft(rhologram)
-        showimage(equalize(spectrum))
+        intensity = get_intensity(spectrum)
+        showimage(equalize(intensity))
 
         print("Masked spectrum")
         for radious_scale in frange(1.5, .5, 1):
@@ -56,10 +57,12 @@ def main():
             cuttop = .5
             print("Cuttop: %2.2f" % cuttop)
 
-            masked_spectrum = apply_mask(spectrum, softness=softness,
+            mask, masked_intensity = apply_mask(spectrum, softness=softness,
                 radious_scale=radious_scale, cuttop=cuttop)
+            masked_spectrum = spectrum * mask
+
             showmask = 2 * equalize(masked_spectrum) + equalize(spectrum)
-            showimage(normalize(showmask))
+            showimage(normalize(mask), normalize(showmask))
 
             propagation_array = get_propagation_array(shape, distance)
             propagated = propagation_array * masked_spectrum

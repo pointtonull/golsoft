@@ -24,19 +24,15 @@ K = tau / LAMBDA # wave number
 EPSILON = 1e-16
 
 
-def apply_mask(array, softness=0, radious_scale=1, zero_scale=1, cuttop=0.5):
+def get_auto_mask(intensity, softness=0, radious_scale=1, zero_scale=1, cuttop=0.5):
     """
     Try to filter out spurious data.
     """
-    shape = array.shape
-    intensity = get_intensity(array)
+    shape = intensity.shape
 
     circles = sorted(get_circles(intensity, 3, 50))
     virtual_order, real_order, zero_order = circles
     peak_height, peak_center, peak_radious = real_order
-
-    print("Peak center: (%d, %d)" % peak_center)
-    print("Peak radious: %d" % peak_radious)
 
     peak_radious = min([(abs(shape[0] / 3.5 - peak[2]), peak[2])
         for peak in circles])[1]
@@ -49,13 +45,13 @@ def apply_mask(array, softness=0, radious_scale=1, zero_scale=1, cuttop=0.5):
     zeromask = 1 - get_mask(shape, zerowindow, zero_order[1])
     mask *= zeromask
 
-    masked = mask * array
+    masked_intensity = mask * intensity
 
-    intensity = get_intensity(masked)
-    cutoff = intensity > intensity.max() - intensity.ptp() * cuttop
-    masked[cutoff] = 0
+    cutoff = masked_intensity > masked_intensity.max() - masked_intensity.ptp() * cuttop
+    mask[cutoff] = 0
+    masked_intensity[cutoff] = 0
 
-    return masked
+    return mask, masked_intensity
 
 
 def get_ref_beam(shape, cos_alpha=EPSILON, cos_beta=EPSILON):
@@ -89,7 +85,8 @@ def get_pea(hologram, distance, cos_alpha=EPSILON, cos_beta=EPSILON, radious_sca
     rhologram = ref_beam * hologram
 
     frh = get_shifted_dft(rhologram)
-    masked = apply_mask(frh, softness=softness, radious_scale=radious_scale)
+    mask, masked = get_auto_mask(get_intensity(frh), softness, radious_scale)
+    masked = frh * mask
 
     maxrow = shape[0] / 2
     maxcol = shape[1] / 2
