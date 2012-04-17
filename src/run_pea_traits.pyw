@@ -9,7 +9,8 @@ from mayavi.core.api import PipelineBase
 from mayavi.core.ui.api import SceneEditor
 from mayavi.core.ui.mayavi_scene import MayaviScene
 from mayavi.tools.mlab_scene_model import MlabSceneModel
-from traits.api import HasTraits, Button, File, Range, Enum, Instance, on_trait_change
+from traits.api import HasTraits, Button, File, Range, Enum, Instance
+from traits.api import on_trait_change
 from traitsui.api import View, Item, Group
 from traitsui.menu import OKButton
 
@@ -41,8 +42,9 @@ class PEA(HasTraits):
         )
     scn_hologram = Instance(MlabSceneModel, ())
     plt_hologram = Instance(PipelineBase)
-    vis_inputfile = Item('scn_hologram', editor=SceneEditor(scene_class=MayaviScene),
-        height=600, width=600, show_label=False),
+    vis_inputfile = Item('scn_hologram', 
+        editor=SceneEditor(scene_class=MayaviScene), height=600, width=600,
+        show_label=False),
 
 
     @on_trait_change("filename")
@@ -63,7 +65,8 @@ class PEA(HasTraits):
     cos_alpha = Range(-1., 1., 0., mode="xslider")
     cos_beta = Range(-1., 1., 0., mode="xslider")
     btn_director_cosines = Button("Calculate best values")
-    ref_beam_vismode = Enum('ref_beam', 'hologram x ref_beam', label="Visualize")
+    ref_beam_vismode = Enum('ref_beam', 'hologram x ref_beam', 
+        label="Visualize")
     grp_ref_beam_parameters = Group(
         "cos_alpha",
         "cos_beta",
@@ -73,8 +76,9 @@ class PEA(HasTraits):
     )
     scn_ref_beam = Instance(MlabSceneModel, ())
     plt_ref_beam = Instance(PipelineBase)
-    vis_ref_beam = Item('scn_ref_beam', editor=SceneEditor(scene_class=MayaviScene),
-        height=600, width=600, show_label=False)
+    vis_ref_beam = Item('scn_ref_beam', 
+        editor=SceneEditor(scene_class=MayaviScene), height=600, width=600,
+        show_label=False)
 
 
     @on_trait_change("btn_director_cosines")
@@ -86,7 +90,8 @@ class PEA(HasTraits):
 
     @on_trait_change("cos_alpha,cos_beta, ref_beam_vismode")
     def calculate_ref_beam(self):
-        self.ref_beam = get_ref_beam(self.hologram.shape, self.cos_alpha, self.cos_beta)
+        self.ref_beam = get_ref_beam(self.hologram.shape, self.cos_alpha,
+            self.cos_beta)
         self.ref_beam_x_hologram = self.ref_beam * self.hologram
         self.spectrum = get_shifted_dft(self.ref_beam_x_hologram)
 
@@ -111,7 +116,8 @@ class PEA(HasTraits):
     zero_scale = Range(0., 2., 1., mode="xslider")
     cuttop = Range(0., 1., .5, mode="xslider")
     btn_draw_mask = Button("Draw the mask")
-    mask_vismode = Enum("hibryd", "mask", "spectrum x mask", label="Visualize")
+    mask_vismode = Enum("hibryd", "mask", "spectrum x mask", 
+        label="Visualize")
     grp_mask_parameters = Group(
         "softness",
         "radious_scale",
