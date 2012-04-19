@@ -112,11 +112,14 @@ class PEA(HasTraits):
 
     ## SPECTRUM MASK ##
     mask = np.zeros_like(hologram)
-    softness = Range(0., 30., 0., mode="xslider")
-    radious_scale = Range(0., 2., 1., mode="xslider")
-    zero_scale = Range(0., 2., 1., mode="xslider")
-    cuttop = Range(0., 1., .5, mode="xslider")
-    btn_draw_mask = Button("Draw the mask")
+    softness = Range(0., 30., 0., mode="xslider", enter_set=True,
+        auto_set=False)
+    radious_scale = Range(0., 2., 1., mode="xslider", enter_set=True,
+        auto_set=False)
+    zero_scale = Range(0., 2., 1., mode="xslider", enter_set=True,
+        auto_set=False)
+    cuttop = Range(.99, 1., 0., mode="xslider", enter_set=True,
+        auto_set=False)
     mask_vismode = Enum("hibryd", "mask", "spectrum x mask", 
         label="Visualize")
     grp_mask_parameters = Group(
@@ -134,7 +137,8 @@ class PEA(HasTraits):
         height=600, width=600, show_label=False, resizable=True)
 
     
-    @on_trait_change("btn_draw_mask, mask_vismode")
+    @on_trait_change("mask_vismode, softness, radious_scale, cuttop, "
+        "zero_scale")
     def generate_mask(self):
         self.spectrum_intensity = get_intensity(self.spectrum)
         self.mask, masked_intensity = get_auto_mask(self.spectrum_intensity,
