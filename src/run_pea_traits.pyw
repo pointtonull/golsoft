@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
-from dft import get_shifted_idft, get_shifted_dft
-from image import equalize, imread, imwrite, normalize, get_intensity
-from pea import calculate_director_cosines, get_ref_beam, get_auto_mask
+import sys
+
+import numpy as np
+import scipy
 
 from mayavi.core.api import PipelineBase
 from mayavi.core.ui.api import SceneEditor
@@ -11,13 +12,12 @@ from mayavi.core.ui.mayavi_scene import MayaviScene
 from mayavi.tools.mlab_scene_model import MlabSceneModel
 from traits.api import HasTraits, Button, File, Range, Enum, Instance
 from traits.api import on_trait_change
-from traitsui.api import View, Item, Group
+from traitsui.api import View, Item, Group, HSplit
 from traitsui.menu import OKButton
 
-import scipy
-import numpy as np
-import sys
-
+from dft import get_shifted_idft, get_shifted_dft
+from image import equalize, imread, imwrite, normalize, get_intensity
+from pea import calculate_director_cosines, get_ref_beam, get_auto_mask
 
 class PEA(HasTraits):
 
