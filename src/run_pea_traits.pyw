@@ -71,6 +71,7 @@ class PEA(HasTraits):
         "cos_alpha",
         "cos_beta",
         Item('btn_director_cosines', show_label=False),
+        Item('ref_beam_vismode', style='simple'),
         label="Parameters",
         show_border=True,
     )
@@ -123,7 +124,7 @@ class PEA(HasTraits):
         "radious_scale",
         "zero_scale",
         "cuttop",
-        Item('btn_draw_mask', show_label=False),
+        Item('mask_vismode', style='simple'),
         label="Parameters",
         show_border=True,
     )
@@ -159,23 +160,21 @@ class PEA(HasTraits):
     ## PUT ALL-TOGHETER ##
     view = View(
 
-        Group(
+        HSplit(
             grp_datainput,
             vis_inputfile,
             label="Data input",
         ),
 
-        Group(
+        HSplit(
             grp_ref_beam_parameters,
             vis_ref_beam,
-            Item('ref_beam_vismode', style='simple', show_label=False),
             label="Reference beam",
         ),
 
-        Group(
+        HSplit(
             grp_mask_parameters,
             vis_mask,
-            Item('mask_vismode', style='simple', show_label=False),
             label="Mask",
         ),
 
@@ -185,12 +184,14 @@ class PEA(HasTraits):
     )
 
 
+
 def main():
     filenames = [filename for filename in sys.argv[1:]]
     filenames = filenames or [""]
     for filename in filenames:
         window = PEA(filename)
         window.configure_traits()
+
 
 if __name__ == "__main__":
     exit(main())
