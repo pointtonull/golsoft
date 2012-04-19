@@ -8,7 +8,7 @@ Testing case
 from autopipe import showimage
 from image import equalize, imread, normalize, imwrite, get_intensity
 from pea import calculate_director_cosines, get_ref_beam, get_propagation_array
-from pea import apply_mask
+from pea import get_auto_mask
 from numpy import abs, arctan2
 from dft import get_shifted_dft, get_shifted_idft
 import numpy as np
@@ -31,15 +31,16 @@ def main():
         cos_alpha, cos_beta = calculate_director_cosines(hologram)
         print("Cosines: %4.3f %4.3f" % (cos_alpha, cos_beta))
 
-        distance = .0375
+        distance = -.05
         print("Distance: %3.2f" % distance)
 
-        print("Reference beam: normalized(imag == real)")
-        ref_beam = get_ref_beam(shape, cos_alpha, cos_beta)
-        showimage(normalize(ref_beam.imag))
-
-        print("Ref x hologram: normalized / equalized")
-        rhologram = ref_beam * hologram
+#        print("Reference beam: normalized(imag == real)")
+#        ref_beam = get_ref_beam(shape, cos_alpha, cos_beta)
+#        showimage(normalize(ref_beam.imag))
+#
+#        print("Ref x hologram: normalized / equalized")
+#        rhologram = ref_beam * hologram
+        rhologram = hologram
         showimage(normalize(rhologram), equalize(rhologram))
 
         print("Spectrum:")
@@ -48,32 +49,31 @@ def main():
         showimage(equalize(intensity))
 
         print("Masked spectrum")
-        for radious_scale in frange(1.5, .5, 1):
-            softness = 0
-            print("Mask softness; %3.2f" % softness)
+        softness = 1
+        print("Mask softness; %3.2f" % softness)
 
-            print("Radious scale; %3.2f" % radious_scale)
+        radious_scale = 1.8
+        print("Radious scale; %3.2f" % radious_scale)
 
-            cuttop = .5
+        for cuttop in frange(0, .5, 1):
             print("Cuttop: %2.2f" % cuttop)
-
-            mask, masked_intensity = apply_mask(spectrum, softness=softness,
-                radious_scale=radious_scale, cuttop=cuttop)
-            masked_spectrum = spectrum * mask
-
-            showmask = 2 * equalize(masked_spectrum) + equalize(spectrum)
-            showimage(normalize(mask), normalize(showmask))
-
+    
+            zero_scale = 1.6
+            mask, masked = get_auto_mask(spectrum, softness, radious_scale,
+                zero_scale, cuttop)
+    
+            showimage(normalize(mask), equalize(masked))
+    
             propagation_array = get_propagation_array(shape, distance)
-            propagated = propagation_array * masked_spectrum
-
+            propagated = propagation_array * masked
+    
             reconstructed = get_shifted_idft(propagated)
             module = normalize(abs(reconstructed))
             showimage(module)
-#            imwrite(module, "%s-module.jpg" % filename)
+    #            imwrite(module, "%s-module.jpg" % filename)
             phase = angle2(reconstructed)
             showimage(normalize(phase))
-#            imwrite(phase, "%s-phase.jpg" % filename)
+    #            imwrite(phase, "%s-phase.jpg" % filename)
     return 0
 
 

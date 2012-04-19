@@ -24,11 +24,12 @@ K = tau / LAMBDA # wave number
 EPSILON = 1e-16
 
 
-def get_auto_mask(intensity, softness=0, radious_scale=1, zero_scale=1, cuttop=0.5):
+def get_auto_mask(spectrum, softness=0, radious_scale=1, zero_scale=1, cuttop=0.5):
     """
     Try to filter out spurious data.
     """
-    shape = intensity.shape
+    shape = spectrum.shape
+    intensity = get_intensity(spectrum)
 
     circles = sorted(get_circles(intensity, 3, 50))
     virtual_order, real_order, zero_order = circles
@@ -49,9 +50,12 @@ def get_auto_mask(intensity, softness=0, radious_scale=1, zero_scale=1, cuttop=0
 
     cutoff = masked_intensity > masked_intensity.max() - masked_intensity.ptp() * cuttop
     mask[cutoff] = 0
-    masked_intensity[cutoff] = 0
+    masked = mask * spectrum
 
-    return mask, masked_intensity
+    masked = get_centered(masked, peak_center)
+    mask = get_centered(mask, peak_center)
+
+    return mask, masked
 
 
 def get_ref_beam(shape, cos_alpha=EPSILON, cos_beta=EPSILON):
