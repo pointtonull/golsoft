@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
-from dft import get_shifted_idft, get_shifted_dft
-from image import equalize, imread, imwrite, normalize, get_intensity
-from pea import calculate_director_cosines, get_ref_beam, get_auto_mask
+import sys
+
+import numpy as np
+import scipy
 
 from mayavi.core.api import PipelineBase
 from mayavi.core.ui.api import SceneEditor
@@ -11,13 +12,12 @@ from mayavi.core.ui.mayavi_scene import MayaviScene
 from mayavi.tools.mlab_scene_model import MlabSceneModel
 from traits.api import HasTraits, Button, File, Range, Enum, Instance
 from traits.api import on_trait_change
-from traitsui.api import View, Item, Group
+from traitsui.api import View, Item, Group, HSplit
 from traitsui.menu import OKButton
 
-import scipy
-import numpy as np
-import sys
-
+from dft import get_shifted_idft, get_shifted_dft
+from image import equalize, imread, imwrite, normalize, get_intensity
+from pea import calculate_director_cosines, get_ref_beam, get_auto_mask
 
 class PEA(HasTraits):
 
@@ -71,6 +71,7 @@ class PEA(HasTraits):
         "cos_alpha",
         "cos_beta",
         Item('btn_director_cosines', show_label=False),
+        Item('ref_beam_vismode', style='simple'),
         label="Parameters",
         show_border=True,
     )
@@ -111,11 +112,14 @@ class PEA(HasTraits):
 
     ## SPECTRUM MASK ##
     mask = np.zeros_like(hologram)
-    softness = Range(0., 30., 0., mode="xslider")
-    radious_scale = Range(0., 2., 1., mode="xslider")
-    zero_scale = Range(0., 2., 1., mode="xslider")
-    cuttop = Range(0., 1., .5, mode="xslider")
-    btn_draw_mask = Button("Draw the mask")
+    softness = Range(0., 30., 0., mode="xslider", enter_set=True,
+        auto_set=False)
+    radious_scale = Range(0., 2., 1., mode="xslider", enter_set=True,
+        auto_set=False)
+    zero_scale = Range(0., 2., 1., mode="xslider", enter_set=True,
+        auto_set=False)
+    cuttop = Range(.99, 1., 0., mode="xslider", enter_set=True,
+        auto_set=False)
     mask_vismode = Enum("hibryd", "mask", "spectrum x mask", 
         label="Visualize")
     grp_mask_parameters = Group(
@@ -123,7 +127,7 @@ class PEA(HasTraits):
         "radious_scale",
         "zero_scale",
         "cuttop",
-        Item('btn_draw_mask', show_label=False),
+        Item('mask_vismode', style='simple'),
         label="Parameters",
         show_border=True,
     )
@@ -133,7 +137,8 @@ class PEA(HasTraits):
         height=600, width=600, show_label=False, resizable=True)
 
     
-    @on_trait_change("btn_draw_mask, mask_vismode")
+    @on_trait_change("mask_vismode, softness, radious_scale, cuttop, "
+        "zero_scale")
     def generate_mask(self):
         self.spectrum_intensity = get_intensity(self.spectrum)
         self.mask, masked_intensity = get_auto_mask(self.spectrum_intensity,
@@ -159,23 +164,21 @@ class PEA(HasTraits):
     ## PUT ALL-TOGHETER ##
     view = View(
 
-        Group(
+        HSplit(
             grp_datainput,
             vis_inputfile,
             label="Data input",
         ),
 
-        Group(
+        HSplit(
             grp_ref_beam_parameters,
             vis_ref_beam,
-            Item('ref_beam_vismode', style='simple', show_label=False),
             label="Reference beam",
         ),
 
-        Group(
+        HSplit(
             grp_mask_parameters,
             vis_mask,
-            Item('mask_vismode', style='simple', show_label=False),
             label="Mask",
         ),
 
@@ -185,12 +188,14 @@ class PEA(HasTraits):
     )
 
 
+
 def main():
     filenames = [filename for filename in sys.argv[1:]]
     filenames = filenames or [""]
     for filename in filenames:
         window = PEA(filename)
         window.configure_traits()
+
 
 if __name__ == "__main__":
     exit(main())
