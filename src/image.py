@@ -137,8 +137,8 @@ def equalizearray(array):
     """
     Equalize the array histogram
     """
-    array = array.copy()
-    array = (normalize(array) * 2 ** 32).astype("int") # enough precision
+    array = normalize(array)
+    array[array < 10e-10] = 0 # enough precision
     if issubclass(array.dtype.type, complex):
         array = get_intensity(array)
     array = array.astype(float)
