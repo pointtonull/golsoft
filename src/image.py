@@ -33,7 +33,22 @@ def imread(filename, flatten=True, aspectratio=1):
         array = misc.imread(filename, flatten)
     except IOError:
         array = open_raw(filename, aspectratio)
+
     return array
+
+
+
+def evenshape(array, shrink=False):
+    if not shrink:
+        newshape = [dim + 1 - dim % 2 for dim in array.shape]
+        newarray = np.zeros(newshape)
+        newarray[:array.shape[0],:array.shape[1]] = array
+    else:
+        newshape = [dim - 1 + dim % 2 for dim in array.shape]
+        newarray = array[:newshape[0], :newshape[1]]
+
+    return newarray
+
 
 
 def imwrite(array, filename):
