@@ -19,6 +19,7 @@ from dft import get_shifted_idft, get_shifted_dft
 from image import equalize, imread, imwrite, normalize, get_intensity
 from pea import calculate_director_cosines, get_ref_beam, get_auto_mask
 from pea import get_propagation_array
+from autopipe import showimage
 
 
 class PEA(HasTraits):
@@ -26,16 +27,13 @@ class PEA(HasTraits):
 
     def __init__(self, initialfile=""):
         HasTraits.__init__(self)
-
-        if initialfile:
-            self.filename = initialfile
-            self.update_image
-        self.calculate_ref_beam()
+        self.filename = initialfile
     
 
     ## OVERVIEW ##
 
-    filename = File(filter=[u"*.raw"], entries=10)
+    filename = File(filter=[u"*.raw"])
+    force_even_shape = Enum("False", "Shrink", "Enlarge")
     overview_vismode = Enum("input map", "input surface", "phase map",
         "phase surface", "module map", "hibryd surface", label="Visualize")
 
@@ -56,16 +54,20 @@ class PEA(HasTraits):
         Item('overview_vismode', style='simple', show_label=False),
     )
 
+
     @on_trait_change("filename")
     def update_image(self):
+        print("update image")
         self.hologram = imread(self.filename)
 
         if self.plt_overview is None:
-            self.plt_hologram = self.scn_overview.mlab.imshow(
+            print("first time, creating plt_overview")
+            self.plt_overview = self.scn_overview.mlab.imshow(
                 self.hologram, colormap="spectral",
-                figure=self.scn_hologram.mayavi_scene)
+                figure=self.scn_overview.mayavi_scene)
         else:
-            self.plt_hologram.mlab_source.set(scalars=self.hologram)
+            print("updating plt_overview")
+            self.plt_overview.mlab_source.set(scalars=self.hologram)
 
 
 
@@ -85,13 +87,16 @@ class PEA(HasTraits):
         editor=SceneEditor(scene_class=MayaviScene), height=600, width=600,
         show_label=False)
 
-    grp_ref_beam_parameters = Group(
-        "cos_alpha",
-        "cos_beta",
-        Item('btn_director_cosines', show_label=False),
-        label="Reference beam parameters",
-        show_border=True,
-        enabled_when="use_ref_beam",
+    grp_ref_beam_parameters = (
+        "use_ref_beam",
+        Group(
+            "cos_alpha",
+            "cos_beta",
+            Item('btn_director_cosines', show_label=False),
+            label="Reference beam parameters",
+            show_border=True,
+            enabled_when="use_ref_beam",
+        ),
     )
 
     grp_ref_beam_visualizer = Group(
@@ -100,14 +105,14 @@ class PEA(HasTraits):
     )
 
 
-    @on_trait_change("btn_director_cosines")
+#    @on_trait_change("btn_director_cosines")
     def calculate_director_cosines(self):
         cos_alpha, cos_beta = calculate_director_cosines(self.hologram)
         self.cos_alpha = cos_alpha
         self.cos_beta = cos_beta
 
 
-    @on_trait_change("cos_alpha,cos_beta, ref_beam_vismode")
+#    @on_trait_change("cos_alpha,cos_beta, ref_beam_vismode")
     def calculate_ref_beam(self):
         self.ref_beam = get_ref_beam(self.hologram.shape, self.cos_alpha,
             self.cos_beta)
@@ -138,9 +143,19 @@ class PEA(HasTraits):
     use_zero_mask = Bool(True)
     zero_scale = Range(0., 2., 1., mode="xslider", enter_set=True,
         auto_set=False, enabled_when="use_zero_mask")
+    grp_zero_scale = Group(
+        "zero_scale",
+        enabled_when="use_zero_mask",
+        show_border=False,
+    )
     use_cuttop = Bool(False)
     cuttop = Range(.99, 1., 0., mode="xslider", enter_set=True,
-        auto_set=False, enabled_when="use_cuttop")
+        auto_set=False)
+    grp_cuttop = Group(
+        "cuttop",
+        enabled_when="use_cuttop",
+        show_border=False,
+    )
     mask_vismode = Enum("hibryd", "mask", "spectrum x mask", 
         label="Visualize")
 
@@ -149,16 +164,19 @@ class PEA(HasTraits):
     vis_mask = Item('scn_mask', editor=SceneEditor(scene_class=MayaviScene),
         height=600, width=600, show_label=False, resizable=True)
 
-    grp_mask_parameters = Group(
-        "softness",
-        "radious_scale",
-        "use_zero_mask",
-        "zero_scale",
-        "use_cuttop",
-        "cuttop",
-        label="Spectrum mask parameters",
-        show_border=True,
-        enabled_when="use_masking",
+    grp_mask_parameters = (
+        "use_masking",
+        Group(
+            "softness",
+            "radious_scale",
+            "use_zero_mask",
+            grp_zero_scale,
+            "use_cuttop",
+            grp_cuttop,
+            label="Spectrum mask parameters",
+            show_border=True,
+            enabled_when="use_masking",
+        ),
     )
 
     grp_mask_visualizer = Group(
@@ -167,7 +185,7 @@ class PEA(HasTraits):
     )
 
     
-    @on_trait_change("mask_vismode, softness, radious_scale, zero_scale")
+#    @on_trait_change("mask_vismode, softness, radious_scale, zero_scale")
     def generate_mask(self):
         self.spectrum_intensity = get_intensity(self.spectrum)
         self.mask, self.masked_hologram = get_auto_mask(
@@ -204,11 +222,14 @@ class PEA(HasTraits):
         editor=SceneEditor(scene_class=MayaviScene), height=600, width=600,
         show_label=False, resizable=True)
 
-    grp_propagation_parameters = Group(
-        "distance",
-        label="Propagation parameters",
-        show_border=True,
-        enabled_when="use_propagation",
+    grp_propagation_parameters = (
+        "use_propagation",
+        Group(
+            "distance",
+            label="Propagation parameters",
+            show_border=True,
+            enabled_when="use_propagation",
+        ),
     )
 
     grp_propagation_visualizer = Group(
@@ -216,7 +237,7 @@ class PEA(HasTraits):
         Item('propagation_vismode', style='simple', show_label=False),
     )
 
-    @on_trait_change("propagation_vismode, distance")
+#    @on_trait_change("propagation_vismode, distance")
     def propagate_hologram(self):
         self.propagation_array = get_propagation_array(self.hologram.shape,
             self.distance)
@@ -227,15 +248,6 @@ class PEA(HasTraits):
     use_unwrapping = Bool(True)
 
 
-    def __init__(self, initialfile=""):
-        HasTraits.__init__(self)
-
-        if initialfile:
-            self.filename = initialfile
-            self.update_image
-        self.calculate_ref_beam()
-
-
 
     ## PUT ALL-TOGHETER ##
     view = View(
@@ -244,11 +256,8 @@ class PEA(HasTraits):
             HSplit(
                 Group(
                     grp_datainput,
-                    "use_ref_beam",
                     grp_ref_beam_parameters,
-                    "use_masking",
                     grp_mask_parameters,
-                    "use_propagation",
                     grp_propagation_parameters,
                 ),
                 grp_overview_visualizer,
