@@ -31,7 +31,7 @@ def main():
         cos_alpha, cos_beta = calculate_director_cosines(hologram)
         print("Cosines: %4.3f %4.3f" % (cos_alpha, cos_beta))
 
-        distance = .11
+        distance = .05
         print("Distance: %3.2f" % distance)
 
 #        print("Reference beam: normalized(imag == real)")
@@ -49,10 +49,10 @@ def main():
         showimage(equalize(intensity))
 
         print("Masked spectrum")
-        softness = 1
+        softness = 0
         print("Mask softness; %3.2f" % softness)
 
-        radious_scale = 1.8
+        radious_scale = 1.6
         print("Radious scale; %3.2f" % radious_scale)
         
         tau = 6.283185307179586
@@ -65,8 +65,8 @@ def main():
 
 
         def get_chirp(shape):
-            maxrow = shape[0] / 2
-            maxcol = shape[1] / 2
+            maxrow = shape[0] / 2.
+            maxcol = shape[1] / 2.
             minrow, mincol = -maxrow, -maxcol
             row, col = np.ogrid[minrow:maxrow:1., mincol:maxcol:1.]
             fresnel = exp(-1j * pi/(LAMBDA * distance) * (col ** 2 * DX ** 2
@@ -75,44 +75,39 @@ def main():
 
             
         def get_wrapped_formula_array(shape):
-            maxrow = shape[0] / 2
-            maxcol = shape[1] / 2
+            maxrow = shape[0] / 2.
+            maxcol = shape[1] / 2.
             minrow, mincol = -maxrow, -maxcol
             row, col = np.ogrid[minrow:maxrow:1., mincol:maxcol:1.]
-            eta=LAMBDA*distance/(512*DX)
-            nu=LAMBDA*distance/(512*DY)
-            wfa = (1j / (LAMBDA * distance)) * exp(-1j * pi/LAMBDA
-                *(2*distance+1/distance** (row ** 2 * eta ** 2 + col** 2 * nu ** 2)))
+            eta = LAMBDA * distance / (shape[0] * DX)
+            nu = LAMBDA * distance / (shape[1] * DY)
+            wfa = (1j / (LAMBDA * distance)) * exp(-1j * pi / LAMBDA
+                * (2 * distance + 1 / distance ** (row ** 2 * eta ** 2
+                + col ** 2 * nu ** 2)))
             return wfa
             
 
-        cuttop = 0
-        print("Cuttop: %2.2f" % cuttop)
-
         zero_scale = 1.6
-        mask, masked = get_auto_mask(spectrum, softness, radious_scale,
-            zero_scale, cuttop)
+        mask, masked, centered = get_auto_mask(spectrum, softness,
+            radious_scale, zero_scale)
 
         print("Mask")
-        showimage(normalize(mask), equalize(masked))
+        showimage(normalize(mask),
+            normalize(normalize(mask) + equalize(centered)))
 
         masked_idft = get_shifted_idft(masked)
 
         chirp = get_chirp(shape)
         
-        print("abs(chirp)")
-        showimage(equalize(abs(chirp)))
+        delilah = chirp * masked_idft
+#        delilah = chirp * hologram
 
-#        delilah = chirp * masked_idft
-        delilah = chirp * hologram
         delilah_dft = get_shifted_dft(delilah)
 
         print("intensity(delilah_dft)")
         showimage(equalize(delilah_dft))
 
         wfa = get_wrapped_formula_array(shape)
-        print("intensity(wfa)")
-        showimage(equalize(wfa))
 
         reconstructed = wfa * delilah_dft
 
