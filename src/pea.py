@@ -24,7 +24,8 @@ K = tau / LAMBDA # wave number
 EPSILON = 1e-16
 
 
-def get_auto_mask(spectrum, softness=0, radious_scale=1, zero_scale=1, cuttop=0.5):
+def get_auto_mask(spectrum, softness=0, radious_scale=1, zero_scale=1,
+        cuttop=0):
     """
     Try to filter out spurious data.
     """
@@ -48,7 +49,8 @@ def get_auto_mask(spectrum, softness=0, radious_scale=1, zero_scale=1, cuttop=0.
 
     masked_intensity = mask * intensity
 
-    cutoff = masked_intensity > masked_intensity.max() - masked_intensity.ptp() * cuttop
+    cutoff = masked_intensity > (masked_intensity.max()
+        - masked_intensity.ptp() * cuttop)
     mask[cutoff] = 0
     masked = mask * spectrum
 
@@ -73,8 +75,8 @@ def get_ref_beam(shape, cos_alpha=EPSILON, cos_beta=EPSILON):
     return ref_beam
 
 
-def get_pea(hologram, distance, cos_alpha=EPSILON, cos_beta=EPSILON, radious_scale=1,
-    softness=1):
+def get_pea(hologram, distance, cos_alpha=EPSILON, cos_beta=EPSILON,
+        radious_scale=1, softness=1):
     """
     1. hologram x ref_beam
     2. shifted_fft(1)
@@ -89,7 +91,8 @@ def get_pea(hologram, distance, cos_alpha=EPSILON, cos_beta=EPSILON, radious_sca
     rhologram = ref_beam * hologram
 
     frh = get_shifted_dft(rhologram)
-    mask, masked = get_auto_mask(get_intensity(frh), softness, radious_scale)
+    mask, masked, centered = get_auto_mask(get_intensity(frh), softness, 
+        radious_scale)
     masked = frh * mask
 
     maxrow = shape[0] / 2
