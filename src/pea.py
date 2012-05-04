@@ -54,10 +54,11 @@ def get_auto_mask(spectrum, softness=0, radious_scale=1, zero_scale=1,
     mask[cutoff] = 0
     masked = mask * spectrum
 
+    centered = get_centered(intensity, peak_center)
     masked = get_centered(masked, peak_center)
     mask = get_centered(mask, peak_center)
 
-    return mask, masked
+    return mask, masked, centered
 
 
 def get_ref_beam(shape, cos_alpha=EPSILON, cos_beta=EPSILON):
