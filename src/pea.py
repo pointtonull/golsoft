@@ -27,7 +27,7 @@ EPSILON = 1e-16
 def get_auto_mask(spectrum, softness=0, radious_scale=1, zero_scale=1,
         cuttop=0):
     """
-    Try to filter out spurious data.
+    Try to filter spurious data out.
     """
     shape = spectrum.shape
     intensity = get_intensity(spectrum)
