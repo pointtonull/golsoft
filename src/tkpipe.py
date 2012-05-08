@@ -93,7 +93,7 @@ class Tkpipe(Frame):
             self.txt_messages.image_create("end", {"image" : self.images[-1]})
             self.update()
         else:
-            self.write("<Must install PIL-tk to display images>\n", "blue")
+            self.write("<Must install PIL to display images>\n", "blue")
 
 
 class ColoredPipe:
