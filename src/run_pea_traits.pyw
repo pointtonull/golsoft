@@ -35,7 +35,7 @@ class PEA(HasTraits):
 
     ## OVERVIEW ##
 
-    filename = File(filter=[u"*.raw"], entries=10)
+    filename = File(filter=[u"*.raw"])
     overview_vismode = Enum("input map", "input surface", "phase map",
         "phase surface", "module map", "hibryd surface", label="Visualize")
 
@@ -63,7 +63,7 @@ class PEA(HasTraits):
         if self.plt_overview is None:
             self.plt_hologram = self.scn_overview.mlab.imshow(
                 self.hologram, colormap="spectral",
-                figure=self.scn_hologram.mayavi_scene)
+                figure=self.scn_overview.mayavi_scene)
         else:
             self.plt_hologram.mlab_source.set(scalars=self.hologram)
 
