@@ -12,6 +12,7 @@ from mayavi.core.ui.mayavi_scene import MayaviScene
 from mayavi.tools.mlab_scene_model import MlabSceneModel
 from traits.api import HasTraits, Button, File, Range, Enum, Instance, Bool
 from traits.api import on_trait_change
+oeeo
 from traitsui.api import View, Item, Group, HSplit
 from traitsui.menu import OKButton
 
@@ -22,7 +23,6 @@ from pea import get_propagation_array
 
 
 class PEA(HasTraits):
-
 
     def __init__(self, initialfile=""):
         HasTraits.__init__(self)
