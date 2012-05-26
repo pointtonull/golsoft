@@ -2,37 +2,34 @@
 #-*- coding: UTF-8 -*-
 
 from autopipe import showimage
-from image import equalize, imread
+from image import equalize, imread, get_centered, derotate
 from scipy.misc import imresize
+from itertools import product
+from random import sample
 import sys
 
 
 def main():
     images = [(filename, imread(filename)) for filename in sys.argv[1:]]
+    angles = (-15., -10., -5., 0., 5., 10., 15.)
+
     if not images:
         lena = imresize(misc.lena(), .5)
         images = [lena]
 
-    for filename, image in images:
-        print(filename)
-        width, height = image.shape
-        if max(width, height) > 600:
-            print("Resizing...")
-            prop = 600. / max(width, height)
-            image = imresize(image, prop)
+    samples = sample(list(product(images, angles)), 3)
 
-        print("Original image:")
+    transformations = []
+    for combination in samples:
+        image, angle = combination
+        image = misc.imrotate(image, angle)
+        transformations.append(image)
+
+    for image in transformations:
+        print("\nCompare images:")
         showimage(image)
-
-#        print("With center of mass to center of image:")
-#        centered = get_centered(image)
-#        showimage(centered)
-
-#        print("With logscale:")
-#        showimage(logscale(image))
-
-        print("With equalized histogram:")
-        showimage(equalize(image))
+        derotated = derotate(image)
+        showimage(derotated)
 
     return 0
 
