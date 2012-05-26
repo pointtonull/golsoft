@@ -5,7 +5,7 @@
 This is a simple implementation of the Fourier-Mellin Trasform
 """
 
-#from autopipe import showimage
+from autopipe import showimage
 from automask import get_mask
 from dft import get_shifted_dft
 from image import get_centered
@@ -114,6 +114,7 @@ def get_fmt(array):
     """
     fourier = get_shifted_dft(array)
     magnitude = np.abs(fourier)
+    showimage(magnitude)
     high_passed = get_high_pass_filter(magnitude, .15, 2)
     logpolar = get_logpolar(high_passed, 3)
     fmt = get_shifted_dft(logpolar)
