@@ -8,9 +8,7 @@ This is a simple implementation of the Fourier-Mellin Trasform
 from autopipe import showimage
 from automask import get_mask
 from dft import get_shifted_dft
-from image import get_centered
-from numpy import sin, cos, exp, log
-from scipy.ndimage import geometric_transform
+from image import get_centered, get_logpolar
 import cache
 import cv2.cv as cv
 import numpy as np
@@ -46,52 +44,6 @@ def correlate2d(array1, array2):
     result = result[marginrows:marginrows + minrows,
         margincols:margincols + mincols]
     return result
-
-
-@cache.hybrid
-def get_logpolar(array, interpolation=0, reverse=False):
-    """
-    Returns a new array with the logpolar transfamation of array.
-    Interpolation can be:
-        0 Near
-        1 Linear
-        2 Bilineal
-        3 Cubic
-        4
-        5
-    """
-    assert interpolation in range(6)
-    rows, cols = array.shape
-    row0 = rows / 2.
-    col0 = cols / 2.
-    theta_scalar = tau / cols
-    max_radius = (row0 ** 2 + col0 ** 2) ** .5
-    rho_scalar = log(max_radius) / cols
-
-    def cart2logpol(dst_coords):
-        theta, rho = dst_coords
-        rho = exp(rho * rho_scalar)
-        theta = np.pi / 2 - theta * theta_scalar
-        row_from = rho * cos(theta) + row0
-        col_from = rho * sin(theta) + col0
-        return row_from, col_from
-
-    def logpol2cart(dst_coords):
-        xindex, yindex = dst_coords
-        x = xindex - col0
-        y = yindex - row0
-
-        r = np.log(np.sqrt(x ** 2 + y ** 2)) / rho_scalar
-        theta = np.arctan2(y, x)
-        theta_index = np.round((theta + np.pi) * cols / tau)
-        return theta_index, r
-
-    trans = logpol2cart if reverse else cart2logpol
-
-    logpolar = geometric_transform(array, trans, array.shape,
-        order=interpolation)
-    return logpolar
-
 
 
 @cache.hybrid(reset=0)
