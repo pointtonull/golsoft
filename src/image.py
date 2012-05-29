@@ -2,7 +2,9 @@
 #-*- coding: UTF-8 -*-
 
 from itertools import groupby, izip, count
+from numpy import sin, cos, exp, log
 from scipy import ndimage, misc
+from scipy.ndimage import geometric_transform
 import Image as pil
 import ImageOps
 import cache
@@ -10,11 +12,109 @@ import numpy as np
 import operator
 
 VERBOSE = 0
+pi = 3.14159265358979323846264338327950288419716939937510582097494
+tau = pi * 2
 
 #TODO:
 #  * implement:
 #    - imshow   as in autopipe
 #    - imsave
+
+
+
+def get_logpolar(array, interpolation=0, reverse=False):
+    """
+    Returns a new array with the logpolar transfamation of array.
+    Interpolation can be:
+        0 Near
+        1 Linear
+        2 Bilineal
+        3 Cubic
+        4
+        5
+    """
+    assert interpolation in range(6)
+    rows, cols = array.shape
+    row0 = rows / 2.
+    col0 = cols / 2.
+    theta_scalar = tau / cols
+    max_radius = (row0 ** 2 + col0 ** 2) ** .5
+    rho_scalar = log(max_radius) / cols
+
+    def cart2logpol(dst_coords):
+        theta, rho = dst_coords
+        rho = exp(rho * rho_scalar)
+        theta = np.pi / 2 - theta * theta_scalar
+        row_from = rho * cos(theta) + row0
+        col_from = rho * sin(theta) + col0
+        return row_from, col_from
+
+    def logpol2cart(dst_coords):
+        xindex, yindex = dst_coords
+        x = xindex - col0
+        y = yindex - row0
+
+        r = np.log(np.sqrt(x ** 2 + y ** 2)) / rho_scalar
+        theta = np.arctan2(y, x)
+        theta_index = np.round((theta + np.pi) * cols / tau)
+        return theta_index, r
+
+    trans = logpol2cart if reverse else cart2logpol
+
+    logpolar = geometric_transform(array, trans, array.shape,
+        order=interpolation)
+
+    return logpolar
+
+
+
+def get_polar(array, interpolation=0, reverse=False):
+    """
+    Returns a new array with the logpolar transfamation of array.
+    Interpolation can be:
+        0 Near
+        1 Linear
+        2 Bilineal
+        3 Cubic
+        4
+        5
+    """
+    assert interpolation in range(6)
+    rows, cols = array.shape
+    row0 = rows / 2.
+    col0 = cols / 2.
+    theta_scalar = tau / cols
+    max_radius = (row0 ** 2 + col0 ** 2) ** .5
+    rho_scalar = log(max_radius) / cols
+
+    def cart2pol(dst_coords):
+        theta, rho = dst_coords
+        rho = rho * rho_scalar
+        theta = np.pi / 2 - theta * theta_scalar
+        row_from = rho * cos(theta) + row0
+        col_from = rho * sin(theta) + col0
+        return row_from, col_from
+
+    def pol2cart(dst_coords):
+        xindex, yindex = dst_coords
+        x = xindex - col0
+        y = yindex - row0
+
+        r = np.sqrt(x ** 2 + y ** 2) / rho_scalar
+        theta = np.arctan2(y, x)
+        theta_index = np.round((theta + np.pi) * cols / tau)
+        return theta_index, r
+
+    trans = pol2cart if reverse else cart2pol
+
+    polar = geometric_transform(array, trans, array.shape,
+        order=interpolation)
+
+    return polar
+
+
+
+
 
 def open_raw(filename, aspectratio=1):
     bits = open(filename, "rb").read()
@@ -36,6 +136,17 @@ def imread(filename, flatten=True, aspectratio=1):
 
     return array
 
+
+def derotate(array):
+    rows, cols = array.shape
+    polar_array = get_logpolar(array, 0)
+    rows_sum = polar_array.sum(1)
+    maxcol = - rows_sum.argmax()
+    rows_sum = ndimage.shift(rows_sum, maxcol, order=0, mode="wrap")
+    rows_shift = maxcol
+    angle = (-360. * rows_shift) / rows
+    derotated = ndimage.rotate(array, angle, reshape=False)
+    return derotated
 
 
 def evenshape(array, shrink=False):
@@ -116,8 +227,10 @@ def get_shift_to_center_of_mass(array, mode="wrap"):
                 break
             total_shift += eshift
             centered = ndimage.shift(centered, eshift, mode=mode)
-        total_shift = int(round(total_shift))
-        return total_shift
+
+        shift = int(round(total_shift))
+
+        return shift
 
 
 def get_intensity(array):
@@ -138,7 +251,7 @@ def logscale(array):
 
 def normalize(array):
     """
-    Apply linears tranformations to ensure all the values are in (0, 255)
+    Apply linears tranformations to ensure all the values are in [0, 255]
     """
     array = array.copy()
     if issubclass(array.dtype.type, complex):
