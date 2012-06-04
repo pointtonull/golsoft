@@ -35,10 +35,10 @@ class GeneticORC:
 
     def run(self):
         darwin = GSimpleGA.GSimpleGA(self.genome)
-#        darwin.selector.set(Selectors.GRankSelector)
+        darwin.selector.set(Selectors.GRankSelector)
 #        darwin.selector.set(Selectors.GRouletteWheel)
-        darwin.selector.set(Selectors.GTournamentSelector)
-        darwin.setGenerations(10)
+#        darwin.selector.set(Selectors.GTournamentSelector)
+        darwin.setGenerations(100)
         darwin.setMutationRate(0.10)
 #        darwin.terminationCriteria.set(GSimpleGA.ConvergenceCriteria)
 
@@ -49,19 +49,20 @@ class GeneticORC:
 
 
     def fitness_func(self, chromosome):
+        #TODO para que el apareamiento mejore los ángulos deberían ser relativos
         self.canvas.clear()
         recpoints = polartorec(chromosome)
         curve = Curve(recpoints)
         points = curve.points
         distances = [points[i].distance(points[i+1])
             for i in xrange(-1, len(curve.points) - 1)]
-        std_distances = np.std(distances) / sum(distances)
+        std_distances = (np.std(distances) / sum(distances)) ** 2
         self.canvas.draw(curve)
         array = self.canvas.as_array()
         array = array.mean(-1)
-#        array = get_centered(array)
+        array = get_centered(array)
         penalty = abs(array - self.reference) > 127
-        penalty_sum = penalty.sum() / self.rangemax
+        penalty_sum = (penalty.sum() / self.rangemax) ** 2
         diff = abs(penalty_sum - std_distances)
         score = 1000. / (penalty_sum + std_distances + diff)
         if score > self.bestscore:
