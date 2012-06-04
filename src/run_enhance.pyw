@@ -3,7 +3,7 @@
 
 from autopipe import showimage
 from image import imread, derotate, get_centered
-from scipy.misc import imresize, imrotate
+from scipy.misc import imresize, imrotate, lena
 from itertools import product
 from random import sample
 import sys
@@ -15,8 +15,8 @@ def main():
     angles = range(360)
 
     if not images:
-        lena = imresize(misc.lena(), .5)
-        images = [lena]
+        image = imresize(lena(), .5)
+        images = ["lena", image]
 
     samples = sample(list(product(images, angles)), 20)
 
