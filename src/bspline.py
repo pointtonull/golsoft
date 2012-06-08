@@ -2,7 +2,6 @@
 #-*- coding: UTF-8 -*-
 
 from collections import namedtuple
-from operator import itemgetter
 import cairo
 import numpy as np
 
@@ -42,26 +41,17 @@ class Point(namedtuple("Point", "x y")):
         return Point(self.x / scalar, self.y / scalar)
 
 
-def polartorec(points, center=(256, 256)):
-    xshift, yshift = center
-    theta_scale = np.pi / xshift
-    points = sorted(points, key=itemgetter(1), reverse=True)
-    points = [
-        (rho * np.cos(theta * theta_scale) + xshift,
-         rho * np.sin(theta * theta_scale) + yshift)
-        for rho, theta in points]
-    return points
-
-
 class Curve:
 
     def __init__(self, points, color=(1, 1, 1, 1)):
-        self.points = [Point(x, y) for x, y in points]
+        self.points = [Point(x, y) for x, y, softness in points]
+        self.softness = [softness for x, y, softness in points]
         self.color = color
 
     def get_nodes(self):
         points = self.points
-        nodes = [points[i+1].get_node(points[i], points[i+2])
+        softness = self.softness
+        nodes = [points[i+1].get_node(points[i], points[i+2], softness[i+1])
             for i in range(-2, len(points) - 2)]
         return nodes
 

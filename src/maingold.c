@@ -87,11 +87,11 @@ main (int argc, char *argv[])
     printf("Intermediate files will be saved (i.e. debug on).\n");
 
   /*  OPEN FILES, ALLOCATE MEMORY      */
-  OpenFile(&ifp, infile, "rb");
-  OpenFile(&ofp, outfile, "wb");
+  OpenFile(&ifp, infile, "r");
+  OpenFile(&ofp, outfile, "w");
   mfp = NULL;
   if (!Keyword(maskfile, "none"))
-    OpenFile(&mfp, maskfile, "rb");
+    OpenFile(&mfp, maskfile, "r");
 
   AllocateFloat(&phase, xsize*ysize, "phase data");
   AllocateFloat(&soln, xsize*ysize, "unwrapped data");
