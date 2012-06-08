@@ -107,6 +107,7 @@ def get_pea(hologram, distance, cos_alpha=EPSILON, cos_beta=EPSILON,
     return reconstructed
  
 
+@cache.hybrid(reset=0)
 def get_propagation_array(shape, distance):
     maxrow = shape[0] / 2.
     maxcol = shape[1] / 2.
