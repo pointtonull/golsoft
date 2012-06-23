@@ -1,57 +1,40 @@
-from traits.api import HasStrictTraits, Str, Int, Regex, List, Instance
+#!/usr/bin/env python
+#-*- coding: UTF-8 -*-
+
+import numpy as np
+
+from traits.api import HasTraits, Str, Int, Regex, List, Instance, Enum
 from traits.api import on_trait_change
 from traits.api import Range
 from traitsui.api import View, VGroup, Item, ListEditor
 
+import pea
 
-class Filter(HasStrictTraits):
+class Filter(HasTraits):
     name  = Str
-    age = Range(0, 100, mode='spinner')
-    phone = Regex(value='000-0000', regex='\d\d\d[-]\d\d\d\d')
+    function = Enum(dir(pea),
+        label="Function")
+    representation = List
 
     traits_view = View(
         'name',
-        'age',
-        'phone',
-        width = 0.18,
-        buttons = ['OK', 'Cancel']
+        'function',
+        'representation',
+#        width = 0.18,
     )
 
+
+Cos = Filter(
+    name="Cos",
+    representation = ["normalize", "equalize", "phase"],
+)
+
 pipe = [
-    Filter(
-        name = 'FFT',
-        age = 41,
-        phone = '555-1212'
-    ),
-    Filter(
-        name = 'xRefBeam',
-        age = 63,
-        phone = '555-3895'
-    ),
-    Filter(
-        name = 'Automask',
-        age = 63,
-        phone = '555-3895'
-    ),
-    Filter(
-        name = 'Autofocus',
-        age = 31,
-        phone = '555-3547'
-    ),
-    Filter(
-        name = 'Propagate',
-        age = 46,
-        phone = '555-3285'
-    ),
-    Filter(
-        name = 'IDFT',
-        age = 34,
-        phone = '555-6943'
-    ),
+    Cos,
 ]
 
 
-class ListEditorNotebookSelectionDemo(HasStrictTraits):
+class ListEditorNotebookSelectionDemo(HasTraits):
     pipe = List(Filter)
     selected = Instance(Filter)
     index = Range(0, 7, mode='spinner')

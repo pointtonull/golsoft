@@ -12,7 +12,6 @@ from mayavi.core.ui.mayavi_scene import MayaviScene
 from mayavi.tools.mlab_scene_model import MlabSceneModel
 from traits.api import HasTraits, Button, File, Range, Enum, Instance, Bool
 from traits.api import on_trait_change
-oeeo
 from traitsui.api import View, Item, Group, HSplit
 from traitsui.menu import OKButton
 
@@ -141,7 +140,7 @@ class PEA(HasTraits):
     use_cuttop = Bool(False)
     cuttop = Range(.99, 1., 0., mode="xslider", enter_set=True,
         auto_set=False, enabled_when="use_cuttop")
-    mask_vismode = Enum("hibryd", "mask", "spectrum x mask", 
+    mask_vismode = Enum("hibryd", "mask", "spectrum x mask",
         label="Visualize")
 
     scn_mask = Instance(MlabSceneModel, ())
