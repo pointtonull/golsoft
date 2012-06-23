@@ -81,9 +81,11 @@ def main():
 
             reconstructed = get_shifted_idft(propagated)
             module = normalize(abs(reconstructed))
+            print("Module")
             showimage(module)
 #            imwrite(module, "%s-module.jpg" % filename)
             phase = angle2(reconstructed)
+            print("Phase")
             showimage(normalize(phase))
 #            imwrite(phase, "%s-phase.jpg" % filename)
     return 0
