@@ -170,6 +170,7 @@ def main():
                 array = normalize(array)
 
             pygame.surfarray.blit_array(screen, array)
+
         elif set_pea:
             array = pygame.surfarray.array2d(image)
 
