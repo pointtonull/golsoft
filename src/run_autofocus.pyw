@@ -1,20 +1,22 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
-from autopipe import showimage
-from dft import get_shifted_dft, get_idft, get_shifted_idft
-from fmt import get_mask
-from image import imread, normalize, get_intensity, equalize, get_centered
-from pea import calculate_director_cosines, get_ref_beam
-from pea import get_propagation_array, get_distance
-from pea import get_auto_mask, generic_minimizer
-from ranges import frange
-from automask import get_mask, get_circles
-from scipy import misc, ndimage, optimize, stats
-import cache
+import sys
+
+from scipy import misc, optimize, stats
 import matplotlib.pyplot as plt
 import numpy as np
-import sys
+
+from automask import get_mask, get_circles
+from autopipe import showimage
+from dft import get_shifted_dft, get_idft, get_shifted_idft
+from image import imread, normalize, get_intensity, equalize
+from pea import calculate_director_cosines, get_ref_beam
+from pea import get_auto_mask, generic_minimizer
+from pea import get_propagation_array, get_distance
+from ranges import frange
+import cache
+
 
 
 class Methods(list):
@@ -109,7 +111,6 @@ def phase_detection(masked_spectrum, distance):
     distance = get_distance(left_peak, right_peak)
     fitness = distance
     return fitness
-    
 
 
 #@methods
