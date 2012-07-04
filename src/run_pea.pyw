@@ -5,16 +5,19 @@
 Testing case
 """
 
+import sys
+
+from numpy import abs, arctan2
+import numpy as np
+
 from autopipe import showimage
+from dft import get_shifted_dft, get_shifted_idft
 from image import equalize, imread, normalize, imwrite, get_intensity
 from image import evenshape
 from pea import calculate_director_cosines, get_ref_beam, get_propagation_array
 from pea import get_auto_mask
-from numpy import abs, arctan2
-from dft import get_shifted_dft, get_shifted_idft
-import numpy as np
 from ranges import frange
-import sys
+from unwrap import unwrap_wls, unwrap_qg
 
 def angle2(array):
     return arctan2(array.real, array.imag)
@@ -33,8 +36,8 @@ def main():
 #        cos_alpha, cos_beta = calculate_director_cosines(hologram)
 #        print("Cosines: %4.3f %4.3f" % (cos_alpha, cos_beta))
 
-        distances = (-.05, -.05)
-        evenshapes = (False, True)
+        distances = (-.05, )
+        evenshapes = (False, )
         for distance, to_evenshape in zip(distances, evenshapes):
             print("Distance: %3.2f" % distance)
             if to_evenshape:
@@ -88,8 +91,19 @@ def main():
             print("Phase")
             showimage(normalize(phase))
 #            imwrite(phase, "%s-phase.jpg" % filename)
+            unwrapped = unwrap_wls(phase)
+            print("Least Squares Unwrapped Phase")
+            showimage(normalize(unwrapped))
+            import statprof
+            statprof.start()
+            unwrapped = unwrap_qg(phase[:100], module[:100])
+            statprof.stop()
+            print("Quality Guided Unwrapped Phase")
+            showimage(normalize(unwrapped))
+            statprof.display()
     return 0
 
 
 if __name__ == "__main__":
+
     exit(main())
