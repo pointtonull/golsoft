@@ -9,7 +9,7 @@ from scipy import signal
 import Image
 import numpy
 from punwrap import unwrap2D as unwrap
-from math import pi, exp
+from math import pi
 import sys
 from debug import debug
 
