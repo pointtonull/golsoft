@@ -9,8 +9,6 @@ import numpy as np
 pi = np.pi
 tau = 2 * pi
 
-from autopipe import showimage
-from image import normalize
 
 def sdct(image):
     """
