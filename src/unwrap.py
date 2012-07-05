@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
-from scipy.ndimage.morphology import binary_dilation
-from scipy.ndimage.filters import generic_filter, gaussian_filter
+from blist import sortedset
 import cv2
 import image
 import numpy as np
