@@ -94,10 +94,14 @@ def main():
             unwrapped = unwrap_wls(phase)
             print("Least Squares Unwrapped Phase")
             showimage(normalize(unwrapped))
+
             import statprof
             statprof.start()
-            unwrapped = unwrap_qg(phase[:100], module[:100])
+            
+            unwrapped = unwrap_qg(phase, module)
+
             statprof.stop()
+
             print("Quality Guided Unwrapped Phase")
             showimage(normalize(unwrapped))
             statprof.display()
