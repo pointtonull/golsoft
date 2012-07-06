@@ -65,6 +65,12 @@ def unwrap_qg(phase, quality_map, equalize=True, margin=5):
 
     Returns the unwrapped phase.
     """
+    
+    assert phase.shape == quality_map.shape
+    shape = phase.shape
+    rows, cols = shape
+
+    phase /= tau
 
     if equalize:
         quality_map = image.equalize(quality_map)
