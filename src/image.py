@@ -85,7 +85,7 @@ def get_polar(array, interpolation=0, reverse=False):
     col0 = cols / 2.
     theta_scalar = tau / cols
     max_radius = (row0 ** 2 + col0 ** 2) ** .5
-    rho_scalar = log(max_radius) / cols
+    rho_scalar = max_radius / cols
 
     def cart2pol(dst_coords):
         theta, rho = dst_coords

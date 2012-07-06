@@ -10,8 +10,7 @@ fmt = fft(lp_ft_magnitude)
 """
 
 from autopipe import showimage
-from fmt import get_logpolar
-from itertools import product
+from image import get_logpolar, get_polar
 from scipy import misc
 import sys
 
@@ -28,8 +27,11 @@ def main():
         showimage(image)
 
         logpolar5 = get_logpolar(image, 5)
-        recart5 = get_logpolar(logpolar5, 5, True)
+        recart5 = get_logpolar(logpolar5, 5, reverse=True)
         showimage(logpolar5, recart5)
+        polar5 = get_polar(image, 5)
+        recart5 = get_polar(polar5, 5, reverse=True)
+        showimage(polar5, recart5)
 
 
 if __name__ == "__main__":
