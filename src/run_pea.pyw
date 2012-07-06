@@ -95,16 +95,16 @@ def main():
             print("Least Squares Unwrapped Phase")
             showimage(normalize(unwrapped))
 
-            import statprof
-            statprof.start()
+#            import statprof
+#            statprof.start()
             
             unwrapped = unwrap_qg(phase, module)
 
-            statprof.stop()
+#            statprof.stop()
+#            statprof.display()
 
             print("Quality Guided Unwrapped Phase")
             showimage(normalize(unwrapped))
-            statprof.display()
     return 0
 
 
