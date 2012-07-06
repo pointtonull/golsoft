@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
-from blist import sortedset
+from bisect import insort
+
+from blist import blist
 import cv2
 import image
 import numpy as np
