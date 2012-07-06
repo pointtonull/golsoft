@@ -87,15 +87,26 @@ def unwrap_qg(phase, quality_map, equalize=True, margin=5):
     if equalize:
         quality_map = image.equalize(quality_map)
 
-    unwrappeds = np.zeros_like(phase).astype(bool)
-    maxpos = np.unravel_index(quality_map.argmax(), quality_map.shape)
-    unwrappeds[maxpos] = True
-    while not unwrappeds.all():
-        to_unwrap = binary_dilation(unwrappeds) - unwrappeds
-        threshold = (quality_map * to_unwrap).max() - margin
-        to_unwrap = quality_map >= threshold
-        showimage(normalize(phase), normalize(unwrappeds.astype(int)))
-        phase, unwrappeds = unwrap_mask(phase, unwrappeds, to_unwrap)
+    phase = phase.ravel()
+    adder = {}
+    quality_map = quality_map.ravel()
+    first_pixel = quality_map.argmax()
+    border = blist()
+
+    for pos in get_neighbors(first_pixel):
+        adder[pos] = phase[first_pixel]
+        insort(border, (quality_map[pos], pos))
+
+    while border:
+        quality, pixel = border.pop()
+        phase[pixel] -= round(phase[pixel] - adder[pixel])
+
+        for pos in get_neighbors(pixel):
+            if pos not in adder:
+                adder[pos] = phase[pixel]
+                insort(border, (quality_map[pos], pos))
+
+    phase = phase.reshape(shape) * tau
     return phase
 
 
