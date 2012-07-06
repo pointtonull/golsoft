@@ -55,36 +55,6 @@ def unwrap_wls(wrapped):
     return unwrapped
 
 
-def unwrap_mask(phase, unwrappeds, to_unwrap=None):
-    """
-    Unwrap the pixels on the mask using only the unwrapped neighbors.
-    The phase values must be in [-1, 1]. instead of in [-pi, pi]
-    The unwrapped pixels will be not modified.
-    If to_unwrap is omitted will try to unwrap all the posible pixels
-    """
-    if to_unwrap is None:
-        to_unwrap = np.ones_like(phase).astype(bool)
-    phase = phase.copy()
-    footprint = np.array(
-        [[0, 1, 0],
-         [1, 0, 1],
-         [0, 1, 0]])
-    unwrappeables = binary_dilation(unwrappeds) * (to_unwrap - unwrappeds)
-    while unwrappeables.any():
-        neighbors_num = generic_filter(unwrappeds.astype(int), np.nansum,
-            footprint=footprint, mode="constant", cval=0)
-        neighbors_sum = generic_filter(unwrappeds * phase, np.nansum,
-            footprint=footprint, mode="constant", cval=0)
-        neighbors_mean = (neighbors_sum[unwrappeables]
-            / neighbors_num[unwrappeables])
-        neighbors_diff = phase[unwrappeables] - neighbors_mean
-        phase[unwrappeables] -= neighbors_diff.round()
-        unwrappeds += unwrappeables
-        unwrappeables = binary_dilation(unwrappeds) * (to_unwrap
-            - unwrappeds)
-    return phase, unwrappeds
-
-
 def unwrap_qg(phase, quality_map, equalize=True, margin=5):
     """
     Quality Guided Path Following unwrapping algoritm
