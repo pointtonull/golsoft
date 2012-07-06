@@ -72,6 +72,18 @@ def unwrap_qg(phase, quality_map, equalize=True, margin=5):
 
     phase /= tau
 
+    def get_neighbors(pos):
+        row = pos % cols + 1
+        col = pos / cols + 1
+        if col > 1:
+            yield pos - cols
+        if col < cols:
+            yield pos + cols
+        if row > 1:
+            yield pos - 1
+        if row < rows:
+            yield pos + 1
+
     if equalize:
         quality_map = image.equalize(quality_map)
 
