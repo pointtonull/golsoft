@@ -7,9 +7,9 @@ from scipy import misc, optimize, stats
 import matplotlib.pyplot as plt
 import numpy as np
 
-from automask import get_mask, get_circles
+from automask import get_mask
 from autopipe import showimage
-from dft import get_shifted_dft, get_idft, get_shifted_idft
+from dft import get_shifted_dft, get_idft
 from image import imread, normalize, get_intensity, equalize
 from pea import calculate_director_cosines, get_ref_beam
 from pea import get_auto_mask, generic_minimizer
@@ -43,7 +43,7 @@ def get_lowpass_mask(shape, radius=0.2, softness=0):
     return mask
 
 
-#@methods
+@methods
 @cache.hybrid
 def get_var(masked_spectrum, distance):
     propagation_array = get_propagation_array(masked_spectrum.shape, distance)
@@ -54,7 +54,7 @@ def get_var(masked_spectrum, distance):
     return fitness
 
 
-#@methods
+@methods
 @cache.hybrid
 def get_lowpass_var(masked_spectrum, distance):
     propagation_array = get_propagation_array(masked_spectrum.shape, distance)
@@ -67,6 +67,7 @@ def get_lowpass_var(masked_spectrum, distance):
     return fitness
 
 
+<<<<<<< HEAD
 #@methods
 def phase_detection(masked_spectrum, distance):
     shape = masked_spectrum.shape
@@ -113,6 +114,8 @@ def phase_detection(masked_spectrum, distance):
     return fitness
 
 
+=======
+>>>>>>> experimental
 #@methods
 @cache.hybrid(reset=0)
 def get_highpass_var(masked_spectrum, distance):
