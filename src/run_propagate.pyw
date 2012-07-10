@@ -45,8 +45,8 @@ def main():
 
             reconstructed = get_shifted_idft(propagated)
             module = normalize(abs(reconstructed))
-            showimage(module)
-            showimage(equalize(propagated.real), equalize(propagated.imag))
+            showimage(module, normalize(angle2(propagated)))
+            showimage(normalize(abs(propagated)), normalize(propagated.imag))
     return 0
 
 
