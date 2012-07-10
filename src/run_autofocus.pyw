@@ -23,11 +23,9 @@ class Methods(list):
     def __call__(self, func):
         self.append(func)
         return func
-
 methods = Methods()
 
 
-#@cache.hybrid
 def get_highpass_mask(shape, radius=0.2, softness=0):
     radius = round(min(shape) * (1 - radius))
     window = np.kaiser(radius, softness)
@@ -35,7 +33,6 @@ def get_highpass_mask(shape, radius=0.2, softness=0):
     return mask
 
 
-#@cache.hybrid
 def get_lowpass_mask(shape, radius=0.2, softness=0):
     radius = round(min(shape) * radius)
     window = np.kaiser(radius, softness)
@@ -53,8 +50,15 @@ def get_var(masked_spectrum, distance):
     fitness = intensity.var()
     return fitness
 
-
 @methods
+def get_diff_var(masked_spectrum, distance):
+    fitness = get_var(masked_spectrum, distance)
+    fitness -= get_var(masked_spectrum, -distance)
+    return fitness
+
+
+
+#@methods
 @cache.hybrid
 def get_lowpass_var(masked_spectrum, distance):
     propagation_array = get_propagation_array(masked_spectrum.shape, distance)
@@ -65,6 +69,13 @@ def get_lowpass_var(masked_spectrum, distance):
     intensity = get_intensity(reconstructed)
     fitness = intensity.var()
     return fitness
+
+#@methods
+def get_diff_lowpass_var(masked_spectrum, distance):
+    fitness = get_lowpass_var(masked_spectrum, distance)
+    fitness -= get_lowpass_var(masked_spectrum, -distance)
+    return fitness
+
 
 
 <<<<<<< HEAD
@@ -128,21 +139,42 @@ def get_highpass_var(masked_spectrum, distance):
     fitness = intensity.var()
     return fitness
 
+#@methods
+def get_diff_highpass_var(masked_spectrum, distance):
+    fitness = get_highpass_var(masked_spectrum, distance)
+    fitness -= get_highpass_var(masked_spectrum, -distance)
+    return fitness
 
 
-@methods
+
+#@methods
 @cache.hybrid
 def get_var_over_hpass_var(*args):
     fitness = get_var(*args) / get_highpass_var(*args)
     return fitness
 
+#@methods
+def get_diff_var_over_hpass_var(masked_spectrum, distance):
+    fitness = get_var_over_hpass_var(masked_spectrum, distance)
+    fitness -= get_var_over_hpass_var(masked_spectrum, -distance)
+    return fitness
 
 
-@methods
+
+
+#@methods
 @cache.hybrid
 def get_lpass_var_over_hpass_var(*args):
     fitness = get_lowpass_var(*args) / get_highpass_var(*args)
     return fitness
+
+
+#@methods
+def get_diff_lpass_var_over_hpass_var(masked_spectrum, distance):
+    fitness = get_lpass_var_over_hpass_var(masked_spectrum, distance)
+    fitness -= get_lpass_var_over_hpass_var(masked_spectrum, -distance)
+    return fitness
+
 
 
 def get_groups(values, number):
@@ -199,17 +231,13 @@ def main():
     figure = plt.figure()
 
     for filename, image in images:
-        shape = image.shape
         print("\nOriginal image: %s" % filename)
         showimage(image)
-        alpha, beta = calculate_director_cosines(image)
-        ref_beam = get_ref_beam(shape, alpha, beta)
-        rhologram = ref_beam * image
-        spectrum = get_shifted_dft(rhologram)
-        distances = [distance for distance in frange(0.0, 2**-2, 5)]
+        spectrum = get_shifted_dft(image)
+        distances = [distance for distance in frange(0.0, 2**-2, 80)]
         mask, masked_spectrum, centered = get_auto_mask(spectrum,
             softness=0, radious_scale=1.5)
-        showimage(equalize(masked_spectrum))
+        showimage(equalize(centered), equalize(masked_spectrum))
 
         for method in methods:
             print("\nMethod: %s\n" % method.func_name)
@@ -219,33 +247,35 @@ def main():
             plt.cla()
             plt.plot(distances, fitness_values, c="green")
 
-            localmins = [dst
-                for dst in guess_focus_distance(masked_spectrum, method)
-                    if np.abs(dst) < .16]
-            fitness = [method(masked_spectrum, dst) for dst in localmins]
+#            localmins = [dst
+#                for dst in guess_focus_distance(masked_spectrum, method)
+#                    if np.abs(dst) < .16]
+#            fitness = [method(masked_spectrum, dst) for dst in localmins]
 
-            plt.scatter(localmins, fitness, c="blue")
+#            plt.scatter(localmins, fitness, c="blue")
 
-            strings = ["%6.5f" % distance for distance in localmins]
-            localmins = autogroup(localmins)
+#            strings = ["%6.5f" % distance for distance in localmins]
+#            localmins = autogroup(localmins)
 
-            localmins = [np.mean(group) for group in localmins]
-            fitness = [method(masked_spectrum, dst) for dst in localmins]
+#            localmins = [np.mean(group) for group in localmins]
+#            fitness = [method(masked_spectrum, dst) for dst in localmins]
 
-            plt.scatter(localmins, fitness, c="red")
+#            plt.scatter(localmins, fitness, c="red")
 
             showimage(figure)
-            print("All localmins: %s" % ", ".join(strings))
-            strings = ["%6.5f" % distance for distance in localmins]
-            print("Pre-selecteds localmins: %s" % ", ".join(strings))
-            for localmin in localmins:
-                propagation_array = get_propagation_array(shape, localmin)
-                propagated = masked_spectrum * propagation_array
-                reconstructed = get_idft(propagated)
-                showimage(normalize(np.abs(reconstructed)), 
-                    normalize(np.arctan2(reconstructed.real,
-                    reconstructed.imag)))
-                print localmin, "\n"
+
+#            print("All localmins: %s" % ", ".join(strings))
+#            strings = ["%6.5f" % distance for distance in localmins]
+
+#            print("Pre-selecteds localmins: %s" % ", ".join(strings))
+#            for localmin in localmins:
+#                propagation_array = get_propagation_array(shape, localmin)
+#                propagated = masked_spectrum * propagation_array
+#                reconstructed = get_idft(propagated)
+#                showimage(normalize(np.abs(reconstructed)), 
+#                    normalize(np.arctan2(reconstructed.real,
+#                    reconstructed.imag)))
+#                print localmin, "\n"
 
 #        reconstructed = get_idft(propagated)
 #        showimage(equalize(np.angle(reconstructed))) # phase
