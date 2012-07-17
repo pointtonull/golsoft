@@ -2,7 +2,7 @@
 #-*- coding: UTF-8 -*-
 
 """
-The 'de facto' implementation of Fast Fourier Transform
+The 'de facto' implementation of the Discrete Fourier Transform
 
 The valid values for FFTW are:
 
@@ -13,6 +13,7 @@ The valid values for FFTW are:
 """
 
 import anfft
+import cv2
 import numpy as np
 
 #TYPE = "clongdouble"
@@ -41,3 +42,28 @@ def get_idft(array, ndim=None):
 def get_shifted_idft(array):
     shifted_idft = get_idft(np.fft.ifftshift(array))
     return shifted_idft
+
+
+def get_dct(array):
+    """
+    Will raise TypeError on odd dim's arrays.
+    """
+    return cv2.dct(array)
+
+
+def get_sdct(array):
+    """
+    Secure discrete cosine trasform
+    <octave way>
+    """
+    try:
+        return cv2.dct(array)
+    except:
+        return cv2.dct(array[:-1, :-1])
+
+
+def get_idct(*args, **kwargs):
+    """
+    Performs the inverse discrete cosine transform
+    """
+    return get_idct(*args, **kwargs)
