@@ -4,22 +4,13 @@
 from bisect import insort
 
 from blist import blist
-import cv2
 import image
 import numpy as np
 
+from dft import get_sdct, get_idct
+
 pi = np.pi
 tau = 2 * pi
-
-
-def sdct(image):
-    """
-    Secure discrete cosine trasform
-    """
-    try:
-        return cv2.dct(image)
-    except:
-        return cv2.dct(image[:-1, :-1])
 
 
 def unwrap_wls(wrapped):
@@ -40,7 +31,7 @@ def unwrap_wls(wrapped):
     rhoy = np.diff(np.concatenate((np.zeros((cols, 1)), wcoldiff), 1), axis=1)
 
     rho = rhox + rhoy
-    dct = sdct(rho)
+    dct = get_sdct(rho)
 
     col = np.mgrid[pi / cols:pi + pi / cols: pi / cols]
     row = np.mgrid[pi / rows:pi + pi / rows: pi / rows]
@@ -50,7 +41,7 @@ def unwrap_wls(wrapped):
         phiinv = dct / cosines
     except:
         phiinv = dct / cosines[:-1, :-1]
-    unwrapped = cv2.idct(phiinv)
+    unwrapped = get_idct(phiinv)
 
     return unwrapped
 
