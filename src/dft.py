@@ -12,10 +12,7 @@ The valid values for FFTW are:
 
 """
 
-from autopipe import showimage
-from image import equalize
 import anfft
-import cache
 import numpy as np
 
 #TYPE = "clongdouble"

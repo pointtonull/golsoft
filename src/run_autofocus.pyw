@@ -11,7 +11,6 @@ from automask import get_mask
 from autopipe import showimage
 from dft import get_shifted_dft, get_idft
 from image import imread, normalize, get_intensity, equalize
-from pea import calculate_director_cosines, get_ref_beam
 from pea import get_auto_mask, generic_minimizer
 from pea import get_propagation_array, get_distance
 from ranges import frange
@@ -46,7 +45,8 @@ def get_var(masked_spectrum, distance):
     propagation_array = get_propagation_array(masked_spectrum.shape, distance)
     propagated = propagation_array * masked_spectrum
     reconstructed = get_idft(propagated)
-    intensity = get_intensity(reconstructed)
+#    intensity = get_intensity(reconstructed)
+    intensity = np.abs(reconstructed)
     fitness = intensity.var()
     return fitness
 
@@ -55,7 +55,6 @@ def get_diff_var(masked_spectrum, distance):
     fitness = get_var(masked_spectrum, distance)
     fitness -= get_var(masked_spectrum, -distance)
     return fitness
-
 
 
 #@methods
@@ -176,37 +175,21 @@ def get_diff_lpass_var_over_hpass_var(masked_spectrum, distance):
     return fitness
 
 
-
-def get_groups(values, number):
-    if number == 1 or len(values) == 0:
-        yield [values]
-    else:
-        for cant in range(1, len(values) - number + 2):
-            left = [values[:cant]]
-            remainder = values[cant:]
-            for right in get_groups(remainder, number - 1):
-                yield left + right 
-
-
-def get_metavar(groups):
-    metavar = sum((np.var(group) for group in groups))
-    return metavar
-
-
-def autogroup(values):
-    if len(values) > 2:
-        values = sorted(values)
-        groupings = [groups for cant in range(1, len(values) + 1)
-            for groups in get_groups(values, cant)]
-        lengths = [len(groups) for groups in groupings]
-        variances = [get_metavar(groups) for groups in groupings]
-        slope, intercept, r_value = stats.linregress(lengths, variances)[:3]
-        regresion = [length * slope + intercept for length in lengths]
-        diffs = np.array(variances) - np.array(regresion)
-        pos = diffs.argmin()
-        return groupings[pos]
-    else:
-        return values
+def get_best_contrast_zone(hologram, shape=(400, 400)):
+    assert shape[0] <= hologram.shape[0]
+    assert shape[1] <= hologram.shape[1]
+    rows = hologram.shape[0] - shape[0] + 1
+    cols = hologram.shape[1] - shape[1] + 1
+    rowsvar = hologram.var(0)
+    colsvar = hologram.var(1)
+    sumsrowsranges = np.array([rowsvar[top:top + shape[0]].sum()
+        for top in xrange(rows)])
+    sumscolsranges = np.array([colsvar[left:left + shape[1]].sum()
+        for left in xrange(cols)])
+    toprow = sumsrowsranges.argmax()
+    leftcol = sumscolsranges.argmax()
+    print(rows, cols)
+    return hologram[toprow:toprow + shape[0], leftcol:leftcol + shape[1]]
 
 
 def guess_focus_distance(masked_spectrum, extractor):
@@ -221,8 +204,10 @@ def guess_focus_distance(masked_spectrum, extractor):
     return results
 
 
+
 def main():
-    images = [(filename, imread(filename, True)) for filename in sys.argv[1:]]
+    images = [(filename, imread(filename, True))
+        for filename in sys.argv[1:]]
     if len(images) < 2:
         if not images:
             lena = misc.imresize(misc.lena(), .5)
@@ -230,58 +215,54 @@ def main():
 
     figure = plt.figure()
 
-    for filename, image in images:
+    graph_distances = [distance for distance in frange(0.0, 2**-2, 80)]
+
+    for filename, hologram in images:
         print("\nOriginal image: %s" % filename)
-        showimage(image)
-        spectrum = get_shifted_dft(image)
-        distances = [distance for distance in frange(0.0, 2**-2, 80)]
+        shape = hologram.shape
+        showimage(hologram)
+
+        best_zone = get_best_contrast_zone(hologram)
+        showimage(best_zone)
+        print(best_zone.shape)
+
+        spectrum = get_shifted_dft(hologram)
         mask, masked_spectrum, centered = get_auto_mask(spectrum,
             softness=0, radious_scale=1.5)
         showimage(equalize(centered), equalize(masked_spectrum))
 
+        zone_spectrum = get_shifted_dft(best_zone)
+        zone_spectrum = spectrum
+        mask, zone_masked_spectrum, centered = get_auto_mask(zone_spectrum,
+            softness=0, radious_scale=1.0)
+        showimage(equalize(centered), equalize(zone_masked_spectrum))
+
         for method in methods:
             print("\nMethod: %s\n" % method.func_name)
 
-            fitness_values = [method(masked_spectrum, distance)
-                for distance in distances]
+            fitness_values = [method(zone_masked_spectrum, distance)
+                for distance in graph_distances]
             plt.cla()
-            plt.plot(distances, fitness_values, c="green")
+            plt.plot(graph_distances, fitness_values, c="blue")
 
-#            localmins = [dst
-#                for dst in guess_focus_distance(masked_spectrum, method)
-#                    if np.abs(dst) < .16]
-#            fitness = [method(masked_spectrum, dst) for dst in localmins]
+            localmins = guess_focus_distance(zone_masked_spectrum, method)
+            fitness = [method(zone_masked_spectrum, dst)
+                for dst in localmins]
 
-#            plt.scatter(localmins, fitness, c="blue")
+            plt.scatter(localmins, fitness, c="green")
 
-#            strings = ["%6.5f" % distance for distance in localmins]
-#            localmins = autogroup(localmins)
-
-#            localmins = [np.mean(group) for group in localmins]
-#            fitness = [method(masked_spectrum, dst) for dst in localmins]
-
-#            plt.scatter(localmins, fitness, c="red")
+            bestfitness, globalmin = min(zip(fitness, localmins))
+            plt.scatter(globalmin, bestfitness, c="red")
 
             showimage(figure)
 
-#            print("All localmins: %s" % ", ".join(strings))
-#            strings = ["%6.5f" % distance for distance in localmins]
-
-#            print("Pre-selecteds localmins: %s" % ", ".join(strings))
-#            for localmin in localmins:
-#                propagation_array = get_propagation_array(shape, localmin)
-#                propagated = masked_spectrum * propagation_array
-#                reconstructed = get_idft(propagated)
-#                showimage(normalize(np.abs(reconstructed)), 
-#                    normalize(np.arctan2(reconstructed.real,
-#                    reconstructed.imag)))
-#                print localmin, "\n"
-
-#        reconstructed = get_idft(propagated)
-#        showimage(equalize(np.angle(reconstructed))) # phase
-#        intensity = get_intensity(reconstructed)
-#        showimage(equalize(intensity)) # module
-#        showimage(equalize(get_shifted_dft(intensity)))
+            propagation_array = get_propagation_array(shape, globalmin)
+            propagated = masked_spectrum * propagation_array
+            reconstructed = get_idft(propagated)
+            showimage(normalize(np.abs(reconstructed)), 
+                normalize(np.arctan2(reconstructed.real,
+                reconstructed.imag)))
+            print globalmin, "\n"
 
     return 0
 
