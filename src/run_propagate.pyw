@@ -9,19 +9,16 @@ Testing case
 import sys
 
 from numpy import abs, arctan2
-import numpy as np
 
 from autopipe import showimage
 from dft import get_shifted_dft, get_shifted_idft
-from image import equalize, imread, normalize, imwrite, get_intensity
-from image import evenshape
-from pea import calculate_director_cosines, get_ref_beam, get_propagation_array
-from pea import get_auto_mask
-from ranges import frange
-from unwrap import unwrap_wls, unwrap_qg
+from image import imread, normalize
+from pea import get_propagation_array
+
 
 def angle2(array):
     return arctan2(array.real, array.imag)
+
 
 def main():
     """
