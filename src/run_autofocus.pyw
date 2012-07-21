@@ -1,4 +1,7 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> experimental
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
@@ -10,6 +13,7 @@ import numpy as np
 
 from automask import get_mask
 from autopipe import showimage
+<<<<<<< HEAD
 from dft import get_shifted_dft, get_idft
 from image import imread, normalize, get_intensity, equalize
 from pea import get_auto_mask, generic_minimizer
@@ -17,6 +21,15 @@ from pea import get_propagation_array, get_distance
 from ranges import frange
 import cache
 
+=======
+from dft import get_shifted_dft, get_shifted_idft
+from image import imread, normalize, get_intensity, equalize
+from pea import get_auto_mask, generic_minimizer, angle2
+from pea import get_propagation_array, get_distance
+from ranges import frange
+import cache
+#from fresnel import get_chirp, get_wrapped_formula_array
+>>>>>>> experimental
 
 
 class Methods(list):
@@ -39,16 +52,25 @@ def get_lowpass_mask(shape, radius=0.2, softness=0):
     mask = get_mask(shape, window)
     return mask
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> experimental
 @methods
 @cache.hybrid
 def get_var(masked_spectrum, distance):
     propagation_array = get_propagation_array(masked_spectrum.shape, distance)
     propagated = propagation_array * masked_spectrum
+<<<<<<< HEAD
     reconstructed = get_idft(propagated)
 #    intensity = get_intensity(reconstructed)
     intensity = np.abs(reconstructed)
     fitness = intensity.var()
+=======
+    reconstructed = get_shifted_idft(propagated)
+    module = np.abs(reconstructed)
+    fitness = module.var()
+>>>>>>> experimental
     return fitness
 
 @methods
@@ -58,6 +80,26 @@ def get_diff_var(masked_spectrum, distance):
     return fitness
 
 
+<<<<<<< HEAD
+=======
+@methods
+@cache.hybrid
+def get_int_var(masked_spectrum, distance):
+    propagation_array = get_propagation_array(masked_spectrum.shape, distance)
+    propagated = propagation_array * masked_spectrum
+    reconstructed = get_shifted_idft(propagated)
+    intensity = get_intensity(reconstructed)
+    fitness = intensity.var()
+    return fitness
+
+@methods
+def get_diff_int_var(masked_spectrum, distance):
+    fitness = get_int_var(masked_spectrum, distance)
+    fitness -= get_int_var(masked_spectrum, -distance)
+    return fitness
+
+
+>>>>>>> experimental
 #@methods
 @cache.hybrid
 def get_lowpass_var(masked_spectrum, distance):
@@ -65,7 +107,11 @@ def get_lowpass_var(masked_spectrum, distance):
     propagated = propagation_array * masked_spectrum
     lowpass_mask = get_lowpass_mask(propagated.shape, .4)
     propagated = lowpass_mask * propagated
+<<<<<<< HEAD
     reconstructed = get_idft(propagated)
+=======
+    reconstructed = get_shifted_idft(propagated)
+>>>>>>> experimental
     intensity = get_intensity(reconstructed)
     fitness = intensity.var()
     return fitness
@@ -78,6 +124,7 @@ def get_diff_lowpass_var(masked_spectrum, distance):
 
 
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 #@methods
 def phase_detection(masked_spectrum, distance):
@@ -127,6 +174,8 @@ def phase_detection(masked_spectrum, distance):
 
 =======
 >>>>>>> experimental
+=======
+>>>>>>> experimental
 #@methods
 @cache.hybrid(reset=0)
 def get_highpass_var(masked_spectrum, distance):
@@ -134,7 +183,11 @@ def get_highpass_var(masked_spectrum, distance):
     propagated = propagation_array * masked_spectrum
     highpass_mask = get_highpass_mask(propagated.shape, .4)
     propagated = highpass_mask * propagated
+<<<<<<< HEAD
     reconstructed = get_idft(propagated)
+=======
+    reconstructed = get_shifted_idft(propagated)
+>>>>>>> experimental
     intensity = get_intensity(reconstructed)
     fitness = intensity.var()
     return fitness
@@ -176,7 +229,11 @@ def get_diff_lpass_var_over_hpass_var(masked_spectrum, distance):
     return fitness
 
 
+<<<<<<< HEAD
 def get_best_contrast_zone(hologram, shape=(400, 400)):
+=======
+def get_best_contrast_zone(hologram, shape=(256, 256)):
+>>>>>>> experimental
     assert shape[0] <= hologram.shape[0]
     assert shape[1] <= hologram.shape[1]
     rows = hologram.shape[0] - shape[0] + 1
@@ -216,7 +273,11 @@ def main():
 
     figure = plt.figure()
 
+<<<<<<< HEAD
     graph_distances = [distance for distance in frange(0.0, 2**-2, 80)]
+=======
+    graph_distances = [distance for distance in frange(0.0, 2**-2, 160)]
+>>>>>>> experimental
 
     for filename, hologram in images:
         print("\nOriginal image: %s" % filename)
@@ -233,7 +294,10 @@ def main():
         showimage(equalize(centered), equalize(masked_spectrum))
 
         zone_spectrum = get_shifted_dft(best_zone)
+<<<<<<< HEAD
         zone_spectrum = spectrum
+=======
+>>>>>>> experimental
         mask, zone_masked_spectrum, centered = get_auto_mask(zone_spectrum,
             softness=0, radious_scale=1.0)
         showimage(equalize(centered), equalize(zone_masked_spectrum))
@@ -256,6 +320,7 @@ def main():
             plt.scatter(globalmin, bestfitness, c="red")
 
             showimage(figure)
+<<<<<<< HEAD
 
             propagation_array = get_propagation_array(shape, globalmin)
             propagated = masked_spectrum * propagation_array
@@ -263,6 +328,21 @@ def main():
             showimage(normalize(np.abs(reconstructed)), 
                 normalize(np.arctan2(reconstructed.real,
                 reconstructed.imag)))
+=======
+            
+            propagation_array = get_propagation_array(zone_spectrum.shape, globalmin)
+            propagated = zone_masked_spectrum * propagation_array
+            reconstructed = get_shifted_idft(propagated)
+            showimage(normalize(np.abs(reconstructed)), 
+                normalize(angle2(reconstructed)))
+            print(propagated.shape, reconstructed.shape)
+
+            propagation_array = get_propagation_array(shape, globalmin)
+            propagated = masked_spectrum * propagation_array
+            reconstructed = get_shifted_idft(propagated)
+            showimage(normalize(np.abs(reconstructed)), 
+                normalize(angle2(reconstructed)))
+>>>>>>> experimental
             print globalmin, "\n"
 
     return 0
@@ -270,6 +350,7 @@ def main():
 
 if __name__ == "__main__":
     exit(main())
+<<<<<<< HEAD
 =======
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
@@ -513,4 +594,6 @@ def main():
 
 if __name__ == "__main__":
     exit(main())
+>>>>>>> experimental
+=======
 >>>>>>> experimental
