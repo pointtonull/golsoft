@@ -9,13 +9,13 @@ import numpy as np
 
 from automask import get_mask
 from autopipe import showimage
-from dft import get_shifted_dft, get_idft
+from dft import get_shifted_dft, get_shifted_idft
 from image import imread, normalize, get_intensity, equalize
-from pea import get_auto_mask, generic_minimizer
+from pea import get_auto_mask, generic_minimizer, angle2
 from pea import get_propagation_array, get_distance
 from ranges import frange
 import cache
-
+#from fresnel import get_chirp, get_wrapped_formula_array
 
 
 class Methods(list):
@@ -38,22 +38,37 @@ def get_lowpass_mask(shape, radius=0.2, softness=0):
     mask = get_mask(shape, window)
     return mask
 
-
 @methods
 @cache.hybrid
 def get_var(masked_spectrum, distance):
     propagation_array = get_propagation_array(masked_spectrum.shape, distance)
     propagated = propagation_array * masked_spectrum
-    reconstructed = get_idft(propagated)
-#    intensity = get_intensity(reconstructed)
-    intensity = np.abs(reconstructed)
-    fitness = intensity.var()
+    reconstructed = get_shifted_idft(propagated)
+    module = np.abs(reconstructed)
+    fitness = module.var()
     return fitness
 
 @methods
 def get_diff_var(masked_spectrum, distance):
     fitness = get_var(masked_spectrum, distance)
     fitness -= get_var(masked_spectrum, -distance)
+    return fitness
+
+
+@methods
+@cache.hybrid
+def get_int_var(masked_spectrum, distance):
+    propagation_array = get_propagation_array(masked_spectrum.shape, distance)
+    propagated = propagation_array * masked_spectrum
+    reconstructed = get_shifted_idft(propagated)
+    intensity = get_intensity(reconstructed)
+    fitness = intensity.var()
+    return fitness
+
+@methods
+def get_diff_int_var(masked_spectrum, distance):
+    fitness = get_int_var(masked_spectrum, distance)
+    fitness -= get_int_var(masked_spectrum, -distance)
     return fitness
 
 
@@ -64,7 +79,7 @@ def get_lowpass_var(masked_spectrum, distance):
     propagated = propagation_array * masked_spectrum
     lowpass_mask = get_lowpass_mask(propagated.shape, .4)
     propagated = lowpass_mask * propagated
-    reconstructed = get_idft(propagated)
+    reconstructed = get_shifted_idft(propagated)
     intensity = get_intensity(reconstructed)
     fitness = intensity.var()
     return fitness
@@ -84,7 +99,7 @@ def get_highpass_var(masked_spectrum, distance):
     propagated = propagation_array * masked_spectrum
     highpass_mask = get_highpass_mask(propagated.shape, .4)
     propagated = highpass_mask * propagated
-    reconstructed = get_idft(propagated)
+    reconstructed = get_shifted_idft(propagated)
     intensity = get_intensity(reconstructed)
     fitness = intensity.var()
     return fitness
@@ -126,7 +141,7 @@ def get_diff_lpass_var_over_hpass_var(masked_spectrum, distance):
     return fitness
 
 
-def get_best_contrast_zone(hologram, shape=(400, 400)):
+def get_best_contrast_zone(hologram, shape=(256, 256)):
     assert shape[0] <= hologram.shape[0]
     assert shape[1] <= hologram.shape[1]
     rows = hologram.shape[0] - shape[0] + 1
@@ -166,7 +181,7 @@ def main():
 
     figure = plt.figure()
 
-    graph_distances = [distance for distance in frange(0.0, 2**-2, 80)]
+    graph_distances = [distance for distance in frange(0.0, 2**-2, 160)]
 
     for filename, hologram in images:
         print("\nOriginal image: %s" % filename)
@@ -183,7 +198,6 @@ def main():
         showimage(equalize(centered), equalize(masked_spectrum))
 
         zone_spectrum = get_shifted_dft(best_zone)
-        zone_spectrum = spectrum
         mask, zone_masked_spectrum, centered = get_auto_mask(zone_spectrum,
             softness=0, radious_scale=1.0)
         showimage(equalize(centered), equalize(zone_masked_spectrum))
@@ -206,13 +220,19 @@ def main():
             plt.scatter(globalmin, bestfitness, c="red")
 
             showimage(figure)
+            
+            propagation_array = get_propagation_array(zone_spectrum.shape, globalmin)
+            propagated = zone_masked_spectrum * propagation_array
+            reconstructed = get_shifted_idft(propagated)
+            showimage(normalize(np.abs(reconstructed)), 
+                normalize(angle2(reconstructed)))
+            print(propagated.shape, reconstructed.shape)
 
             propagation_array = get_propagation_array(shape, globalmin)
             propagated = masked_spectrum * propagation_array
-            reconstructed = get_idft(propagated)
+            reconstructed = get_shifted_idft(propagated)
             showimage(normalize(np.abs(reconstructed)), 
-                normalize(np.arctan2(reconstructed.real,
-                reconstructed.imag)))
+                normalize(angle2(reconstructed)))
             print globalmin, "\n"
 
     return 0

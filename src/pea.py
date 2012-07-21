@@ -23,6 +23,8 @@ DY = 8.46e-6
 K = tau / LAMBDA # wave number
 EPSILON = 1e-16
 
+def angle2(array):
+    return np.arctan2(array.real, array.imag)
 
 def get_auto_mask(spectrum, softness=0, radious_scale=1, zero_scale=1,
         cuttop=0):
@@ -109,12 +111,15 @@ def get_pea(hologram, distance, cos_alpha=EPSILON, cos_beta=EPSILON,
 
 @cache.hybrid(reset=0)
 def get_propagation_array(shape, distance):
-    maxrow = shape[0] / 2.
-    maxcol = shape[1] / 2.
+    rows, cols = shape
+    maxrow = rows / 2.
+    maxcol = cols / 2.
     minrow, mincol = -maxrow, -maxcol
     row, col = np.ogrid[minrow:maxrow:1, mincol:maxcol:1]
-    phase_correction_factor = K * sqrt(1 - (LAMBDA * 232.7920143 * row) ** 2
-        - (LAMBDA * 230.8658393 * col) ** 2)
+    frow = 1. / (rows * DX) 
+    fcol = 1. / (cols * DY)
+    phase_correction_factor = K * sqrt(1 - (LAMBDA * frow * row) ** 2
+        - (LAMBDA * fcol * col) ** 2)
     propagation_array = exp(1j * phase_correction_factor * distance)
     return propagation_array
 
