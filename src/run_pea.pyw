@@ -15,12 +15,10 @@ from dft import get_shifted_dft, get_shifted_idft
 from image import equalize, imread, normalize, imwrite, get_intensity
 from image import evenshape
 from pea import calculate_director_cosines, get_ref_beam, get_propagation_array
-from pea import get_auto_mask
+from pea import get_auto_mask, angle2
 from ranges import frange
 from unwrap import unwrap_wls, unwrap_qg
 
-def angle2(array):
-    return arctan2(array.real, array.imag)
 
 def main():
     """
