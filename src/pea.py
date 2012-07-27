@@ -23,8 +23,19 @@ DY = 8.46e-6
 K = tau / LAMBDA # wave number
 EPSILON = 1e-16
 
+
 def angle2(array):
+    raise DeprecationWarning("use get_phase insteat")
     return np.arctan2(array.real, array.imag)
+
+
+def get_phase(array):
+    return np.arctan2(array.real, array.imag)
+
+
+def get_module(array):
+    return np.abs(array)
+
 
 def get_auto_mask(spectrum, softness=0, radious_scale=1, zero_scale=1,
         cuttop=0):
