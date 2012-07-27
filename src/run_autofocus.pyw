@@ -3,19 +3,19 @@
 
 import sys
 
-from scipy import misc, optimize, stats
+from scipy import misc, optimize
 import matplotlib.pyplot as plt
 import numpy as np
 
 from automask import get_mask
+from autofocus import guess_focus_distance
 from autopipe import showimage
 from dft import get_shifted_dft, get_shifted_idft
 from image import imread, normalize, get_intensity, equalize
 from pea import get_auto_mask, generic_minimizer, angle2
-from pea import get_propagation_array, get_distance
+from pea import get_propagation_array
 from ranges import frange
 import cache
-#from fresnel import get_chirp, get_wrapped_formula_array
 
 
 class Methods(list):
