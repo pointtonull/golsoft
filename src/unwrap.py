@@ -18,6 +18,7 @@ def unwrap_wls(wrapped):
     Weighted least squares algoritm.
     The fastest one but extremly innacurate.
     TODO: implement weights!!
+    TODO: try to use lasso method
     """
     rows, cols = wrapped.shape
 
@@ -46,7 +47,7 @@ def unwrap_wls(wrapped):
     return unwrapped
 
 
-def unwrap_qg(phase, quality_map, equalize=True, margin=5):
+def unwrap_qg(phase, quality_map):
     """
     Quality Guided Path Following unwrapping algoritm
     This algoritm uses the correlation array as quality map to guide the
@@ -74,9 +75,6 @@ def unwrap_qg(phase, quality_map, equalize=True, margin=5):
             yield pos - 1
         if row < rows:
             yield pos + 1
-
-    if equalize:
-        quality_map = image.equalize(quality_map)
 
     phase = phase.ravel()
     adder = {}

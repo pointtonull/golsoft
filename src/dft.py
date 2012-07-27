@@ -66,4 +66,4 @@ def get_idct(*args, **kwargs):
     """
     Performs the inverse discrete cosine transform
     """
-    return get_idct(*args, **kwargs)
+    return cv2.idct(*args, **kwargs)
