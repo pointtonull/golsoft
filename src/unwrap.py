@@ -56,8 +56,9 @@ def unwrap_qg(phase, quality_map):
 
     Returns the unwrapped phase.
     """
-    
+
     assert phase.shape == quality_map.shape
+    phase = phase.copy()
     shape = phase.shape
     rows, cols = shape
 
