@@ -4,7 +4,6 @@
 from bisect import insort
 
 from blist import blist
-import image
 import numpy as np
 
 from dft import get_sdct, get_idct
@@ -16,7 +15,7 @@ tau = 2 * pi
 def unwrap_wls(wrapped):
     """
     Weighted least squares algoritm.
-    The fastest one but extremly innacurate.
+    The fastest one but is innacurate.
     TODO: implement weights!!
     TODO: try to use lasso method
     """
@@ -57,8 +56,9 @@ def unwrap_qg(phase, quality_map):
 
     Returns the unwrapped phase.
     """
-    
+
     assert phase.shape == quality_map.shape
+    phase = phase.copy()
     shape = phase.shape
     rows, cols = shape
 
@@ -97,6 +97,24 @@ def unwrap_qg(phase, quality_map):
 
     phase = phase.reshape(shape) * tau
     return phase
+
+
+def unwrap_iqg(phase, quality_map):
+    """
+    Quality Guided Path Following unwrapping algoritm
+    This algoritm uses the correlation array as quality map to guide the
+    unwrapping path avoiding the tricky zones.
+
+    Note: Correlation as also know as module image.
+
+    Esta es una versión modificadia que luego de escoger el píxel a
+    modoficar y de calcular su distancia evalua la certeza del salto o
+    continuidad. Si hay mucha incertidumbre disminuye la confianza en el
+    punto y posterga su evaluación.
+
+    Returns the unwrapped phase.
+    """
+    pass
 
 
 """
