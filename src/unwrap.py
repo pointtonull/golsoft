@@ -4,7 +4,6 @@
 from bisect import insort
 
 from blist import blist
-import image
 import numpy as np
 
 from dft import get_sdct, get_idct
