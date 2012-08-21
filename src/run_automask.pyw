@@ -15,6 +15,7 @@ import sys
 def main():
 
     alone = [True, False]
+    r_scale = 0
     radius_factor = [2,  3]
     softness = [2, 4]
     hole_len = [4, 8]
