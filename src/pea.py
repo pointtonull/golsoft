@@ -220,3 +220,61 @@ def calculate_director_cosines(hologram):
     cos_beta = freq_rows * LAMBDA
 
     return cos_alpha, cos_beta
+
+
+
+class PEA(object):
+
+    filename = Datum(0)
+    @Depends(filename)
+    def hologram(self):
+        print("reading")
+        return self.filename + 1
+    
+    @Depends(hologram)
+    def spectrum(self):
+        print("dft")
+        return self.hologram + 1
+
+    order_scale = Datum(0.8)
+    zero_scale = Datum(1.2)
+    @Depends(spectrum, order_scale, zero_scale)
+    def masked_spectrum(self):
+        print("enmasking")
+        return self.spectrum + 1
+
+    @Depends(spectrum)
+    def distance(self):
+        print("focusing")
+        return self.spectrum + 1
+
+    @Depends(distance)
+    def propagation(self):
+        print("creating propagation")
+        return self.distance + 1
+
+    @Depends(masked_spectrum, propagation)
+    def propagated(self):
+        print("propagating")
+        return max(self.masked_spectrum, self.propagation) + 1
+
+    @Depends(propagated)
+    def reconstructed(self):
+        print("idft")
+        return self.propagated + 1
+
+    @Depends(reconstructed)
+    def module(self):
+        print("module")
+        return self.reconstructed + 1
+
+    @Depends(reconstructed)
+    def phase(self):
+        print("phase")
+        return self.reconstructed + 1
+
+    unwrapper = Datum("quality guided")
+    @Depends(phase, unwrapper)
+    def unwrapped_phase(self):
+        print("unwrapping")
+        return self.phase + 1
