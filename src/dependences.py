@@ -2,8 +2,48 @@
 #-*- coding: UTF-8 -*-
 
 
+"""
+Toolbox to write hieralchical pipes. Is intented to realize the smallest
+quantity of operations:
+
+    * when a datum is updated all their dependents are deprecated
+
+Datum is the base class that handle dependences, and propagate deprecation
+    signals.
+Depends is a helper decorator that enable easy creation of methods with
+    Daturm ready interface.
+
+
+The process must be a new-style class, e.g.:
+
+    from dependences import Datum, Depends
+
+    Class Salary(object):
+
+        base = Datum(700)
+        @Dependences(base)
+        def retentions(self):
+            return self.base * .2
+
+        antiquity = Datum(5)
+        @Dependences(base, antiquity)
+        def gross(self):
+            return self.base + self.base * .05 * self.antiquity
+
+        childs = Datum(3)
+        @Dependences(base, childs)
+        def statements(self):
+            return self.base * .15 + self.childs * 60
+
+        @Dependences(gross, retentions, statements)
+        def net(self):
+            return self.gross - self.retentions + self.statements
+
+"""
+
+
 class Datum(property):
-    def __init__(self, value):
+    def __init__(self, value=None):
         """
         Base class that allow the construction of complex hieralchical 
         proccess throgh the iteraction of simple elements and using a clear
@@ -12,7 +52,7 @@ class Datum(property):
         self.dependences = set()
         self.dependents = set()
         self.value = value
-        self.updated = True
+        self.updated = value is not None
         property.__init__(self, self.getter, self.setter)
 
 
@@ -85,8 +125,12 @@ class Depends:
         self.dependences = dependences
     
     def __call__(self, updater):
+        """
+        Decorator trick that setups the datum updater and dependencies.
+        """
         datum = Datum(None)
         datum.deprecate()
-        datum.set_property(updater, *self.dependences)
+        datum.set_updater(updater)
+        datum.set_dependences(*self.dependences)
         return datum
 
