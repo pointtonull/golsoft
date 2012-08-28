@@ -10,7 +10,7 @@ View run_automask to see a complete example.
 #from autopipe import showimage
 #from image import normalize
 from collections import defaultdict
-from image import get_centered
+from image import get_centered, get_intensity
 from scipy.ndimage import geometric_transform
 from scipy.ndimage import maximum_filter1d, rotate
 import matplotlib.pyplot as plt
@@ -174,6 +174,43 @@ def get_holed_window(winfunc, length, holelen=0):
             print(length, holelen)
             raise
     return window
+
+
+def get_auto_mask(spectrum, softness=1, radious_scale=1, zero_scale=1,
+        cuttop=0):
+    """
+    Try to filter spurious data out.
+    """
+    shape = spectrum.shape
+    intensity = get_intensity(spectrum)
+
+    circles = sorted(get_circles(intensity, 3, 50))
+    virtual_order, real_order, zero_order = circles
+    peak_height, peak_center, peak_radious = real_order
+
+    peak_radious = min([(abs(shape[0] / 3.5 - peak[2]), peak[2])
+        for peak in circles])[1]
+
+    windowmaker = lambda x: np.kaiser(x, softness)
+    window = get_holed_window(windowmaker, peak_radious * radious_scale)
+    mask = get_mask(shape, window, peak_center)
+
+    zerowindow = get_holed_window(windowmaker, peak_radious * zero_scale)
+    zeromask = 1 - get_mask(shape, zerowindow, zero_order[1])
+    mask *= zeromask
+
+    masked_intensity = mask * intensity
+
+    cutoff = masked_intensity > (masked_intensity.max()
+        - masked_intensity.ptp() * cuttop)
+    mask[cutoff] = 0
+    masked = mask * spectrum
+
+    centered = get_centered(intensity, peak_center)
+    masked = get_centered(masked, peak_center)
+    mask = get_centered(mask, peak_center)
+
+    return mask, masked, centered
 
 
 

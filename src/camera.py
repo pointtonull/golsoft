@@ -9,7 +9,8 @@ import pygame
 
 from dft import get_shifted_idft, get_shifted_dft
 from image import normalize, equalize
-from pea import get_auto_mask, get_propagation_array
+from automask import get_auto_mask
+from propagation import  get_propagation_array
 
 
 
@@ -65,7 +66,7 @@ def main():
     pygame.surfarray.use_arraytype("numpy")
 
     cams = camera.list_cameras()
-    cam = camera.Camera(cams[0])
+    cam = camera.Camera(cams[0], (360, 296))
     cam.start()
     fps = 25.0
     window = pygame.display.set_mode((640, 480), 0, 8)
