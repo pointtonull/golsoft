@@ -14,12 +14,14 @@ from traitsui.api import View, Item, Group, HSplit
 from traitsui.menu import OKButton
 import numpy as np
 
+from autofocus import guess_focus_distance
+from automask import get_auto_mask
 from dft import get_shifted_idft, get_shifted_dft
 from image import equalize, imread, normalize
-from pea import calculate_director_cosines, get_ref_beam, get_auto_mask
-from pea import get_propagation_array, get_phase, get_module
+from pea import calculate_director_cosines, get_refbeam
+from pea import get_phase, get_module
+from propagation import get_propagation_array
 from unwrap import unwrap_qg, unwrap_wls
-from autofocus import guess_focus_distance
 
 
 class PEA(HasTraits):
@@ -50,7 +52,7 @@ class PEA(HasTraits):
 
 
     ## OVERVIEW ##
-    filename = File(filter=[u"*.raw"])
+    filename = File(filter=[u"*.*"])
     overview_vismode = Enum("input map", "spectrum", "module", "phase map",
         "unwrapped phase", "unwrapped phase map", label="Visualize")
 
@@ -87,7 +89,7 @@ class PEA(HasTraits):
         rep_type = "image"
         if vismode == "input map":
             array = self.hologram
-            color = "spectral"
+            color = "bone"
         elif vismode == "spectrum":
             array = normalize(self.mask) + equalize(self.centered_spectrum)
             color = "gist_stern"
@@ -192,7 +194,7 @@ class PEA(HasTraits):
     def update_ref_beam(self):
         if self.use_ref_beam:
             print("Updating reference beam")
-            self.ref_beam = get_ref_beam(self.hologram.shape, self.cos_alpha,
+            self.ref_beam = get_refbeam(self.hologram.shape, self.cos_alpha,
                 self.cos_beta)
             self.r_hologram = self.ref_beam * self.hologram
         else:

@@ -27,8 +27,8 @@ def unwrap_wls(wrapped):
     wrowdiff = np.mod(rowdiff + pi, tau) - pi
     wcoldiff = np.mod(coldiff + pi, tau) - pi
 
-    rhox = np.diff(np.concatenate((np.zeros((1, rows)), wrowdiff), 0), axis=0)
-    rhoy = np.diff(np.concatenate((np.zeros((cols, 1)), wcoldiff), 1), axis=1)
+    rhox = np.diff(np.concatenate((np.zeros((1, cols)), wrowdiff), 0), axis=0)
+    rhoy = np.diff(np.concatenate((np.zeros((rows, 1)), wcoldiff), 1), axis=1)
 
     rho = rhox + rhoy
     dct = get_sdct(rho)
@@ -93,6 +93,7 @@ def unwrap_qg(phase, quality_map):
         for pos in get_neighbors(pixel):
             if pos not in adder:
                 adder[pos] = phase[pixel]
+                print pos
                 insort(border, (quality_map[pos], pos))
 
     phase = phase.reshape(shape) * tau

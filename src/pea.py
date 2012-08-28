@@ -6,14 +6,17 @@ Simple implementation of the Angular Spectrum Method to reconstruct lensless
 holograms
 """
 
-from autopipe import showimage
-from automask import get_circles, get_holed_window, get_mask
-from dft import get_shifted_dft, get_idft
-from image import equalize, get_intensity, get_centered, normalize, logscale
-from numpy import exp, cos, sqrt, sin
+from numpy import exp, sqrt
 from scipy import optimize
-import cache
 import numpy as np
+
+from automask import get_circles, get_holed_window, get_mask
+from autofocus import guess_focus_distance
+from dependences import Datum, Depends
+from dft import get_shifted_dft, get_idft
+from image import get_intensity, get_centered, imread
+import cache
+
 
 
 tau = 6.283185307179586
@@ -37,44 +40,9 @@ def get_module(array):
     return np.abs(array)
 
 
-def get_auto_mask(spectrum, softness=0, radious_scale=1, zero_scale=1,
-        cuttop=0):
-    """
-    Try to filter spurious data out.
-    """
-    shape = spectrum.shape
-    intensity = get_intensity(spectrum)
-
-    circles = sorted(get_circles(intensity, 3, 50))
-    virtual_order, real_order, zero_order = circles
-    peak_height, peak_center, peak_radious = real_order
-
-    peak_radious = min([(abs(shape[0] / 3.5 - peak[2]), peak[2])
-        for peak in circles])[1]
-
-    windowmaker = lambda x: np.kaiser(x, softness)
-    window = get_holed_window(windowmaker, peak_radious * radious_scale)
-    mask = get_mask(shape, window, peak_center)
-
-    zerowindow = get_holed_window(windowmaker, peak_radious * zero_scale)
-    zeromask = 1 - get_mask(shape, zerowindow, zero_order[1])
-    mask *= zeromask
-
-    masked_intensity = mask * intensity
-
-    cutoff = masked_intensity > (masked_intensity.max()
-        - masked_intensity.ptp() * cuttop)
-    mask[cutoff] = 0
-    masked = mask * spectrum
-
-    centered = get_centered(intensity, peak_center)
-    masked = get_centered(masked, peak_center)
-    mask = get_centered(mask, peak_center)
-
-    return mask, masked, centered
 
 
-def get_ref_beam(shape, cos_alpha=EPSILON, cos_beta=EPSILON):
+def get_refbeam(shape, cos_alpha=EPSILON, cos_beta=EPSILON):
     """
     Generate a reference beam array given the shape of the hologram and the
     directors angles
@@ -101,7 +69,7 @@ def get_pea(hologram, distance, cos_alpha=EPSILON, cos_beta=EPSILON,
     """
 
     shape = hologram.shape
-    ref_beam = get_ref_beam(shape, cos_alpha, cos_beta)
+    ref_beam = get_refbeam(shape, cos_alpha, cos_beta)
     rhologram = ref_beam * hologram
 
     frh = get_shifted_dft(rhologram)
@@ -120,36 +88,20 @@ def get_pea(hologram, distance, cos_alpha=EPSILON, cos_beta=EPSILON,
     return reconstructed
  
 
-@cache.hybrid(reset=0)
-def get_propagation_array(shape, distance):
-    rows, cols = shape
-    maxrow = rows / 2.
-    maxcol = cols / 2.
-    minrow, mincol = -maxrow, -maxcol
-    row, col = np.ogrid[minrow:maxrow:1, mincol:maxcol:1]
-    frow = 1. / (rows * DX) 
-    fcol = 1. / (cols * DY)
-    phase_correction_factor = K * sqrt(1 - (LAMBDA * frow * row) ** 2
-        - (LAMBDA * fcol * col) ** 2)
-    propagation_array = exp(1j * phase_correction_factor * distance)
-    return propagation_array
-
-
 def get_distance(point1, point2):
     distance = ((point1[0] - point2[0]) ** 2
         + (point1[1] - point2[1]) ** 2) ** .5
     return distance
 
 
-def get_peak_coords(hologram):
-    """
-    """
-    shape = hologram.shape
+def get_peak_coords(spectrum):
+    # TODO: must select by position not by intensity
+    shape = spectrum.shape
     center = [dim / 2. for dim in shape]
 
-    dft = get_intensity(get_shifted_dft(hologram.real))
+    intensity = get_intensity(spectrum)
     circles = [(-get_distance(center, circle[1]), circle[0], circle[1])
-        for circle in get_circles(dft, 2, 20)]
+        for circle in get_circles(intensity, 2, 20)]
     circles.sort()
     peak = circles[0][2]
     peaks_row = (peak[0] - center[0]) / float(center[0])
@@ -159,60 +111,17 @@ def get_peak_coords(hologram):
 
 @cache.hybrid(reset=0)
 def get_refbeam_peak_coords(alpha, beta):
-    ref_beam = get_ref_beam((256, 256), alpha, beta)
+    ref_beam = get_refbeam((256, 256), alpha, beta)
     row, col = get_peak_coords(ref_beam)
     return row, col
 
 
 @cache.hybrid(reset=0)
-def guess_director_cosines(hologram):
-    """
-    guess the optimums directors angles for the given hologram
-    """
-    ref_peak = get_peak_coords(hologram)
-    print("ref_peak: %4.3f, %4.3f" % ref_peak)
-
-    def get_fitness(args):
-        """
-        Learning fitness function
-        """
-        new_peak = get_refbeam_peak_coords(*args)
-        distance = get_distance(ref_peak, new_peak)
-        return distance
-
-    xinit = np.array([tau / 4, tau /4])
-    xend = generic_minimizer(get_fitness, xinit)
-    return xend[0], xend[1]
-
-
-def generic_minimizer(fitness_func, initial_guess, optimizers=None):
-    """
-    A common interface to various minimization algorithms
-    """
-
-    if optimizers == None:
-        optimizers = [
-            optimize.fmin, # 66
-            optimize.fmin_powell,
-        ]
-
-    best_result = None
-    for optimizer in optimizers:
-        xend = optimizer(fitness_func, initial_guess, disp=False)
-        last_result = fitness_func(xend)
-        if best_result is None or last_result < best_result:
-            best_guess = xend
-            best_result = last_result
-
-    return best_guess
-
-
-@cache.hybrid(reset=0)
-def calculate_director_cosines(hologram):
+def calculate_director_cosines(spectrum):
     """
     Calculate the director cosines using the spectral proyection formula
     """
-    peak = get_peak_coords(hologram)
+    peak = get_peak_coords(spectrum)
     freq_rows, freq_cols = peak
     freq_rows /= 2 * DY
     freq_cols /= 2 * DX
@@ -225,38 +134,107 @@ def calculate_director_cosines(hologram):
 
 class PEA(object):
 
-    filename = Datum(0)
+    filename = Datum()
     @Depends(filename)
+    def image(self):
+        return imread(self.filename)
+
+
+    @Depends(image)
+    def ispectrum(self):
+        return get_shifted_dft(self.image)
+
+
+    use_autocosines = Datum(True)
+    user_cosines = Datum((0, 0))
+    @Depends(ispectrum, use_autocosines, user_cosines)
+    def cosines(self):
+        if self.use_autocosines:
+            return calculate_director_cosines(self.ispectrum)
+        else:
+            return self.user_cosines
+
+
+    @Depends(image, cosines)
+    def refbeam(self):
+        return get_refbeam(self.image.shape, *self.cosines)
+
+
+    use_refbeam = Datum(False)
+    @Depends(image, refbeam, use_refbeam)
     def hologram(self):
-        print("reading")
-        return self.filename + 1
-    
-    @Depends(hologram)
+        if self.use_refbeam:
+            return self.refbeam * self.image
+        else:
+            return self.image
+
+
+    @Depends(image, cosines)
     def spectrum(self):
-        print("dft")
-        return self.hologram + 1
+        if self.use_refbeam:
+            return get_shifted_dft(self.hologram)
+        else:
+            return self.ispectrum
 
+
+    softness = Datum(0)
     order_scale = Datum(0.8)
+    use_zeromask = Datum(True)
     zero_scale = Datum(1.2)
-    @Depends(spectrum, order_scale, zero_scale)
-    def masked_spectrum(self):
-        print("enmasking")
-        return self.spectrum + 1
+    use_cuttop = Datum(False)
+    cuttop = Datum(0.005)
+    @Depends(spectrum, order_scale, use_zeromask, zero_scale, softness,
+        use_cuttop, cuttop)
+    def masking(self):
+        zero_scale = self.zero_scale if self.use_zeromask else 0
+        cuttop = self.cuttop if self.use_cuttop else 0
+        mask, masked, centered = get_auto_mask(self.spectrum,
+            self.softness, self.order_scale, zero_scale, cuttop)
+        return mask, masked, centered
 
-    @Depends(spectrum)
+
+    @Depends(masking)
+    def mask(self):
+        return self.masking[0]
+
+
+    @Depends(masking)
+    def masked_spectrum(self):
+        return self.masking[1]
+
+
+    @Depends(masking)
+    def centered_spectrum(self):
+        return self.masking[2]
+
+
+    @Depends(ispectrum)
+    def auto_distance(self):
+        mask, masked, centered = get_auto_mask(self.ispectrum)
+        distance = guess_focus_distance(masked)
+        return distance
+
+
+    use_autofocus = Datum(True)
+    user_distance = Datum(0.05)
+    @Depends(use_autofocus, user_distance, auto_distance)
     def distance(self):
-        print("focusing")
-        return self.spectrum + 1
+        if self.use_autofocus:
+            return self.auto_distance
+        else:
+            return self.user_distance
+
 
     @Depends(distance)
     def propagation(self):
-        print("creating propagation")
         return self.distance + 1
+
 
     @Depends(masked_spectrum, propagation)
     def propagated(self):
         print("propagating")
         return max(self.masked_spectrum, self.propagation) + 1
+
 
     @Depends(propagated)
     def reconstructed(self):
