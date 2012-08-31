@@ -111,13 +111,6 @@ def get_peak_coords(spectrum):
 
 
 @cache.hybrid(reset=0)
-def get_refbeam_peak_coords(alpha, beta):
-    ref_beam = get_refbeam((256, 256), alpha, beta)
-    row, col = get_peak_coords(ref_beam)
-    return row, col
-
-
-@cache.hybrid(reset=0)
 def calculate_director_cosines(spectrum):
     """
     Calculate the director cosines using the spectral proyection formula
