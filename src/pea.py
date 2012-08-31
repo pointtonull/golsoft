@@ -128,14 +128,20 @@ def calculate_director_cosines(spectrum):
 
 class PEA(object):
 
+    def __init__(self, filename=None):
+        if filename:
+            self.filename = filename
+
     filename = Datum()
     @Depends(filename)
     def image(self):
-        return imread(self.filename)
+        print("Loading image")
+        return imread(self.filename, True)
 
 
     @Depends(image)
     def ispectrum(self):
+        print("DFT(image)")
         return get_shifted_dft(self.image)
 
 
@@ -143,6 +149,7 @@ class PEA(object):
     user_cosines = Datum((0, 0))
     @Depends(ispectrum, use_autocosines, user_cosines)
     def cosines(self):
+        print("Director cosines")
         if self.use_autocosines:
             return calculate_director_cosines(self.ispectrum)
         else:
@@ -151,12 +158,14 @@ class PEA(object):
 
     @Depends(image, cosines)
     def refbeam(self):
+        print("Calculating refbeam")
         return get_refbeam(self.image.shape, *self.cosines)
 
 
     use_refbeam = Datum(False)
     @Depends(image, refbeam, use_refbeam)
     def hologram(self):
+        print("R-Hologram")
         if self.use_refbeam:
             return self.refbeam * self.image
         else:
@@ -165,6 +174,7 @@ class PEA(object):
 
     @Depends(image, cosines)
     def spectrum(self):
+        print("DFT(R-Hologram)")
         if self.use_refbeam:
             return get_shifted_dft(self.hologram)
         else:
@@ -180,6 +190,7 @@ class PEA(object):
     @Depends(spectrum, order_scale, use_zeromask, zero_scale, softness,
         use_cuttop, cuttop)
     def masking(self):
+        print("Masking")
         zero_scale = self.zero_scale if self.use_zeromask else 0
         cuttop = self.cuttop if self.use_cuttop else 0
         mask, masked, centered = get_auto_mask(self.spectrum,
@@ -189,21 +200,25 @@ class PEA(object):
 
     @Depends(masking)
     def mask(self):
+        print("Mask")
         return self.masking[0]
 
 
     @Depends(masking)
     def masked_spectrum(self):
+        print("Masked spectrum")
         return self.masking[1]
 
 
     @Depends(masking)
     def centered_spectrum(self):
+        print("Centered spectrum")
         return self.masking[2]
 
 
     @Depends(ispectrum)
     def auto_distance(self):
+        print("Auto distance")
         mask, masked, centered = get_auto_mask(self.ispectrum)
         distance = guess_focus_distance(masked)
         return distance
