@@ -12,17 +12,17 @@ pi = np.pi
 tau = 2 * pi
 
 
-def unwrap_wls(wrapped):
+def unwrap_wls(phase, quality_map=None):
     """
     Weighted least squares algoritm.
     The fastest one but is innacurate.
     TODO: implement weights!!
     TODO: try to use lasso method
     """
-    rows, cols = wrapped.shape
+    rows, cols = phase.shape
 
-    rowdiff = np.concatenate((np.diff(wrapped, 1, 0), np.zeros((1, cols))), 0)
-    coldiff = np.concatenate((np.diff(wrapped, 1, 1), np.zeros((rows, 1))), 1)
+    rowdiff = np.concatenate((np.diff(phase, 1, 0), np.zeros((1, cols))), 0)
+    coldiff = np.concatenate((np.diff(phase, 1, 1), np.zeros((rows, 1))), 1)
 
     wrowdiff = np.mod(rowdiff + pi, tau) - pi
     wcoldiff = np.mod(coldiff + pi, tau) - pi
