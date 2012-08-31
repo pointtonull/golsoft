@@ -108,11 +108,10 @@ class Datum(property):
         Uptades self value
         Deprecates dependents
         """
-        if self.value != value:
-            self.value = value
+        self.value = value
 
-            for dependent in self.dependents:
-                child.deprecate()
+        for dependent in self.dependents:
+            dependent.deprecate()
         self.updated = True
         return value
 

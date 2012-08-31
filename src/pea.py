@@ -6,15 +6,16 @@ Simple implementation of the Angular Spectrum Method to reconstruct lensless
 holograms
 """
 
-from numpy import exp, sqrt
-from scipy import optimize
+from numpy import exp
 import numpy as np
 
-from automask import get_circles, get_holed_window, get_mask
 from autofocus import guess_focus_distance
+from automask import get_circles, get_auto_mask
 from dependences import Datum, Depends
-from dft import get_shifted_dft, get_idft
-from image import get_intensity, get_centered, imread
+from dft import get_shifted_dft, get_idft, get_shifted_idft
+from propagation import get_propagation_array
+from image import get_intensity, imread
+from unwrap import unwrap_wls
 import cache
 
 
@@ -110,13 +111,6 @@ def get_peak_coords(spectrum):
 
 
 @cache.hybrid(reset=0)
-def get_refbeam_peak_coords(alpha, beta):
-    ref_beam = get_refbeam((256, 256), alpha, beta)
-    row, col = get_peak_coords(ref_beam)
-    return row, col
-
-
-@cache.hybrid(reset=0)
 def calculate_director_cosines(spectrum):
     """
     Calculate the director cosines using the spectral proyection formula
@@ -134,14 +128,20 @@ def calculate_director_cosines(spectrum):
 
 class PEA(object):
 
+    def __init__(self, filename=None):
+        if filename:
+            self.filename = filename
+
     filename = Datum()
     @Depends(filename)
     def image(self):
-        return imread(self.filename)
+        print("Loading image")
+        return imread(self.filename, True)
 
 
     @Depends(image)
     def ispectrum(self):
+        print("DFT(image)")
         return get_shifted_dft(self.image)
 
 
@@ -149,6 +149,7 @@ class PEA(object):
     user_cosines = Datum((0, 0))
     @Depends(ispectrum, use_autocosines, user_cosines)
     def cosines(self):
+        print("Director cosines")
         if self.use_autocosines:
             return calculate_director_cosines(self.ispectrum)
         else:
@@ -157,12 +158,14 @@ class PEA(object):
 
     @Depends(image, cosines)
     def refbeam(self):
+        print("Calculating refbeam")
         return get_refbeam(self.image.shape, *self.cosines)
 
 
     use_refbeam = Datum(False)
     @Depends(image, refbeam, use_refbeam)
     def hologram(self):
+        print("R-Hologram")
         if self.use_refbeam:
             return self.refbeam * self.image
         else:
@@ -171,6 +174,7 @@ class PEA(object):
 
     @Depends(image, cosines)
     def spectrum(self):
+        print("DFT(R-Hologram)")
         if self.use_refbeam:
             return get_shifted_dft(self.hologram)
         else:
@@ -186,6 +190,7 @@ class PEA(object):
     @Depends(spectrum, order_scale, use_zeromask, zero_scale, softness,
         use_cuttop, cuttop)
     def masking(self):
+        print("Masking")
         zero_scale = self.zero_scale if self.use_zeromask else 0
         cuttop = self.cuttop if self.use_cuttop else 0
         mask, masked, centered = get_auto_mask(self.spectrum,
@@ -195,21 +200,25 @@ class PEA(object):
 
     @Depends(masking)
     def mask(self):
+        print("Mask")
         return self.masking[0]
 
 
     @Depends(masking)
     def masked_spectrum(self):
+        print("Masked spectrum")
         return self.masking[1]
 
 
     @Depends(masking)
     def centered_spectrum(self):
+        print("Centered spectrum")
         return self.masking[2]
 
 
     @Depends(ispectrum)
     def auto_distance(self):
+        print("Auto distance")
         mask, masked, centered = get_auto_mask(self.ispectrum)
         distance = guess_focus_distance(masked)
         return distance
@@ -219,40 +228,42 @@ class PEA(object):
     user_distance = Datum(0.05)
     @Depends(use_autofocus, user_distance, auto_distance)
     def distance(self):
+        print("Distance")
         if self.use_autofocus:
             return self.auto_distance
         else:
             return self.user_distance
 
 
-    @Depends(distance)
+    @Depends(spectrum, distance)
     def propagation(self):
-        return self.distance + 1
+        print("Propagation")
+        return get_propagation_array(self.spectrum.shape, self.distance)
 
 
     @Depends(masked_spectrum, propagation)
     def propagated(self):
-        print("propagating")
-        return max(self.masked_spectrum, self.propagation) + 1
+        print("Propagated")
+        return self.masked_spectrum * self.propagation
 
 
     @Depends(propagated)
     def reconstructed(self):
-        print("idft")
-        return self.propagated + 1
+        print("IDFT(Propagated)")
+        return get_shifted_idft(self.propagated)
 
     @Depends(reconstructed)
     def module(self):
-        print("module")
-        return self.reconstructed + 1
+        print("Module")
+        return get_module(self.reconstructed)
 
     @Depends(reconstructed)
     def phase(self):
-        print("phase")
-        return self.reconstructed + 1
+        print("Phase")
+        return get_phase(self.reconstructed)
 
-    unwrapper = Datum("quality guided")
-    @Depends(phase, unwrapper)
+    unwrapper = Datum(unwrap_wls)
+    @Depends(phase, module, unwrapper)
     def unwrapped_phase(self):
-        print("unwrapping")
-        return self.phase + 1
+        print("Unwrapped phase")
+        return self.unwrapper(self.phase, self.module)

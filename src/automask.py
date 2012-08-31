@@ -176,7 +176,7 @@ def get_holed_window(winfunc, length, holelen=0):
     return window
 
 
-def get_auto_mask(spectrum, softness=1, radious_scale=1, zero_scale=1,
+def get_auto_mask(spectrum, softness=0, radious_scale=.8, zero_scale=1.3,
         cuttop=0):
     """
     Try to filter spurious data out.

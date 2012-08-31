@@ -313,7 +313,7 @@ class PEA(HasTraits):
     use_propagation = Bool(True)
 
     btn_guess_focus = Button("Guess focus distance")
-    distance = Range(-0.20, 0.20, 0., mode="xslider", enter_set=True,
+    distance = Range(-0.30, 0.30, 0., mode="xslider", enter_set=True,
         auto_set=False)
     propagation_vismode = Enum("module", "phase", label="Visualize")
 
