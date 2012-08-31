@@ -228,40 +228,42 @@ class PEA(object):
     user_distance = Datum(0.05)
     @Depends(use_autofocus, user_distance, auto_distance)
     def distance(self):
+        print("Distance")
         if self.use_autofocus:
             return self.auto_distance
         else:
             return self.user_distance
 
 
-    @Depends(distance)
+    @Depends(spectrum, distance)
     def propagation(self):
-        return self.distance + 1
+        print("Propagation")
+        return get_propagation_array(self.spectrum.shape, self.distance)
 
 
     @Depends(masked_spectrum, propagation)
     def propagated(self):
-        print("propagating")
-        return max(self.masked_spectrum, self.propagation) + 1
+        print("Propagated")
+        return self.masked_spectrum * self.propagation
 
 
     @Depends(propagated)
     def reconstructed(self):
-        print("idft")
-        return self.propagated + 1
+        print("IDFT(Propagated)")
+        return get_shifted_idft(self.propagated)
 
     @Depends(reconstructed)
     def module(self):
-        print("module")
-        return self.reconstructed + 1
+        print("Module")
+        return get_module(self.reconstructed)
 
     @Depends(reconstructed)
     def phase(self):
-        print("phase")
-        return self.reconstructed + 1
+        print("Phase")
+        return get_phase(self.reconstructed)
 
-    unwrapper = Datum("quality guided")
-    @Depends(phase, unwrapper)
+    unwrapper = Datum(unwrap_wls)
+    @Depends(phase, module, unwrapper)
     def unwrapped_phase(self):
-        print("unwrapping")
-        return self.phase + 1
+        print("Unwrapped phase")
+        return self.unwrapper(self.phase, self.module)
