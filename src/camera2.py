@@ -7,12 +7,13 @@ import time
 
 def save_image(cap, cant=1):
     images = []
+    # TODO: debe asegurarse de tomar %cant imágenes distintas
     for number in xrange(cant):
         image = cv.QueryFrame(cap)
-        filename = "cap-%f.png" % time.time()
+        filename = "cap-%f.ppm" % time.time()
         images.append((filename, image))
-    for filename, image in images:
         cv.SaveImage(filename, image)
+        time.sleep(0.0)
         yield filename
 
 
@@ -20,6 +21,8 @@ def save_image(cap, cant=1):
 def main():
     cap = cv.CaptureFromCAM(0)
     cv.NamedWindow("camera", cv.CV_WINDOW_NORMAL)
+    cv.SetCaptureProperty(cap, cv.CV_CAP_PROP_FRAME_WIDTH, 720)
+    cv.SetCaptureProperty(cap, cv.CV_CAP_PROP_FRAME_HEIGHT, 540)
     cols = int(cv.GetCaptureProperty(cap, cv.CV_CAP_PROP_FRAME_WIDTH))
     rows = int(cv.GetCaptureProperty(cap, cv.CV_CAP_PROP_FRAME_HEIGHT))
     grey = cv.CreateImage((cols, rows), 8, 1)
@@ -57,6 +60,7 @@ def main():
                 1245285, # e (block)
                 ):
                 equalize = not equalize
+                print("Equialize: %s" % equalize)
             elif key in ( # Exit
                 27, # ESC
                 1048603, # ESC
