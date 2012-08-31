@@ -1,69 +1,40 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
-import numpy as np
+import sys
 
-from traits.api import HasTraits, Str, Int, Regex, List, Instance, Enum
-from traits.api import on_trait_change
-from traits.api import Range
-from traitsui.api import View, VGroup, Item, ListEditor
-
-import pea
-
-class Filter(HasTraits):
-    name  = Str
-    function = Enum(dir(pea),
-        label="Function")
-    representation = List
-
-    traits_view = View(
-        'name',
-        'function',
-        'representation',
-#        width = 0.18,
-    )
+from autopipe import showimage
+from image import normalize
+from pea import PEA
 
 
-Cos = Filter(
-    name="Cos",
-    representation = ["normalize", "equalize", "phase"],
-)
+def main():
+    """
+    Le main rutine
+    """
+    filenames = sys.argv[1:]
 
-pipe = [
-    Cos,
-]
+    for filename in filenames:
+        print(filename)
+        pea = PEA(filename)
+        showimage(normalize(pea.image))
 
+        print("Using autofocus: %f" % pea.distance)
+        showimage(normalize(pea.phase))
+        showimage(normalize(pea.module))
+        showimage(normalize(pea.unwrapped_phase))
 
-class ListEditorNotebookSelectionDemo(HasTraits):
-    pipe = List(Filter)
-    selected = Instance(Filter)
-    index = Range(0, 7, mode='spinner')
+        print("Using manual focus")
+        pea.use_autofocus = False
+        for distance in (-.25, -.20, -.15, -.05, 0, .05, .15, .20, .25):
+            print("Distance: %f" % distance)
+            pea.user_distance = distance
+            showimage(normalize(pea.phase))
+            showimage(normalize(pea.module))
+            showimage(normalize(pea.unwrapped_phase))
 
-    traits_view = View(
-        Item('index'),
-        '_',
-        VGroup(
-            Item('pipe@',
-                  show_label = False,
-                  editor = ListEditor(
-                      use_notebook = True,
-                      deletable = True,
-                      selected = 'selected',
-                      export = 'DockWindowShell',
-                      page_name = '.name')
-            )
-        ),
-    )
-
-    @on_trait_change("selected")
-    def update_selector_spin(self, selected):
-        self.index = self.pipe.index(selected)
-
-    @on_trait_change("index")
-    def update_selected_tab(self, index):
-        self.selected = self.pipe[index]
+    return 0
 
 
 if __name__ == "__main__":
-    demo = ListEditorNotebookSelectionDemo(pipe=pipe)
-    demo.configure_traits()
+    exit(main())
