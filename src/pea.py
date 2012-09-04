@@ -41,51 +41,22 @@ def get_module(array):
 
 
 
-def get_refbeam(shape, cos_alpha=EPSILON, cos_beta=EPSILON):
+def get_refbeam(shape, cos_alpha, cos_beta, wavelength):
     """
     Generate a reference beam array given the shape of the hologram and the
     directors angles
     """
+    wavenumber = tau / wavelength
     maxrow = shape[0] / 2
     maxcol = shape[1] / 2
     minrow, mincol = -maxrow, -maxcol
     row, col = np.ogrid[minrow:maxrow:1., mincol:maxcol:1.]
 
-    ref_beam = exp(1j * K * (cos_alpha * col * DX + cos_beta * row * DY))
+    ref_beam = exp(1j * wavenumber * (cos_alpha * col * DX + cos_beta *
+        row * DY))
     
     return ref_beam
 
-
-def get_pea(hologram, distance, cos_alpha=EPSILON, cos_beta=EPSILON,
-        radious_scale=1, softness=1):
-    """
-    1. hologram x ref_beam
-    2. shifted_fft(1)
-    3. automask(2)
-    4. center(3)
-    5. propagation_factor_array(M) x 5
-    6. shifted_ifft(5)
-    """
-
-    shape = hologram.shape
-    ref_beam = get_refbeam(shape, cos_alpha, cos_beta)
-    rhologram = ref_beam * hologram
-
-    frh = get_shifted_dft(rhologram)
-    mask, masked, centered = get_auto_mask(get_intensity(frh), softness, 
-        radious_scale)
-    masked = frh * mask
-
-    maxrow = shape[0] / 2
-    maxcol = shape[1] / 2
-    minrow, mincol = -maxrow, -maxcol
-    row, col = np.ogrid[minrow:maxrow:1., mincol:maxcol:1.]
-    propagation_array = get_propagation_array(shape, distance)
-    propagated = propagation_array * masked
-
-    reconstructed = get_idft(propagated)
-    return reconstructed
- 
 
 def get_distance(point1, point2):
     distance = ((point1[0] - point2[0]) ** 2
