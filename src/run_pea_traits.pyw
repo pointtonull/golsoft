@@ -53,6 +53,8 @@ class PEA(HasTraits):
 
     ## OVERVIEW ##
     filename = File(filter=[u"*.*"])
+    wavelength_nm = Range(350, 800, 600, mode="xslider", enter_set=True,
+        auto_set=False)
     overview_vismode = Enum("input map", "spectrum", "module", "phase map",
         "unwrapped phase", "unwrapped phase map", label="Visualize")
 
@@ -65,6 +67,7 @@ class PEA(HasTraits):
 
     grp_datainput = Group(
         Item('filename'),
+        Item("wavelength_nm"),
         label="Input file",
         show_border=True,
     )
@@ -190,12 +193,12 @@ class PEA(HasTraits):
             self.cos_alpha, self.cos_beta = cos_alpha, cos_beta
 
 
-    @on_trait_change("cos_alpha, cos_beta, use_ref_beam")
+    @on_trait_change("cos_alpha, cos_beta, use_ref_beam, wavelength_nm")
     def update_ref_beam(self):
         if self.use_ref_beam:
             print("Updating reference beam")
             self.ref_beam = get_refbeam(self.hologram.shape, self.cos_alpha,
-                self.cos_beta)
+                self.cos_beta, wavelength_nm * 1e-9)
             self.r_hologram = self.ref_beam * self.hologram
         else:
             print("Not updating reference beam")
@@ -345,10 +348,10 @@ class PEA(HasTraits):
         self.distance = guess_focus_distance(self.masked_spectrum)
     
 
-    @on_trait_change("propagation_vismode, distance")
+    @on_trait_change("propagation_vismode, distance, wavelength_nm")
     def update_propagation(self):
         propagation_array = get_propagation_array(self.hologram.shape,
-            self.distance)
+            self.distance, self.wavelength_nm * 1e-9)
         self.propagated = propagation_array * self.masked_spectrum
         self.reconstructed = get_shifted_idft(self.propagated)
         self.module = get_module(self.reconstructed)
