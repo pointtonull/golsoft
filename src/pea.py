@@ -12,20 +12,18 @@ import numpy as np
 from autofocus import guess_focus_distance
 from automask import get_circles, get_auto_mask
 from dependences import Datum, Depends
-from dft import get_shifted_dft, get_idft, get_shifted_idft
-from propagation import get_propagation_array
+from dft import get_shifted_dft, get_shifted_idft
 from image import get_intensity, imread
+from propagation import get_propagation_array
 from unwrap import unwrap_wls
 import cache
 
 
 
-tau = 6.283185307179586
-LAMBDA = 6.328e-07 # wave length
+tau = 6.283185307179586 # twice times sexier than pi
+LAMBDA = 6.328e-07 # default red wavelength
 DX = 8.39e-6
 DY = 8.46e-6
-K = tau / LAMBDA # wave number
-EPSILON = 1e-16
 
 
 def angle2(array):
@@ -43,51 +41,22 @@ def get_module(array):
 
 
 
-def get_refbeam(shape, cos_alpha=EPSILON, cos_beta=EPSILON):
+def get_refbeam(shape, cos_alpha, cos_beta, wavelength):
     """
     Generate a reference beam array given the shape of the hologram and the
     directors angles
     """
+    wavenumber = tau / wavelength
     maxrow = shape[0] / 2
     maxcol = shape[1] / 2
     minrow, mincol = -maxrow, -maxcol
     row, col = np.ogrid[minrow:maxrow:1., mincol:maxcol:1.]
 
-    ref_beam = exp(1j * K * (cos_alpha * col * DX + cos_beta * row * DY))
+    ref_beam = exp(1j * wavenumber * (cos_alpha * col * DX + cos_beta *
+        row * DY))
     
     return ref_beam
 
-
-def get_pea(hologram, distance, cos_alpha=EPSILON, cos_beta=EPSILON,
-        radious_scale=1, softness=1):
-    """
-    1. hologram x ref_beam
-    2. shifted_fft(1)
-    3. automask(2)
-    4. center(3)
-    5. propagation_factor_array(M) x 5
-    6. shifted_ifft(5)
-    """
-
-    shape = hologram.shape
-    ref_beam = get_refbeam(shape, cos_alpha, cos_beta)
-    rhologram = ref_beam * hologram
-
-    frh = get_shifted_dft(rhologram)
-    mask, masked, centered = get_auto_mask(get_intensity(frh), softness, 
-        radious_scale)
-    masked = frh * mask
-
-    maxrow = shape[0] / 2
-    maxcol = shape[1] / 2
-    minrow, mincol = -maxrow, -maxcol
-    row, col = np.ogrid[minrow:maxrow:1., mincol:maxcol:1.]
-    propagation_array = get_propagation_array(shape, distance)
-    propagated = propagation_array * masked
-
-    reconstructed = get_idft(propagated)
-    return reconstructed
- 
 
 def get_distance(point1, point2):
     distance = ((point1[0] - point2[0]) ** 2
@@ -111,7 +80,7 @@ def get_peak_coords(spectrum):
 
 
 @cache.hybrid(reset=0)
-def calculate_director_cosines(spectrum):
+def calculate_director_cosines(spectrum, wavelength):
     """
     Calculate the director cosines using the spectral proyection formula
     """
@@ -119,8 +88,8 @@ def calculate_director_cosines(spectrum):
     freq_rows, freq_cols = peak
     freq_rows /= 2 * DY
     freq_cols /= 2 * DX
-    cos_alpha = freq_cols * LAMBDA
-    cos_beta = freq_rows * LAMBDA
+    cos_alpha = freq_cols * wavelength
+    cos_beta = freq_rows * wavelength
 
     return cos_alpha, cos_beta
 
@@ -156,10 +125,13 @@ class PEA(object):
             return self.user_cosines
 
 
-    @Depends(image, cosines)
+    wavelength = Datum(LAMBDA)
+    @Depends(image, cosines, wavelength)
     def refbeam(self):
         print("Calculating refbeam")
-        return get_refbeam(self.image.shape, *self.cosines)
+        cos_alpha, cos_beta = self.cosines
+        return get_refbeam(self.image.shape, cos_alpha, cos_beta,
+            self.wavelength)
 
 
     use_refbeam = Datum(False)
@@ -235,10 +207,11 @@ class PEA(object):
             return self.user_distance
 
 
-    @Depends(spectrum, distance)
+    @Depends(spectrum, distance, wavelength)
     def propagation(self):
         print("Propagation")
-        return get_propagation_array(self.spectrum.shape, self.distance)
+        return get_propagation_array(self.spectrum.shape, self.distance,
+            self.wavelength)
 
 
     @Depends(masked_spectrum, propagation)
