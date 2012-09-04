@@ -80,7 +80,7 @@ def get_peak_coords(spectrum):
 
 
 @cache.hybrid(reset=0)
-def calculate_director_cosines(spectrum):
+def calculate_director_cosines(spectrum, wavelength):
     """
     Calculate the director cosines using the spectral proyection formula
     """
@@ -88,8 +88,8 @@ def calculate_director_cosines(spectrum):
     freq_rows, freq_cols = peak
     freq_rows /= 2 * DY
     freq_cols /= 2 * DX
-    cos_alpha = freq_cols * LAMBDA
-    cos_beta = freq_rows * LAMBDA
+    cos_alpha = freq_cols * wavelength
+    cos_beta = freq_rows * wavelength
 
     return cos_alpha, cos_beta
 
@@ -125,10 +125,13 @@ class PEA(object):
             return self.user_cosines
 
 
-    @Depends(image, cosines)
+    wavelength = Datum(LAMBDA)
+    @Depends(image, cosines, wavelength)
     def refbeam(self):
         print("Calculating refbeam")
-        return get_refbeam(self.image.shape, *self.cosines)
+        cos_alpha, cos_beta = self.cosines
+        return get_refbeam(self.image.shape, cos_alpha, cos_beta,
+            self.wavelength)
 
 
     use_refbeam = Datum(False)
@@ -204,10 +207,11 @@ class PEA(object):
             return self.user_distance
 
 
-    @Depends(spectrum, distance)
+    @Depends(spectrum, distance, wavelength)
     def propagation(self):
         print("Propagation")
-        return get_propagation_array(self.spectrum.shape, self.distance)
+        return get_propagation_array(self.spectrum.shape, self.distance,
+            self.wavelength)
 
 
     @Depends(masked_spectrum, propagation)
