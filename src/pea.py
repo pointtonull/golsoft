@@ -20,7 +20,14 @@ import cache
 
 
 tau = 6.283185307179586 # twice times sexier than pi
+
+#TODO: Choose from wavelengths.ini
 LAMBDA = 6.328e-07 # default red wavelength
+
+#TODO: Choose from cameras.ini
+DX = 1.75e-6
+DY = 1.75e-6
+#TODO: Choose from cameras.ini
 DX = 8.39e-6
 DY = 8.46e-6
 
