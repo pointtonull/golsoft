@@ -8,6 +8,7 @@ from scipy.ndimage import geometric_transform
 import Image as pil
 import ImageOps
 import cache
+import gdal
 import numpy as np
 import operator
 
@@ -139,12 +140,23 @@ def open_raw(filename, aspectratio=1):
     return array
 
 
-def imread(filename, flatten=True, aspectratio=1):
-    try:
-        array = misc.imread(filename, flatten)
-    except IOError:
-        array = open_raw(filename, aspectratio)
+def open_gdal(filename):
+    dataset = gdal.Open(filename)
+    array = dataset.ReadAsArray()
+    return array
 
+
+def imread(filename, flatten=True, aspectratio=1):
+    if filename.endswith(".raw"):
+        array = open_raw(filename, aspectratio)
+    else:
+        try:
+            array = misc.imread(filename, flatten)
+        except IOError, error:
+            print("imread non-fatal error: %s" % error)
+            array = open_gdal(filename)
+            if flatten:
+                array = array.mean(0)
     return array
 
 
