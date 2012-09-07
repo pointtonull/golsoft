@@ -12,31 +12,26 @@ import numpy as np
 from autofocus import guess_focus_distance
 from automask import get_circles, get_auto_mask
 from dependences import Datum, Depends
-from dft import get_shifted_dft, get_shifted_idft
+from dft import get_shifted_dft, get_shifted_idft, get_module, get_phase
 from image import get_intensity, imread
 from propagation import get_propagation_array
 from unwrap import unwrap_wls
 import cache
 
 
-
 tau = 6.283185307179586 # twice times sexier than pi
+
+#TODO: Choose from wavelengths.ini
 LAMBDA = 6.328e-07 # default red wavelength
+
+#TODO: Choose from cameras.ini
+DX = 1.75e-6
+DY = 1.75e-6
+#TODO: Choose from cameras.ini
 DX = 8.39e-6
 DY = 8.46e-6
 
 
-def angle2(array):
-    raise DeprecationWarning("use get_phase insteat")
-    return np.arctan2(array.real, array.imag)
-
-
-def get_phase(array):
-    return np.arctan2(array.real, array.imag)
-
-
-def get_module(array):
-    return np.abs(array)
 
 
 

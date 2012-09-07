@@ -2,11 +2,14 @@
 #-*- coding: UTF-8 -*-
 
 from autopipe import showimage
-from image import imread, derotate, get_centered
+from image import imread, derotate, get_centered, phase_denoise, normalize
 from scipy.misc import imresize, imrotate, lena
 from itertools import product
 from random import sample
 import sys
+import numpy as np
+
+tau = np.pi * 2
 
 
 def main():
@@ -15,10 +18,17 @@ def main():
 
     if not images:
         image = imresize(lena(), .5)
-        images = ["lena", image]
+        images = [("lena", image)]
 
-    for image in images:
+    for name, image in images:
+        print(name)
         showimage(image)
+        phase = (image / 10.) % tau
+        showimage(normalize(phase))
+        print phase.ptp()
+        denoised = phase_denoise(phase)
+        showimage(normalize(denoised))
+        print denoised.ptp()
 
     return 0
 

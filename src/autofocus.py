@@ -9,7 +9,7 @@ import numpy as np
 
 from automask import get_mask, get_auto_mask
 from autopipe import showimage
-from dft import get_shifted_idft
+from dft import get_shifted_idft, get_module
 from image import imread, normalize, get_intensity, equalize
 from propagation import get_propagation_array
 from ranges import frange
@@ -38,27 +38,30 @@ def get_lowpass_mask(shape, radius=0.2, softness=0):
 
 
 @methods
-@cache.hybrid
-def get_var(masked_spectrum, distance):
-    propagation_array = get_propagation_array(masked_spectrum.shape, distance)
+def get_var(masked_spectrum, distance, wavelength):
+    propagation_array = get_propagation_array(masked_spectrum.shape,
+        distance, wavelength)
     propagated = propagation_array * masked_spectrum
     reconstructed = get_shifted_idft(propagated)
-    module = np.abs(reconstructed)
-    fitness = module.var()
+    module = get_module(reconstructed)
+    module_zone = get_best_contrast_zone(module)
+#    showimage(normalize(module_zone))
+    fitness = module_zone.var()
     return fitness
 
 
 @methods
-def get_diff_var(masked_spectrum, distance):
-    fitness = get_var(masked_spectrum, distance)
-    fitness -= get_var(masked_spectrum, -distance)
+def get_diff_var(masked_spectrum, distance, wavelength):
+    fitness = get_var(masked_spectrum, distance, wavelength)
+    fitness -= get_var(masked_spectrum, -distance, wavelength)
     return fitness
 
 
 @methods
 @cache.hybrid
-def get_int_var(masked_spectrum, distance):
-    propagation_array = get_propagation_array(masked_spectrum.shape, distance)
+def get_int_var(masked_spectrum, distance, wavelength):
+    propagation_array = get_propagation_array(masked_spectrum.shape, distance,
+        wavelength)
     propagated = propagation_array * masked_spectrum
     reconstructed = get_shifted_idft(propagated)
     intensity = get_intensity(reconstructed)
@@ -142,9 +145,11 @@ def get_diff_lpass_var_over_hpass_var(masked_spectrum, distance):
     return fitness
 
 
-def get_best_contrast_zone(hologram, shape=(256, 256)):
-    assert shape[0] <= hologram.shape[0]
-    assert shape[1] <= hologram.shape[1]
+def get_best_contrast_zone(hologram, margin=50, shape=(256, 256)):
+    assert shape[0] + 2 * margin <= hologram.shape[0]
+    assert shape[1] + 2 * margin <= hologram.shape[1]
+    hologram = hologram[margin:-margin, margin:-margin]
+#    hologram = np.diff(hologram)
     rows = hologram.shape[0] - shape[0] + 1
     cols = hologram.shape[1] - shape[1] + 1
     rowsvar = hologram.var(0)
@@ -181,11 +186,12 @@ def generic_minimizer(fitness_func, initial_guess, optimizers=None):
     return best_guess
 
 
-@cache.hybrid
-def guess_focus_distance(masked_spectrum, extractor=get_diff_var):
+@cache.hybrid(reset=False)
+def guess_focus_distance(masked_spectrum, wavelength,
+        extractor=get_diff_var):
 
     def fitness(args):
-        return extractor(masked_spectrum, args)
+        return extractor(masked_spectrum, args, wavelength)
 
     results = []
     for distance in frange(0, .15, 3):

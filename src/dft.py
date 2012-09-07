@@ -67,3 +67,13 @@ def get_idct(*args, **kwargs):
     Performs the inverse discrete cosine transform
     """
     return cv2.idct(*args, **kwargs)
+
+
+def get_phase(array):
+    return np.arctan2(array.real, array.imag)
+
+
+def get_module(array):
+    return np.abs(array)
+
+

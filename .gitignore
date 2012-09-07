@@ -2,3 +2,11 @@
 *.sw?
 .todo.*
 *.pickle
+*.png
+*.tiff
+*.tif
+*.ppm
+*.raw
+*.txt
+*.bmp
+*.parameters

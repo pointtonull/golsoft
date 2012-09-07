@@ -93,7 +93,6 @@ def unwrap_qg(phase, quality_map):
         for pos in get_neighbors(pixel):
             if pos not in adder:
                 adder[pos] = phase[pixel]
-                print pos
                 insort(border, (quality_map[pos], pos))
 
     phase = phase.reshape(shape) * tau

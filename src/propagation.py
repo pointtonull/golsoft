@@ -9,16 +9,22 @@ holograms
 from numpy import exp, sqrt
 import numpy as np
 
-import cache
-
 
 tau = 6.283185307179586
+
+#TODO: Choose from cameras.ini
+DX = 1.75e-6
+DY = 1.75e-6
+#TODO: Choose from cameras.ini
 DX = 8.39e-6
 DY = 8.46e-6
+
+
+
+
 EPSILON = 1e-16
 
 
-@cache.hybrid(reset=0)
 def get_propagation_array(shape, distance, wavelength):
     wavenumber = tau / wavelength
     rows, cols = shape
