@@ -2,8 +2,8 @@
 #-*- coding: UTF-8 -*-
 
 from itertools import groupby, izip, count
-from numpy import sin, cos, exp, log
-from scipy import ndimage, misc
+from numpy import sin, cos, exp, log, arctan2
+from scipy import misc, ndimage
 from scipy.ndimage import geometric_transform
 import Image as pil
 import ImageOps
@@ -20,6 +20,21 @@ tau = pi * 2
 #    - imshow   as in autopipe
 #    - imsave
 
+
+def phase_denoise(phase, size=1):
+    """
+    Cuadratic denoise. Is a median filter applied on the angular space.
+    """
+    if size == 0:
+        return phase
+    else:
+        y_over = sin(phase)
+        x_over = cos(phase)
+        y_over = ndimage.filters.median_filter(y_over, size)
+        x_over = ndimage.filters.median_filter(x_over, size)
+        denoised = arctan2(y_over, x_over)
+        
+    return denoised
 
 
 def get_logpolar(array, interpolation=0, reverse=False):
@@ -67,7 +82,6 @@ def get_logpolar(array, interpolation=0, reverse=False):
     return logpolar
 
 
-
 def get_polar(array, interpolation=0, reverse=False):
     """
     Returns a new array with the logpolar transfamation of array.
@@ -111,9 +125,6 @@ def get_polar(array, interpolation=0, reverse=False):
         order=interpolation)
 
     return polar
-
-
-
 
 
 def open_raw(filename, aspectratio=1):
