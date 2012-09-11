@@ -39,9 +39,9 @@ def get_lowpass_mask(shape, radius=0.2, softness=0):
 
 
 @methods
-def get_var(masked_spectrum, distance, wavelength):
+def get_var(masked_spectrum, distance, wavelength, (dx, dy)):
     propagation_array = get_propagation_array(masked_spectrum.shape,
-        distance, wavelength)
+        distance, wavelength, (dx, dy))
     propagated = propagation_array * masked_spectrum
     reconstructed = get_shifted_idft(propagated)
     module = get_module(reconstructed)
@@ -52,9 +52,9 @@ def get_var(masked_spectrum, distance, wavelength):
 
 
 @methods
-def get_diff_var(masked_spectrum, distance, wavelength):
-    fitness = get_var(masked_spectrum, distance, wavelength)
-    fitness -= get_var(masked_spectrum, -distance, wavelength)
+def get_diff_var(masked_spectrum, distance, wavelength, (dx, dy)):
+    fitness = get_var(masked_spectrum, distance, wavelength, (dx, dy))
+    fitness -= get_var(masked_spectrum, -distance, wavelength, (dx, dy))
     return fitness
 
 
@@ -150,7 +150,6 @@ def get_best_contrast_zone(hologram, margin=50, shape=(256, 256)):
     assert shape[0] + 2 * margin <= hologram.shape[0]
     assert shape[1] + 2 * margin <= hologram.shape[1]
     hologram = hologram[margin:-margin, margin:-margin]
-#    hologram = np.diff(hologram)
     rows = hologram.shape[0] - shape[0] + 1
     cols = hologram.shape[1] - shape[1] + 1
     rowsvar = hologram.var(0)
@@ -161,38 +160,15 @@ def get_best_contrast_zone(hologram, margin=50, shape=(256, 256)):
         for left in xrange(cols)])
     toprow = sumsrowsranges.argmax()
     leftcol = sumscolsranges.argmax()
-    print(rows, cols)
     return hologram[toprow:toprow + shape[0], leftcol:leftcol + shape[1]]
 
 
-def generic_minimizer(fitness_func, initial_guess, optimizers=None):
-    """
-    A common interface to various minimization algorithms
-    """
-
-    if optimizers == None:
-        optimizers = [
-            optimize.fmin, # 66
-            optimize.fmin_powell,
-        ]
-
-    best_result = None
-    for optimizer in optimizers:
-        xend = optimizer(fitness_func, initial_guess, disp=False)
-        last_result = fitness_func(xend)
-        if best_result is None or last_result < best_result:
-            best_guess = xend
-            best_result = last_result
-
-    return best_guess
-
-
 @cache.hybrid(reset=False)
-def guess_focus_distance(masked_spectrum, wavelength,
+def guess_focus_distance(masked_spectrum, wavelength, (dx, dy),
         extractor=get_diff_var):
 
     def fitness(args):
-        return extractor(masked_spectrum, args, wavelength)
+        return extractor(masked_spectrum, args, wavelength, (dx, dy))
 
     results = []
     for distance in frange(0, .15, 3):
