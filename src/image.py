@@ -2,6 +2,8 @@
 #-*- coding: UTF-8 -*-
 
 from itertools import groupby, izip, count
+import operator
+
 from numpy import sin, cos, exp, log, arctan2
 from scipy import misc, ndimage
 from scipy.ndimage import geometric_transform
