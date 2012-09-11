@@ -6,6 +6,7 @@ import operator
 
 from numpy import sin, cos, exp, log, arctan2
 from scipy import misc, ndimage
+from scipy.misc import imresize
 from scipy.ndimage import geometric_transform
 import Image as pil
 import ImageOps
@@ -38,6 +39,30 @@ def phase_denoise(phase, size=1):
         denoised = arctan2(y_over, x_over)
         
     return denoised
+
+
+def limit_size(image, resolution, avoidodds=True):
+    """
+    Image is a numpy array.
+    Resulution is a quantity:
+        in pixels if >= 1000
+        in megapixels if < 1000
+    """
+
+    if resolution < 1000:
+        resolution *= 1e6
+
+    relsize = (image.size / resolution) ** -.5
+    new_shape = [int(round(res * relsize))
+        for res in image.shape]
+
+    if avoidodds:
+        new_shape = tuple([int(res + res % 2)
+            for res in new_shape])
+
+    image = imresize(image, new_shape, 'bicubic')
+    image = np.float32(image)
+    return image
 
 
 def get_logpolar(array, interpolation=0, reverse=False):
