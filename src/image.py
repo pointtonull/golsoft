@@ -178,16 +178,36 @@ def get_polar(array, interpolation=0, reverse=False):
     return polar
 
 
-def open_raw(filename, aspectratio=1):
+def open_raw(filename):
+    known_resolutions = {
+        5038848: (1944, 2592, "bayer"),
+        262144: (512, 512, "mono"),
+    }
+
     bits = open(filename, "rb").read()
     length = len(bits)
-    cols = int(round((length * aspectratio) ** .5))
-    rows = length / cols
-    if length != cols * rows:
-        raise ValueError("incorrect aspectratio")
-    array = np.array([ord(char) for char in bits])
-    array = array.reshape((rows, cols))
-    return array
+
+    if length in known_resolutions:
+        rows, cols, method = known_resolutions[length]
+        array = np.array([ord(char) for char in bits])
+        array = array.reshape((rows, cols))
+
+        if method == "bayer":
+            #TODO: implement Malvar-He-Cutler Bayer demosaicing
+            print("Identified %s as bayer raw." % filename)
+            array0 = array[0::2, 0::2]
+            array1 = array[0::2, 1::2]
+            array2 = array[1::2, 0::2]
+            array3 = array[1::2, 1::2]
+            red = array1
+            green = (array0 + array3) / 2
+            blue = array2
+            array = np.array([red, green, blue])
+
+        return array
+
+    else:
+        raise IOError("unknown resolution on raw file %s" % filename)
 
 
 def open_gdal(filename):
@@ -196,15 +216,16 @@ def open_gdal(filename):
     return array
 
 
-def imread(filename, flatten=True, aspectratio=1):
+def imread(filename, flatten=True):
     if filename.endswith(".raw"):
-        array = open_raw(filename, aspectratio)
+        array = open_raw(filename)
     else:
         try:
             array = misc.imread(filename, flatten)
         except IOError, error:
             print("imread non-fatal error: %s" % error)
             array = open_gdal(filename)
+            array = array[:3, :, :] # alpha shift
             if flatten:
                 array = array.mean(0)
     return array
