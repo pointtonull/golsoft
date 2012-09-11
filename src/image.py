@@ -2,15 +2,19 @@
 #-*- coding: UTF-8 -*-
 
 from itertools import groupby, izip, count
+import operator
+
 from numpy import sin, cos, exp, log, arctan2
 from scipy import misc, ndimage
+from scipy.misc import imresize
 from scipy.ndimage import geometric_transform
 import Image as pil
 import ImageOps
-import cache
 import gdal
 import numpy as np
-import operator
+
+from minimize import generic_minimizer
+import cache
 
 VERBOSE = 0
 pi = 3.14159265358979323846264338327950288419716939937510582097494
@@ -36,6 +40,52 @@ def phase_denoise(phase, size=1):
         denoised = arctan2(y_over, x_over)
         
     return denoised
+
+
+def subtract(left, right):
+    """
+    Will operate
+        left - k * right
+    
+    Where k is the value that minimize the adittion result.
+    """
+
+    if right is None:
+        return left
+    else:
+        def diference(k):
+            diff = ((left - k * right) ** 2).sum()
+            return diff
+
+        best_k = generic_minimizer(diference, 1)
+        print("Subtraction left - %f * right" % best_k)
+        result = left - best_k * right
+
+        return result
+
+
+def limit_size(image, resolution, avoidodds=True):
+    """
+    Image is a numpy array.
+    Resulution is a quantity:
+        in pixels if >= 1000
+        in megapixels if < 1000
+    """
+
+    if resolution < 1000:
+        resolution *= 1e6
+
+    relsize = (image.size / resolution) ** -.5
+    new_shape = [int(round(res * relsize))
+        for res in image.shape]
+
+    if avoidodds:
+        new_shape = tuple([int(res + res % 2)
+            for res in new_shape])
+
+    image = imresize(image, new_shape, 'bicubic')
+    image = np.float32(image)
+    return image
 
 
 def get_logpolar(array, interpolation=0, reverse=False):
@@ -128,16 +178,36 @@ def get_polar(array, interpolation=0, reverse=False):
     return polar
 
 
-def open_raw(filename, aspectratio=1):
+def open_raw(filename):
+    known_resolutions = {
+        5038848: (1944, 2592, "bayer"),
+        262144: (512, 512, "mono"),
+    }
+
     bits = open(filename, "rb").read()
     length = len(bits)
-    cols = int(round((length * aspectratio) ** .5))
-    rows = length / cols
-    if length != cols * rows:
-        raise ValueError("incorrect aspectratio")
-    array = np.array([ord(char) for char in bits])
-    array = array.reshape((rows, cols))
-    return array
+
+    if length in known_resolutions:
+        rows, cols, method = known_resolutions[length]
+        array = np.array([ord(char) for char in bits])
+        array = array.reshape((rows, cols))
+
+        if method == "bayer":
+            #TODO: implement Malvar-He-Cutler Bayer demosaicing
+            print("Identified %s as bayer raw." % filename)
+            array0 = array[0::2, 0::2]
+            array1 = array[0::2, 1::2]
+            array2 = array[1::2, 0::2]
+            array3 = array[1::2, 1::2]
+            red = array1
+            green = (array0 + array3) / 2
+            blue = array2
+            array = np.array([red, green, blue])
+
+        return array
+
+    else:
+        raise IOError("unknown resolution on raw file %s" % filename)
 
 
 def open_gdal(filename):
@@ -146,15 +216,16 @@ def open_gdal(filename):
     return array
 
 
-def imread(filename, flatten=True, aspectratio=1):
+def imread(filename, flatten=True):
     if filename.endswith(".raw"):
-        array = open_raw(filename, aspectratio)
+        array = open_raw(filename)
     else:
         try:
             array = misc.imread(filename, flatten)
         except IOError, error:
             print("imread non-fatal error: %s" % error)
             array = open_gdal(filename)
+            array = array[:3, :, :] # alpha shift
             if flatten:
                 array = array.mean(0)
     return array

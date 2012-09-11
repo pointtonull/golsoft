@@ -19,19 +19,11 @@ def main():
         pea = PEA(filename)
         showimage(normalize(pea.image))
 
-        print("Using autofocus: %f" % pea.distance)
+        print("Using manual focus")
+        pea.propagate = False
         showimage(normalize(pea.phase))
         showimage(normalize(pea.module))
         showimage(normalize(pea.unwrapped_phase))
-
-        print("Using manual focus")
-        pea.use_autofocus = False
-        for distance in (-.25, -.20, -.15, -.05, 0, .05, .15, .20, .25):
-            print("Distance: %f" % distance)
-            pea.user_distance = distance
-            showimage(normalize(pea.phase))
-            showimage(normalize(pea.module))
-            showimage(normalize(pea.unwrapped_phase))
 
     return 0
 

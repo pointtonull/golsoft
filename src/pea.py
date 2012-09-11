@@ -13,30 +13,16 @@ from autofocus import guess_focus_distance
 from automask import get_circles, get_auto_mask
 from dependences import Datum, Depends
 from dft import get_shifted_dft, get_shifted_idft, get_module, get_phase
-from image import get_intensity, imread
+from image import get_intensity, imread, subtract, limit_size
 from propagation import get_propagation_array
 from unwrap import unwrap_wls
 import cache
 
 
-tau = 6.283185307179586 # twice times sexier than pi
-
-#TODO: Choose from wavelengths.ini
-LAMBDA = 6.328e-07 # default red wavelength
-
-#TODO: Choose from cameras.ini
-DX = 1.75e-6
-DY = 1.75e-6
-#TODO: Choose from cameras.ini
-DX = 8.39e-6
-DY = 8.46e-6
+tau = 6.283185307179586 # two times sexier than pi
 
 
-
-
-
-
-def get_refbeam(shape, cos_alpha, cos_beta, wavelength):
+def get_refbeam(shape, cos_alpha, cos_beta, wavelength, (dx, dy)):
     """
     Generate a reference beam array given the shape of the hologram and the
     directors angles
@@ -47,8 +33,8 @@ def get_refbeam(shape, cos_alpha, cos_beta, wavelength):
     minrow, mincol = -maxrow, -maxcol
     row, col = np.ogrid[minrow:maxrow:1., mincol:maxcol:1.]
 
-    ref_beam = exp(1j * wavenumber * (cos_alpha * col * DX + cos_beta *
-        row * DY))
+    ref_beam = exp(1j * wavenumber * (cos_alpha * col * dx + cos_beta *
+        row * dy))
     
     return ref_beam
 
@@ -75,14 +61,14 @@ def get_peak_coords(spectrum):
 
 
 @cache.hybrid(reset=0)
-def calculate_director_cosines(spectrum, wavelength):
+def calculate_director_cosines(spectrum, wavelength, (dx, dy)):
     """
     Calculate the director cosines using the spectral proyection formula
     """
     peak = get_peak_coords(spectrum)
     freq_rows, freq_cols = peak
-    freq_rows /= 2 * DY
-    freq_cols /= 2 * DX
+    freq_rows /= 2 * dy
+    freq_cols /= 2 * dx
     cos_alpha = freq_cols * wavelength
     cos_beta = freq_rows * wavelength
 
@@ -94,13 +80,43 @@ class PEA(object):
 
     def __init__(self, filename=None):
         if filename:
-            self.filename = filename
+            self.filename_holo = filename
 
-    filename = Datum()
-    @Depends(filename)
+
+    resolution_limit = Datum(.5)
+    filename_holo = Datum()
+    @Depends(filename_holo, resolution_limit)
+    def image_holo(self):
+        print("Loading hologram image")
+        image = imread(self.filename_holo, True)
+        image = limit_size(image, self.resolution_limit)
+        return image
+
+    filename_ref = Datum("")
+    @Depends(filename_ref, resolution_limit)
+    def image_ref(self):
+        print("Loading reference image")
+        image = imread(self.filename_ref, True)
+        image = limit_size(image, self.resolution_limit)
+        return image
+
+    filename_obj = Datum("")
+    @Depends(filename_obj, resolution_limit)
+    def image_obj(self):
+        print("Loading object image")
+        image = imread(self.filename_obj, True)
+        image = limit_size(image, self.resolution_limit)
+        return image
+
+    @Depends(image_holo, image_ref, image_obj)
     def image(self):
-        print("Loading image")
-        return imread(self.filename, True)
+        print("Calculating hologram")
+        image = self.image_holo
+        if self.filename_ref:
+            image = subtract(image, self.image_ref)
+        if self.filename_obj:
+            image = subtract(image, self.image_obj)
+        return image
 
 
     @Depends(image)
@@ -120,7 +136,7 @@ class PEA(object):
             return self.user_cosines
 
 
-    wavelength = Datum(LAMBDA)
+    wavelength = Datum(650e-9)
     @Depends(image, cosines, wavelength)
     def refbeam(self):
         print("Calculating refbeam")
@@ -183,11 +199,14 @@ class PEA(object):
         return self.masking[2]
 
 
-    @Depends(ispectrum)
+    dx = Datum(3e-6)
+    dy = Datum(3e-6)
+    @Depends(ispectrum, wavelength, dx, dy)
     def auto_distance(self):
         print("Auto distance")
         mask, masked, centered = get_auto_mask(self.ispectrum)
-        distance = guess_focus_distance(masked)
+        distance = guess_focus_distance(masked, self.wavelength,
+            (self.dx, self.dy))
         return distance
 
 
@@ -202,17 +221,21 @@ class PEA(object):
             return self.user_distance
 
 
-    @Depends(spectrum, distance, wavelength)
+    @Depends(spectrum, distance, wavelength, dx, dy)
     def propagation(self):
         print("Propagation")
         return get_propagation_array(self.spectrum.shape, self.distance,
-            self.wavelength)
+            self.wavelength, (self.dx, self.dy))
 
 
-    @Depends(masked_spectrum, propagation)
+    propagate = Datum(True)
+    @Depends(propagate, masked_spectrum, propagation)
     def propagated(self):
-        print("Propagated")
-        return self.masked_spectrum * self.propagation
+        if self.propagate:
+            print("Propagated")
+            return self.masked_spectrum * self.propagation
+        else:
+            return self.masked_spectrum
 
 
     @Depends(propagated)
