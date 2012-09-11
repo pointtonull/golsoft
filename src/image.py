@@ -42,6 +42,28 @@ def phase_denoise(phase, size=1):
     return denoised
 
 
+def subtract(left, right):
+    """
+    Will operate
+        left - k * right
+    
+    Where k is the value that minimize the adittion result.
+    """
+
+    if right is None:
+        return left
+    else:
+        def diference(k):
+            diff = ((left - k * right) ** 2).sum()
+            return diff
+
+        best_k = generic_minimizer(diference, 1)
+        print("Subtraction left - %f * right" % best_k)
+        result = left - best_k * right
+
+        return result
+
+
 def limit_size(image, resolution, avoidodds=True):
     """
     Image is a numpy array.
