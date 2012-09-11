@@ -10,10 +10,11 @@ from scipy.misc import imresize
 from scipy.ndimage import geometric_transform
 import Image as pil
 import ImageOps
-import cache
 import gdal
 import numpy as np
-import operator
+
+from minimize import generic_minimizer
+import cache
 
 VERBOSE = 0
 pi = 3.14159265358979323846264338327950288419716939937510582097494
