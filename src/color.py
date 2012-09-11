@@ -109,19 +109,21 @@ def guess_wavelength(image):
     """
     Helper function that try to deduce the image dominant wavelength.
     """
-
+    
     if image.ndim == 2:
         print("W: Guess wavelength: a monocrome bitmap has not a dominant"
             " wavelength.")
         rgbcolor = (128, 128, 128)
     else:
-        red = image[:, :, 0].mean()
-        green = image[:, :, 1].mean()
-        blue = image[:, :, 2].mean()
+        red = image[0, :, :].mean()
+        green = image[1, :, :].mean()
+        blue = image[2, :, :].mean()
+
         rgbcolor = (red, green, blue)
+        rgbcolor = sature_color(rgbcolor)
 
     wavelength = rgb2wavelength(rgbcolor)
-    return wavelength
+    return rgbcolor, wavelength
 
 
 
