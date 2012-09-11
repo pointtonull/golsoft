@@ -1,20 +1,22 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
+
 from ConfigParser import ConfigParser
 import json
+import os
 import sys
 
 from mayavi.core.api import PipelineBase
 from mayavi.core.ui.api import SceneEditor
 from mayavi.core.ui.mayavi_scene import MayaviScene
 from mayavi.tools.mlab_scene_model import MlabSceneModel
-from traits.api import Bool, Str
-from traits.api import HasTraits, Button, File, Range, Enum, Instance
+from traits.api import Bool, Str, Color, Float, Int
+from traits.api import HasTraits, Button, File, Range, Enum, Instance, Dict
 from traits.api import on_trait_change
-from traitsui.api import View, Item, Group, HSplit
-from traitsui.menu import OKButton
-from scipy.misc import imresize
+from traitsui.api import ShellEditor
+from traitsui.api import View, Item, Group, HSplit, VSplit, HGroup, VGroup
+from traitsui.file_dialog import open_file, FileInfo
 import numpy as np
 
 from autofocus import guess_focus_distance
@@ -22,7 +24,8 @@ from automask import get_auto_mask
 from autopipe import showimage
 from color import guess_wavelength
 from dft import get_shifted_idft, get_shifted_dft
-from image import equalize, imread, normalize, phase_denoise
+from image import equalize, imread, normalize, phase_denoise, imwrite, subtract
+from image import limit_size
 from pea import calculate_director_cosines, get_refbeam
 from pea import get_phase, get_module
 from propagation import get_propagation_array
@@ -34,11 +37,25 @@ class PEA(HasTraits):
     def __init__(self, initialfile=""):
         HasTraits.__init__(self)
 
+        self.context.update({
+            "np":np,
+            "pea":self,
+            "imread":imread,
+            "imwrite":imwrite,
+            "normalize":normalize,
+            "equalize":equalize,
+            "showimage":showimage,
+            "self":self.context,
+        })
+
         if initialfile:
-            self.filename = initialfile
+            self.holo_filename = initialfile
 
     ## STAGES ##
     empty = np.zeros((200, 200))
+    img_holo = empty # ready
+    img_ref = None # ready
+    img_obj = None # ready
     hologram = empty # ready
     ref_beam = empty # ready
     r_hologram = empty # ready
@@ -52,11 +69,33 @@ class PEA(HasTraits):
     wrapped_phase = empty # ready
     unwrapped_phase = empty # ready
 
+    context = Dict()
+    resolution_limit = .5
+    dx = Float()
+    dy = Float()
 
 
     ## OVERVIEW ##
-    filename = File(filter=[u"*.*"])
-    prev_filename = None
+    filters = [
+        'All files (*.*)|*.*',
+        'PNG file (*.png)|*.png',
+        'GIF file (*.gif)|*.gif',
+        'JPG file (*.jpg)|*.jpg',
+        'JPEG file (*.jpeg)|*.jpeg'
+    ]
+
+    holo_filename = File()
+    ref_filename = File()
+    obj_filename = File()
+
+    btn_update_hologram = Button("Update hologram")
+
+    cp = ConfigParser()
+    cp.read("cameras.ini")
+    cameras = {}
+    for section in cp.sections():
+        cameras[section] = dict(cp.items(section))
+    camera = Enum(cameras.keys(), label="Camera")
 
     cp = ConfigParser()
     cp.read("wavelengths.ini")
@@ -69,10 +108,11 @@ class PEA(HasTraits):
         auto_set=False)
 
     use_sampled_image = Bool(True)
-    btn_save_parameters = Button("Save parameters")
+    btn_load_parameters = Button("Load")
+    btn_save_parameters = Button("Save")
 
     overview_vismode = Enum("input map", "spectrum", "module", "phase map",
-        "unwrapped phase", "unwrapped phase map", label="Visualize")
+        "unwrapped phase map", "unwrapped phase surface", label="Visualize")
 
     scn_overview = Instance(MlabSceneModel, ())
     plt_overview = None
@@ -81,57 +121,121 @@ class PEA(HasTraits):
         editor=SceneEditor(scene_class=MayaviScene), height=600, width=600,
         show_label=False),
 
+    imagecolor = Color("(0,0,0)")
+    imagewavelength = Int(0)
     grp_datainput = Group(
-        Item('filename'),
+
+        Item('holo_filename', label="Hologram",  springy=True),
+        Item('ref_filename', label="Reference", springy=True),
+        Item('obj_filename', label="Object", springy=True),
+        Item("btn_update_hologram", show_label=False),
+        "camera",
+        HGroup(
+            Item("imagecolor", style='readonly', label="Dominant color"),
+            Item("imagewavelength", style="readonly",
+                label="Dominant wavelength"),
+        ),
         "wavelength",
         "wavelength_nm",
-        "use_sampled_image",
-        "btn_save_parameters",
+        HGroup("use_sampled_image", "-", Item("btn_save_parameters",
+            label="Parameters"), Item("btn_load_parameters", show_label=False)),
         label="Input file",
         show_border=True,
     )
 
     grp_overview_visualizer = Group(
-        vis_overview,
         Item('overview_vismode', style='simple', show_label=False),
+        vis_overview,
     )
 
 
-    @on_trait_change("filename, use_sampled_image")
-    def update_hologram(self):
-        print("Updating hologram")
-        parameters_file = self.filename + ".parameters"
+    @on_trait_change("holo_filename, btn_load_parameters")
+    def update_parameters(self):
+        print("Updating parameters")
+        parameters_file = self.holo_filename + ".pea"
         try:
             parameters = json.load(open(parameters_file))
+            print("Loading from %s" % parameters_file)
         except IOError:
+            print("%s doesnt exists, using default values" % parameters_file)
             parameters = {}
 
-        print(parameters)
-        self.__dict__.update(parameters)
+        if "holo_filename" in parameters:
+            del(parameters["holo_filename"])
 
-        print("Image wavelength: %f" % 
-            guess_wavelength(imread(self.filename, False)))
-        image = imread(self.filename)
-        relsize = (image.size / 512. ** 2) ** -.5
-        if self.use_sampled_image and relsize < 1:
-            new_shape = [res * relsize for res in image.shape]
-            new_shape = tuple([int(res + res % 2) for res in new_shape])
-            image = imresize(image, new_shape, 'bicubic')
-            image = np.float32(image)
-        self.hologram = image
-        self.empty = np.zeros_like(self.hologram)
+        parameters["overview_vismode"] = "input map"
+        print(parameters["ref_filename"])
+        self.__dict__.update(parameters)
+        self.update_hologram()
+
+
+    @on_trait_change("holo_filename, use_sampled_image")
+    def update_holoimage(self):
+        print("Updating hologram")
+        rgbcolor, wavelength = guess_wavelength(imread(self.holo_filename,
+            False))
+        print("Image wavelength: %f" % wavelength)
+        self.imagecolor = "(%d,%d,%d)" % rgbcolor
+        self.imagewavelength = int(round(wavelength))
+
+        image = imread(self.holo_filename)
+
+        if self.use_sampled_image:
+            image = limit_size(image, self.resolution_limit)
+
+        self.img_holo = image
+        self.empty = np.zeros_like(self.img_holo)
+
+    
+    @on_trait_change("ref_filename, use_sampled_image")
+    def update_refimage(self):
+        print("Updating reference image")
+        image = imread(self.ref_filename)
+
+        if self.use_sampled_image:
+            image = limit_size(image, self.resolution_limit)
+
+        self.img_ref = image
+
+    
+    @on_trait_change("obj_filename, use_sampled_image")
+    def update_objimage(self):
+        print("Updating object image")
+        image = imread(self.obj_filename)
+
+        if self.use_sampled_image:
+            image = limit_size(image, self.resolution_limit)
+
+        self.img_obj = image
+
+
+    @on_trait_change("btn_update_hologram")
+    def update_hologram(self):
+        print("Re-calculating hologram")
+        self.hologram = subtract(self.img_holo, self.img_ref)
+        self.hologram = subtract(self.hologram, self.img_obj)
         self.update_ref_beam()
         self.update_overview_vis()
 
     
+    @on_trait_change("camera")
+    def update_camera(self):
+        camera = self.cameras[self.camera]
+        self.dx = eval(camera["dx"])
+        self.dy = eval(camera["dy"])
+        self.update_propagation()
+
+
     @on_trait_change("btn_save_parameters")
     def save_parameters(self):
-        valid_types = (bool, int, float, str)
-        exclude = [u"filename", u"overview_vismode"]
+        valid_types = (bool, int, float, str, unicode)
         reg = {key:value
             for key, value in self.__dict__.iteritems()
-                if type(value) in valid_types and key not in exclude}
-        json.dump(reg, open(self.filename + ".parameters", "w"))
+                if type(value) in valid_types}
+        
+        filename = self.holo_filename + ".pea"
+        json.dump(reg, open(filename, "w"))
+        print("Saved to %s" % filename)
 
 
     @on_trait_change("wavelength")
@@ -164,13 +268,13 @@ class PEA(HasTraits):
         elif vismode == "phase map":
             array = self.wrapped_phase
             color = "spectral"
-        elif vismode == "unwrapped phase":
-            array = self.unwrapped_phase
-            color = "spectral"
-            rep_type = "surface"
         elif vismode == "unwrapped phase map":
             array = self.unwrapped_phase
             color = "spectral"
+        elif vismode == "unwrapped phase surface":
+            array = self.unwrapped_phase
+            color = "spectral"
+            rep_type = "surface"
             
         else:
             print("Unrecognized option on overview_vismode: %s" % 
@@ -238,7 +342,7 @@ class PEA(HasTraits):
             ),
             label="Reference beam parameters",
             show_border=True,
-            enabled_when="use_ref_beam",
+            visible_when ="use_ref_beam",
         )
     )
 
@@ -313,7 +417,7 @@ class PEA(HasTraits):
         height=600, width=600, show_label=False, resizable=True)
 
     grp_mask_parameters = Group(
-        "use_masking",
+#        "use_masking",
         Group(
             "softness",
             "radious_scale",
@@ -323,7 +427,7 @@ class PEA(HasTraits):
             Item("cuttop", enabled_when="use_cuttop"),
             label="Spectrum mask parameters",
             show_border=True,
-            enabled_when="use_masking",
+            visible_when="use_masking",
         )
     )
 
@@ -375,7 +479,7 @@ class PEA(HasTraits):
 
 
     ## PROPAGATION ##
-    use_propagation = Bool(True)
+    use_propagation = Bool(False)
 
     btn_guess_focus = Button("Guess focus distance")
     distance = Range(-0.30, 0.30, 0., mode="xslider", enter_set=True,
@@ -391,11 +495,11 @@ class PEA(HasTraits):
     grp_propagation_parameters = Group(
         "use_propagation",
         Group(
-            "btn_guess_focus",
+            Item("btn_guess_focus", show_label=False),
             "distance",
             label="Propagation parameters",
             show_border=True,
-            enabled_when="use_propagation",
+            visible_when="use_propagation",
         )
     )
 
@@ -414,10 +518,13 @@ class PEA(HasTraits):
 
     @on_trait_change("propagation_vismode, distance, wavelength_nm")
     def update_propagation(self):
-        print("Updating propagation")
-        propagation_array = get_propagation_array(self.hologram.shape,
-            self.distance, self.wavelength_nm * 1e-9)
-        self.propagated = propagation_array * self.masked_spectrum
+        if self.use_propagation:
+            print("Updating propagation")
+            propagation_array = get_propagation_array(self.hologram.shape,
+                self.distance, self.wavelength_nm * 1e-9, (self.dx, self.dy))
+            self.propagated = propagation_array * self.masked_spectrum
+        else:
+            self.propagated = self.masked_spectrum
         self.reconstructed = get_shifted_idft(self.propagated)
         self.module = normalize(get_module(self.reconstructed))
         self.wrapped_phase = get_phase(self.reconstructed)
@@ -450,7 +557,7 @@ class PEA(HasTraits):
     ## UNWRAPPING ##
     use_unwrapping = Bool(True)
 
-    phase_denoise = Range(0, 9, 1, mode="spinner")
+    phase_denoise = Range(0, 19, 1, auto_set=False, enter_set=True)
     unwrapping_method = Enum("Unweighted Least Squares", "Quality Guided")
     unwrapping_vismode = Enum("phase", "hibryd", label="Visualize")
 
@@ -466,7 +573,7 @@ class PEA(HasTraits):
             Item("unwrapping_method", show_label=False),
             "phase_denoise",
             show_border=True,
-            enabled_when="use_unwrapping",
+            visible_when="use_unwrapping",
         )
     )
 
@@ -520,71 +627,78 @@ class PEA(HasTraits):
             self.plt_unwrapping.mlab_source.set(scalars=array)
 
 
+    shell = Item('context', editor=ShellEditor(share=True), style='custom',
+        show_label=False)
+
     ## PUT ALL-TOGHETER ##
     view = View(
 
         Group(
             HSplit(
-                Group(
+                VGroup(
                     grp_datainput,
                     grp_ref_beam_parameters,
                     grp_mask_parameters,
                     grp_propagation_parameters,
                     grp_unwrapping_parameters,
                 ),
-                grp_overview_visualizer,
+                VSplit(
+                    grp_overview_visualizer,
+                    shell,
+                )
             ),
             label="Overview",
         ),
 
-        Group(
-            HSplit(
-                Group(
-                    grp_datainput,
-                    grp_ref_beam_parameters,
-                ),
-                grp_ref_beam_visualizer,
-            ),
-            label="Reference beam",
-        ),
+#        Group(
+#            HSplit(
+#                Group(
+#                    grp_datainput,
+#                    grp_ref_beam_parameters,
+#                ),
+#                grp_ref_beam_visualizer,
+#            ),
+#            label="Reference beam",
+#        ),
 
-        Group(
-            HSplit(
-                Group(
-                    grp_datainput,
-                    grp_mask_parameters,
-                ),
-                grp_mask_visualizer,
-            ),
-            label="Mask",
-        ),
+#        Group(
+#            HSplit(
+#                Group(
+#                    grp_datainput,
+#                    grp_mask_parameters,
+#                ),
+#                grp_mask_visualizer,
+#            ),
+#            label="Mask",
+#        ),
 
-        Group(
-            HSplit(
-                Group(
-                    grp_datainput,
-                    grp_propagation_parameters,
-                ),
-                grp_propagation_visualizer,
-            ),
-            label="Propagation",
-        ),
+#        Group(
+#            HSplit(
+#                Group(
+#                    grp_datainput,
+#                    grp_propagation_parameters,
+#                ),
+#                grp_propagation_visualizer,
+#            ),
+#            label="Propagation",
+#        ),
 
 
-        Group(
-            HSplit(
-                Group(
-                    grp_datainput,
-                    grp_unwrapping_parameters,
-                ),
-                grp_unwrapping_visualizer,
-            ),
-            label="Unwrapping",
-        ),
+#        Group(
+#            HSplit(
+#                Group(
+#                    grp_datainput,
+#                    grp_unwrapping_parameters,
+#                ),
+#                grp_unwrapping_visualizer,
+#            ),
+#            label="Unwrapping",
+#        ),
 
 
         title="PEA processor",
         resizable=True,
+        id="peaview",
     )
 
 
