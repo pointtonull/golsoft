@@ -101,7 +101,7 @@ def rgb2wavelength(rgbtuple):
 
     initial_guess = 580
     best_guess = generic_minimizer(distance, initial_guess)
-    return best_guess
+    return float(best_guess)
 
 
 
