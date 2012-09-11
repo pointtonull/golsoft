@@ -2,6 +2,7 @@
 #-*- coding: UTF-8 -*-
 
 from autofocus import generic_minimizer
+from image import normalize
 
 
 def wavelength2rgb(wavelength, gamma=1., intensitymax=255):
