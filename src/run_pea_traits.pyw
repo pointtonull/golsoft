@@ -170,12 +170,13 @@ class PEA(HasTraits):
 
 
     def update_holoimage(self):
-        print("Updating hologram")
-        rgbcolor, wavelength = guess_wavelength(imread(self.holo_filename,
-            False))
-        print("Image wavelength: %f" % wavelength)
-        self.imagecolor = "(%d,%d,%d)" % rgbcolor
-        self.imagewavelength = int(round(wavelength))
+        if self.holo_filename:
+            print("Updating hologram")
+            rgbcolor, wavelength = guess_wavelength(imread(self.holo_filename,
+                False))
+            print("Image wavelength: %f" % wavelength)
+            self.imagecolor = "(%d,%d,%d)" % rgbcolor
+            self.imagewavelength = int(round(wavelength))
 
         image = imread(self.holo_filename)
 
