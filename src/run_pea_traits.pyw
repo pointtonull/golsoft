@@ -166,7 +166,6 @@ class PEA(HasTraits):
             del(parameters["holo_filename"])
 
         parameters["overview_vismode"] = "input map"
-        print(parameters["ref_filename"])
         self.__dict__.update(parameters)
         self.update_hologram()
 
