@@ -68,11 +68,7 @@ def subtract(left, right):
     if right is None:
         return left
     else:
-        def diference(k):
-            diff = ((left - k * right) ** 2).sum()
-            return diff
-
-        best_k = generic_minimizer(diference, 1)
+        best_k = subtract_paramns(left, right)
         print("Subtraction left - %f * right" % best_k)
         result = left - best_k * right
 
