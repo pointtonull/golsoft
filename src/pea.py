@@ -214,7 +214,7 @@ class PEA(object):
 
 
     use_autofocus = Datum(False)
-    user_distance = Datum(0.05)
+    user_distance = Datum(0)
     @Depends(use_autofocus, user_distance, auto_distance)
     def distance(self):
         print("Distance")
