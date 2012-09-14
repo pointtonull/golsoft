@@ -160,7 +160,7 @@ class PEA(object):
 
     @Depends(image, cosines)
     def spectrum(self):
-        print("DFT(R-Hologram)")
+        print("Spectrum (dft(hologram))")
         if self.use_refbeam:
             return get_shifted_dft(self.hologram)
         else:
