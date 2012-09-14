@@ -20,6 +20,7 @@ from traitsui.file_dialog import open_file, FileInfo
 import numpy as np
 
 from autofocus import guess_focus_distance
+from unwrap import phasediff, phasediff2
 from automask import get_auto_mask
 from autopipe import showimage
 from color import guess_wavelength
@@ -554,6 +555,59 @@ class PEA(HasTraits):
             self.plt_propagation.mlab_source.set(scalars=array)
 
 
+    ## PHASE DIFF ##
+    btn_enqueue_phase = Button("Enqueue phase")
+    btn_combine_phases = Button("Combine phases")
+    phase_counter = Int(0)
+    btn_clear_queue = Button("Clear queue")
+    phases = List()
+    reconstructeds = List()
+
+    grp_phase_combiner = Group(
+        Group(
+            HGroup(
+                Item("btn_enqueue_phase", show_label=False),
+                Item("btn_combine_phases", show_label=False),
+                Item("phase_counter",style="readonly"),
+                "-",
+                Item("btn_clear_queue", show_label=False),
+            ),
+#            label="Phase diff",
+#            show_border=True,
+        ),
+    )
+
+
+    @on_trait_change("btn_enqueue_phase")
+    def enqueue_phase(self):
+        print("Enqueue phase")
+        self.phases.append(self.wrapped_phase)
+        self.reconstructeds.append(self.reconstructed)
+        self.update_phases_counter()
+
+    @on_trait_change("btn_clear_queue")
+    def clear_queue(self):
+        print("Clear phases")
+        self.phases = []
+        self.reconstructeds = []
+
+    @on_trait_change("phases")
+    def update_phases_counter(self):
+        print("Updating phases counter")
+        self.phase_counter = len(self.phases)
+    
+    @on_trait_change("btn_combine_phases")
+    def combine_phases(self):
+        print("Combining phases")
+        stack = self.phases[0]
+        for phase in self.phases[1:]:
+            stack = phasediff2(stack, phase)
+
+        self.wrapped_phase = stack
+        
+
+
+
     ## UNWRAPPING ##
     use_unwrapping = Bool(True)
 
@@ -640,6 +694,7 @@ class PEA(HasTraits):
                     grp_ref_beam_parameters,
                     grp_mask_parameters,
                     grp_propagation_parameters,
+                    grp_phase_combiner,
                     grp_unwrapping_parameters,
                 ),
                 VSplit(
