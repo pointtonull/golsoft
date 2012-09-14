@@ -167,10 +167,8 @@ class PEA(HasTraits):
 
         parameters["overview_vismode"] = "input map"
         self.__dict__.update(parameters)
-        self.update_hologram()
 
 
-    @on_trait_change("holo_filename, use_sampled_image")
     def update_holoimage(self):
         print("Updating hologram")
         rgbcolor, wavelength = guess_wavelength(imread(self.holo_filename,
