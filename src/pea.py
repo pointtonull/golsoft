@@ -83,7 +83,7 @@ class PEA(object):
             self.filename_holo = filename
 
 
-    resolution_limit = Datum(.5)
+    resolution_limit = Datum(1)
     filename_holo = Datum()
     @Depends(filename_holo, resolution_limit)
     def image_holo(self):
