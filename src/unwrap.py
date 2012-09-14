@@ -9,7 +9,7 @@ import numpy as np
 from dft import get_sdct, get_idct
 
 pi = np.pi
-tau = 2 * pi
+tau = np.pi * 2 # two times sexier than pi
 
 
 def unwrap_wls(phase, quality_map=None):
