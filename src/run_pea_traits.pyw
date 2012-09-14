@@ -206,14 +206,18 @@ class PEA(HasTraits):
             if self.use_sampled_image:
                 image = limit_size(image, self.resolution_limit)
 
-        self.img_obj = image
+            self.img_obj = image
 
 
     @on_trait_change("btn_update_hologram")
     def update_hologram(self):
         print("Re-calculating hologram")
+        self.update_holoimage()
+        self.update_refimage()
+        self.update_objimage()
         self.hologram = subtract(self.img_holo, self.img_ref)
         self.hologram = subtract(self.hologram, self.img_obj)
+        self.hologram = equalize(self.hologram)
         self.update_ref_beam()
         self.update_overview_vis()
 
@@ -297,7 +301,7 @@ class PEA(HasTraits):
                 self.plt_overview.mlab_source.lut_type = color
                 self.plt_overview.mlab_source.scalars = array
         else:
-            warp_scale = -100 / array.ptp()
+            warp_scale = 100 / array.ptp()
             if self.plt_overview:
                 self.plt_overview.visible = False
             if self.plt_overview_surf is None:
@@ -373,7 +377,6 @@ class PEA(HasTraits):
 
         self.spectrum = get_shifted_dft(self.r_hologram)
 
-        self.update_ref_beam_vis()
         self.update_overview_vis()
         self.update_mask()
 
@@ -417,7 +420,6 @@ class PEA(HasTraits):
         height=600, width=600, show_label=False, resizable=True)
 
     grp_mask_parameters = Group(
-#        "use_masking",
         Group(
             "softness",
             "radious_scale",
@@ -427,7 +429,6 @@ class PEA(HasTraits):
             Item("cuttop", enabled_when="use_cuttop"),
             label="Spectrum mask parameters",
             show_border=True,
-            visible_when="use_masking",
         )
     )
 
@@ -440,8 +441,8 @@ class PEA(HasTraits):
     @on_trait_change("use_masking, softness, radious_scale, use_zero_mask,"
         "zero_scale, use_cuttop, cuttop")
     def update_mask(self):
-        print("Updating mask")
         if self.use_masking:
+            print("Updating mask")
             zero_scale = self.zero_scale if self.use_zero_mask else 0
             cuttop = self.cuttop if self.use_cuttop else 0
             mask, masked_spectrum, centered_spectrum = get_auto_mask(
@@ -455,6 +456,7 @@ class PEA(HasTraits):
             self.update_overview_vis()
         else:
             print("Not using mask")
+            self.masked_spectrum = self.spectrum
 
         self.update_propagation()
 
@@ -625,9 +627,10 @@ class PEA(HasTraits):
         Group(
             Item("unwrapping_method", show_label=False),
             "phase_denoise",
-            show_border=True,
             visible_when="use_unwrapping",
-        )
+            label="Unwrapping",
+            show_border=True,
+        ),
     )
 
     grp_unwrapping_visualizer = Group(
