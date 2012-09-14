@@ -99,6 +99,12 @@ def unwrap_qg(phase, quality_map):
     return phase
 
 
+def phasediff(phase1, phase2):
+    phase = phase1 - phase2
+    phase[phase1 < phase2] += tau
+    return phase
+
+
 def unwrap_iqg(phase, quality_map):
     """
     Quality Guided Path Following unwrapping algoritm
