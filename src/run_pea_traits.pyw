@@ -661,6 +661,12 @@ class PEA(HasTraits):
             print("Not unwrapping")
 
 
+    def update_surface(self, scalars):
+        warp_scale = 100 / scalars.ptp()
+        self.plt_overview_surf.mlab_source.warp_scale = warp_scale
+        self.plt_overview_surf.mlab_source.scalars = scalars
+
+
     @on_trait_change("unwrapping_vismode")
     def update_unwrapping_vis(self):
         if self.unwrapping_vismode == "phase":
