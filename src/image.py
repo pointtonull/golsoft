@@ -60,9 +60,9 @@ def subtract_paramns(left, right):
 def subtract(left, right):
     """
     Will operate
-        left - k * right
+        left - k * right + l
     
-    Where k is the value that minimize the adittion result.
+    Where k and l are the values that minimizes the result.
     """
 
     if right is None:
