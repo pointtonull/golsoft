@@ -139,7 +139,8 @@ class PEA(HasTraits):
         "wavelength",
         "wavelength_nm",
         HGroup("use_sampled_image", "-", Item("btn_save_parameters",
-            label="Parameters"), Item("btn_load_parameters", show_label=False)),
+            label="Parameters"), Item("btn_load_parameters",
+            show_label=False)),
         label="Input file",
         show_border=True,
     )
