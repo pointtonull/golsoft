@@ -57,7 +57,6 @@ def showimage(*images):
     else:
         for image in images:
             imshow(image)
-    return images
 
 
 def color(message, color="blue"):
