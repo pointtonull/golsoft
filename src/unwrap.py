@@ -7,6 +7,7 @@ from blist import blist
 import numpy as np
 
 from dft import get_sdct, get_idct
+from minimize import generic_minimizer
 
 pi = np.pi
 tau = np.pi * 2 # two times sexier than pi
@@ -97,6 +98,28 @@ def unwrap_qg(phase, quality_map):
 
     phase = phase.reshape(shape) * tau
     return phase
+
+
+def diff_match(phase1, phase2, threshold=np.pi):
+    """
+    returns k that minimizes:
+
+        var(diff(phase1) - k * diff(phase2))
+
+
+    """
+
+    diffphase1 = np.diff(phase1)
+    diffphase1[np.abs(diffphase1) > threshold] = 0
+    diffphase2 = np.diff(phase2)
+    diffphase2[np.abs(diffphase2) > threshold] = 0
+
+    def diference(k):
+        distance = diffphase1 - diffphase2 * k
+        return distance.var()
+
+    best_k = generic_minimizer(diference, 1)
+    return best_k
 
 
 def phasediff(phase1, phase2):
