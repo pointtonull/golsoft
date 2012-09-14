@@ -42,22 +42,33 @@ def phase_denoise(phase, size=1):
     return denoised
 
 
+@cache.hybrid
+def subtract_paramns(left, right):
+    """
+    Returns k that minimizes:
+    
+        var(left - k * left)
+    """
+
+    def diference((k)):
+        return (left - k * right).var()
+
+    best_k = float(generic_minimizer(diference, 1))
+    return best_k
+
+
 def subtract(left, right):
     """
     Will operate
-        left - k * right
+        left - k * right + l
     
-    Where k is the value that minimize the adittion result.
+    Where k and l are the values that minimizes the result.
     """
 
     if right is None:
         return left
     else:
-        def diference(k):
-            diff = ((left - k * right) ** 2).sum()
-            return diff
-
-        best_k = generic_minimizer(diference, 1)
+        best_k = subtract_paramns(left, right)
         print("Subtraction left - %f * right" % best_k)
         result = left - best_k * right
 

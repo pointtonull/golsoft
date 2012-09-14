@@ -11,7 +11,7 @@ from mayavi.core.api import PipelineBase
 from mayavi.core.ui.api import SceneEditor
 from mayavi.core.ui.mayavi_scene import MayaviScene
 from mayavi.tools.mlab_scene_model import MlabSceneModel
-from traits.api import Bool, Str, Color, Float, Int
+from traits.api import Bool, Str, Color, Float, Int, List
 from traits.api import HasTraits, Button, File, Range, Enum, Instance, Dict
 from traits.api import on_trait_change
 from traitsui.api import ShellEditor
@@ -20,6 +20,7 @@ from traitsui.file_dialog import open_file, FileInfo
 import numpy as np
 
 from autofocus import guess_focus_distance
+from unwrap import phasediff, phasediff2
 from automask import get_auto_mask
 from autopipe import showimage
 from color import guess_wavelength
@@ -125,9 +126,9 @@ class PEA(HasTraits):
     imagewavelength = Int(0)
     grp_datainput = Group(
 
-        Item('holo_filename', label="Hologram",  springy=True),
-        Item('ref_filename', label="Reference", springy=True),
-        Item('obj_filename', label="Object", springy=True),
+        Item('holo_filename', label="Hologram"),
+        Item('ref_filename', label="Reference"),
+        Item('obj_filename', label="Object"),
         Item("btn_update_hologram", show_label=False),
         "camera",
         HGroup(
@@ -138,7 +139,8 @@ class PEA(HasTraits):
         "wavelength",
         "wavelength_nm",
         HGroup("use_sampled_image", "-", Item("btn_save_parameters",
-            label="Parameters"), Item("btn_load_parameters", show_label=False)),
+            label="Parameters"), Item("btn_load_parameters",
+            show_label=False)),
         label="Input file",
         show_border=True,
     )
@@ -164,56 +166,58 @@ class PEA(HasTraits):
             del(parameters["holo_filename"])
 
         parameters["overview_vismode"] = "input map"
-        print(parameters["ref_filename"])
         self.__dict__.update(parameters)
-        self.update_hologram()
 
 
-    @on_trait_change("holo_filename, use_sampled_image")
     def update_holoimage(self):
-        print("Updating hologram")
-        rgbcolor, wavelength = guess_wavelength(imread(self.holo_filename,
-            False))
-        print("Image wavelength: %f" % wavelength)
-        self.imagecolor = "(%d,%d,%d)" % rgbcolor
-        self.imagewavelength = int(round(wavelength))
+        if self.holo_filename:
+            print("Updating hologram")
+            rgbcolor, wavelength = guess_wavelength(imread(self.holo_filename,
+                False))
+            print("Image wavelength: %f" % wavelength)
+            self.imagecolor = "(%d,%d,%d)" % rgbcolor
+            self.imagewavelength = int(round(wavelength))
 
-        image = imread(self.holo_filename)
+            image = imread(self.holo_filename)
 
-        if self.use_sampled_image:
-            image = limit_size(image, self.resolution_limit)
+            if self.use_sampled_image:
+                image = limit_size(image, self.resolution_limit)
 
-        self.img_holo = image
-        self.empty = np.zeros_like(self.img_holo)
+            self.img_holo = image
+            self.empty = np.zeros_like(self.img_holo)
 
     
-    @on_trait_change("ref_filename, use_sampled_image")
     def update_refimage(self):
-        print("Updating reference image")
-        image = imread(self.ref_filename)
+        if self.ref_filename:
+            print("Updating reference image")
+            image = imread(self.ref_filename)
 
-        if self.use_sampled_image:
-            image = limit_size(image, self.resolution_limit)
+            if self.use_sampled_image:
+                image = limit_size(image, self.resolution_limit)
 
-        self.img_ref = image
+            self.img_ref = image
 
     
-    @on_trait_change("obj_filename, use_sampled_image")
     def update_objimage(self):
         print("Updating object image")
-        image = imread(self.obj_filename)
+        if self.obj_filename:
+            image = imread(self.obj_filename)
 
-        if self.use_sampled_image:
-            image = limit_size(image, self.resolution_limit)
+            if self.use_sampled_image:
+                image = limit_size(image, self.resolution_limit)
 
-        self.img_obj = image
+            self.img_obj = image
 
 
     @on_trait_change("btn_update_hologram")
     def update_hologram(self):
         print("Re-calculating hologram")
+        self.update_holoimage()
+        self.update_refimage()
+        self.update_objimage()
         self.hologram = subtract(self.img_holo, self.img_ref)
         self.hologram = subtract(self.hologram, self.img_obj)
+        self.hologram = equalize(self.hologram)
         self.update_ref_beam()
         self.update_overview_vis()
 
@@ -297,7 +301,7 @@ class PEA(HasTraits):
                 self.plt_overview.mlab_source.lut_type = color
                 self.plt_overview.mlab_source.scalars = array
         else:
-            warp_scale = -100 / array.ptp()
+            warp_scale = 100 / array.ptp()
             if self.plt_overview:
                 self.plt_overview.visible = False
             if self.plt_overview_surf is None:
@@ -373,7 +377,6 @@ class PEA(HasTraits):
 
         self.spectrum = get_shifted_dft(self.r_hologram)
 
-        self.update_ref_beam_vis()
         self.update_overview_vis()
         self.update_mask()
 
@@ -417,7 +420,6 @@ class PEA(HasTraits):
         height=600, width=600, show_label=False, resizable=True)
 
     grp_mask_parameters = Group(
-#        "use_masking",
         Group(
             "softness",
             "radious_scale",
@@ -427,7 +429,6 @@ class PEA(HasTraits):
             Item("cuttop", enabled_when="use_cuttop"),
             label="Spectrum mask parameters",
             show_border=True,
-            visible_when="use_masking",
         )
     )
 
@@ -440,8 +441,8 @@ class PEA(HasTraits):
     @on_trait_change("use_masking, softness, radious_scale, use_zero_mask,"
         "zero_scale, use_cuttop, cuttop")
     def update_mask(self):
-        print("Updating mask")
         if self.use_masking:
+            print("Updating mask")
             zero_scale = self.zero_scale if self.use_zero_mask else 0
             cuttop = self.cuttop if self.use_cuttop else 0
             mask, masked_spectrum, centered_spectrum = get_auto_mask(
@@ -455,6 +456,7 @@ class PEA(HasTraits):
             self.update_overview_vis()
         else:
             print("Not using mask")
+            self.masked_spectrum = self.spectrum
 
         self.update_propagation()
 
@@ -554,6 +556,59 @@ class PEA(HasTraits):
             self.plt_propagation.mlab_source.set(scalars=array)
 
 
+    ## PHASE DIFF ##
+    btn_enqueue_phase = Button("Enqueue phase")
+    btn_combine_phases = Button("Combine phases")
+    phase_counter = Int(0)
+    btn_clear_queue = Button("Clear queue")
+    phases = List()
+    reconstructeds = List()
+
+    grp_phase_combiner = Group(
+        Group(
+            HGroup(
+                Item("btn_enqueue_phase", show_label=False),
+                Item("btn_combine_phases", show_label=False),
+                Item("phase_counter",style="readonly"),
+                "-",
+                Item("btn_clear_queue", show_label=False),
+            ),
+#            label="Phase diff",
+#            show_border=True,
+        ),
+    )
+
+
+    @on_trait_change("btn_enqueue_phase")
+    def enqueue_phase(self):
+        print("Enqueue phase")
+        self.phases.append(self.wrapped_phase)
+        self.reconstructeds.append(self.reconstructed)
+        self.update_phases_counter()
+
+    @on_trait_change("btn_clear_queue")
+    def clear_queue(self):
+        print("Clear phases")
+        self.phases = []
+        self.reconstructeds = []
+
+    @on_trait_change("phases")
+    def update_phases_counter(self):
+        print("Updating phases counter")
+        self.phase_counter = len(self.phases)
+    
+    @on_trait_change("btn_combine_phases")
+    def combine_phases(self):
+        print("Combining phases")
+        stack = self.phases[0]
+        for phase in self.phases[1:]:
+            stack = phasediff2(stack, phase)
+
+        self.wrapped_phase = stack
+        
+
+
+
     ## UNWRAPPING ##
     use_unwrapping = Bool(True)
 
@@ -572,9 +627,10 @@ class PEA(HasTraits):
         Group(
             Item("unwrapping_method", show_label=False),
             "phase_denoise",
-            show_border=True,
             visible_when="use_unwrapping",
-        )
+            label="Unwrapping",
+            show_border=True,
+        ),
     )
 
     grp_unwrapping_visualizer = Group(
@@ -603,6 +659,12 @@ class PEA(HasTraits):
             self.update_overview_vis()
         else:
             print("Not unwrapping")
+
+
+    def update_surface(self, scalars):
+        warp_scale = 100 / scalars.ptp()
+        self.plt_overview_surf.mlab_source.warp_scale = warp_scale
+        self.plt_overview_surf.mlab_source.scalars = scalars
 
 
     @on_trait_change("unwrapping_vismode")
@@ -640,6 +702,7 @@ class PEA(HasTraits):
                     grp_ref_beam_parameters,
                     grp_mask_parameters,
                     grp_propagation_parameters,
+                    grp_phase_combiner,
                     grp_unwrapping_parameters,
                 ),
                 VSplit(

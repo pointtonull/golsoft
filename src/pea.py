@@ -13,7 +13,7 @@ from autofocus import guess_focus_distance
 from automask import get_circles, get_auto_mask
 from dependences import Datum, Depends
 from dft import get_shifted_dft, get_shifted_idft, get_module, get_phase
-from image import get_intensity, imread, subtract, limit_size
+from image import get_intensity, imread, subtract, limit_size, equalize
 from propagation import get_propagation_array
 from unwrap import unwrap_wls
 import cache
@@ -83,7 +83,7 @@ class PEA(object):
             self.filename_holo = filename
 
 
-    resolution_limit = Datum(.5)
+    resolution_limit = Datum(1)
     filename_holo = Datum()
     @Depends(filename_holo, resolution_limit)
     def image_holo(self):
@@ -108,7 +108,8 @@ class PEA(object):
         image = limit_size(image, self.resolution_limit)
         return image
 
-    @Depends(image_holo, image_ref, image_obj)
+    equalize_image = Datum(True)
+    @Depends(image_holo, image_ref, image_obj, equalize_image)
     def image(self):
         print("Calculating hologram")
         image = self.image_holo
@@ -116,6 +117,8 @@ class PEA(object):
             image = subtract(image, self.image_ref)
         if self.filename_obj:
             image = subtract(image, self.image_obj)
+        if self.equalize_image:
+            image = equalize(image)
         return image
 
 
@@ -157,7 +160,7 @@ class PEA(object):
 
     @Depends(image, cosines)
     def spectrum(self):
-        print("DFT(R-Hologram)")
+        print("Spectrum (dft(hologram))")
         if self.use_refbeam:
             return get_shifted_dft(self.hologram)
         else:
@@ -210,8 +213,8 @@ class PEA(object):
         return distance
 
 
-    use_autofocus = Datum(True)
-    user_distance = Datum(0.05)
+    use_autofocus = Datum(False)
+    user_distance = Datum(0)
     @Depends(use_autofocus, user_distance, auto_distance)
     def distance(self):
         print("Distance")
