@@ -11,7 +11,7 @@ from mayavi.core.api import PipelineBase
 from mayavi.core.ui.api import SceneEditor
 from mayavi.core.ui.mayavi_scene import MayaviScene
 from mayavi.tools.mlab_scene_model import MlabSceneModel
-from traits.api import Bool, Str, Color, Float, Int
+from traits.api import Bool, Str, Color, Float, Int, List
 from traits.api import HasTraits, Button, File, Range, Enum, Instance, Dict
 from traits.api import on_trait_change
 from traitsui.api import ShellEditor
