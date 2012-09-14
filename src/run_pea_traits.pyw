@@ -200,10 +200,11 @@ class PEA(HasTraits):
     
     def update_objimage(self):
         print("Updating object image")
-        image = imread(self.obj_filename)
+        if self.obj_filename:
+            image = imread(self.obj_filename)
 
-        if self.use_sampled_image:
-            image = limit_size(image, self.resolution_limit)
+            if self.use_sampled_image:
+                image = limit_size(image, self.resolution_limit)
 
         self.img_obj = image
 
