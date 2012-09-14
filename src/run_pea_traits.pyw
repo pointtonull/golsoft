@@ -126,9 +126,9 @@ class PEA(HasTraits):
     imagewavelength = Int(0)
     grp_datainput = Group(
 
-        Item('holo_filename', label="Hologram",  springy=True),
-        Item('ref_filename', label="Reference", springy=True),
-        Item('obj_filename', label="Object", springy=True),
+        Item('holo_filename', label="Hologram"),
+        Item('ref_filename', label="Reference"),
+        Item('obj_filename', label="Object"),
         Item("btn_update_hologram", show_label=False),
         "camera",
         HGroup(
