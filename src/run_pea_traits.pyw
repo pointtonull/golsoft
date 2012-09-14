@@ -178,13 +178,13 @@ class PEA(HasTraits):
             self.imagecolor = "(%d,%d,%d)" % rgbcolor
             self.imagewavelength = int(round(wavelength))
 
-        image = imread(self.holo_filename)
+            image = imread(self.holo_filename)
 
-        if self.use_sampled_image:
-            image = limit_size(image, self.resolution_limit)
+            if self.use_sampled_image:
+                image = limit_size(image, self.resolution_limit)
 
-        self.img_holo = image
-        self.empty = np.zeros_like(self.img_holo)
+            self.img_holo = image
+            self.empty = np.zeros_like(self.img_holo)
 
     
     @on_trait_change("ref_filename, use_sampled_image")
