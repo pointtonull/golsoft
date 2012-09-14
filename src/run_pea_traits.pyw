@@ -187,7 +187,6 @@ class PEA(HasTraits):
             self.empty = np.zeros_like(self.img_holo)
 
     
-    @on_trait_change("ref_filename, use_sampled_image")
     def update_refimage(self):
         print("Updating reference image")
         image = imread(self.ref_filename)
@@ -198,7 +197,6 @@ class PEA(HasTraits):
         self.img_ref = image
 
     
-    @on_trait_change("obj_filename, use_sampled_image")
     def update_objimage(self):
         print("Updating object image")
         image = imread(self.obj_filename)
