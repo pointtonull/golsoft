@@ -188,13 +188,14 @@ class PEA(HasTraits):
 
     
     def update_refimage(self):
-        print("Updating reference image")
-        image = imread(self.ref_filename)
+        if self.ref_filename:
+            print("Updating reference image")
+            image = imread(self.ref_filename)
 
-        if self.use_sampled_image:
-            image = limit_size(image, self.resolution_limit)
+            if self.use_sampled_image:
+                image = limit_size(image, self.resolution_limit)
 
-        self.img_ref = image
+            self.img_ref = image
 
     
     def update_objimage(self):
