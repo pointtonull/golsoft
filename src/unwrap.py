@@ -122,6 +122,15 @@ def diff_match(phase1, phase2, threshold=np.pi):
     return best_k
 
 
+def phase_match(phase1, phase2):
+    def diference(k):
+        distance = ((phase1 - phase2 + k) ** 2).sum()
+        return distance
+
+    best_k = generic_minimizer(diference, 1)
+    return best_k
+
+
 def phasediff(phase1, phase2):
     phase = phase1 - phase2
     phase[phase1 < phase2] += tau
