@@ -47,6 +47,28 @@ def unwrap_wls(phase, quality_map=None):
     return unwrapped
 
 
+def get_bidiff(phase):
+    if phase.ndim == 2:
+        rows, cols = phase.shape
+        rowdiff = np.concatenate((np.diff(phase, 1, 0), np.zeros((1, cols))),
+            0)
+        coldiff = np.concatenate((np.diff(phase, 1, 1), np.zeros((rows, 1))),
+            1)
+
+        wrowdiff = (rowdiff + pi) % tau - pi
+        wcoldiff = (coldiff + pi) % tau - pi
+
+        rhox = np.diff(np.concatenate((np.zeros((1, cols)), wrowdiff), 0),
+            axis=0)
+        rhoy =np.diff(np.concatenate((np.zeros((rows, 1)), wcoldiff), 1),
+            axis=1)
+
+        rho = rhox + rhoy
+        return rho
+    else:
+        return np.diff(phase)
+
+
 def unwrap_qg(phase, quality_map):
     """
     Quality Guided Path Following unwrapping algoritm
