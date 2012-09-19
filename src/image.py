@@ -87,15 +87,16 @@ def limit_size(image, resolution, avoidodds=True):
         resolution *= 1e6
 
     relsize = (image.size / resolution) ** -.5
-    new_shape = [int(round(res * relsize))
-        for res in image.shape]
+    if relsize > 1:
+        new_shape = [int(round(res * relsize))
+            for res in image.shape]
 
-    if avoidodds:
-        new_shape = tuple([int(res + res % 2)
-            for res in new_shape])
+        if avoidodds:
+            new_shape = tuple([int(res + res % 2)
+                for res in new_shape])
 
-    image = imresize(image, new_shape, 'bicubic')
-    image = np.float32(image)
+        image = imresize(image, new_shape, 'bicubic')
+        image = np.float32(image)
     return image
 
 
