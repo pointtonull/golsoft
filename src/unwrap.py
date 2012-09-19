@@ -207,7 +207,7 @@ def phase_match(phase1, phase2):
         distance = ((phase1 - phase2 + k) ** 2).sum()
         return distance
 
-    best_k = generic_minimizer(diference, 1)
+    best_k = float(generic_minimizer(diference, 1))
     return best_k
 
 
