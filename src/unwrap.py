@@ -218,10 +218,11 @@ def phasediff(phase1, phase2):
 
 
 def phasediff2(phase1, phase2):
+
     scale = diff_match(phase1, phase2)
     phase2 = phase2 * scale
-    shift = phase_match(phase1, phase2)
-    phase2 = phase2 + shift
 
-    diff = phasediff(phase1, phase2)
-    return diff
+    diff = np.zeros_like(phase1)
+    diff[phase1 > phase2] += tau
+
+    return phase2 + diff
