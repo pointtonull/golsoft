@@ -184,7 +184,7 @@ def unwrap_qg(phase, quality_map):
     return phase
 
 
-def diff_match(phase1, phase2, threshold=np.pi):
+def diff_match(phase1, phase2, threshold=np.pi/2.):
     """
     returns k that minimizes:
 
