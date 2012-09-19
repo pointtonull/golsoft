@@ -223,7 +223,7 @@ def phasediff2(phase1, phase2):
     shift = phase_match(phase1, phase2)
     phase2 = phase2 + shift
 
-    diff = phasediff(phase1, phase2 * scale)
+    diff = phasediff(phase1, phase2)
     return diff
 
 
