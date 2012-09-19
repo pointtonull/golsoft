@@ -234,8 +234,7 @@ def imread(filename, flatten=True):
     else:
         try:
             array = misc.imread(filename, flatten)
-        except IOError, error:
-            print("imread non-fatal error: %s" % error)
+        except IOError:
             array = open_gdal(filename)
             array = array[:3, :, :] # alpha shift
             if flatten:
