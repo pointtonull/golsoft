@@ -103,6 +103,34 @@ def unwrap_multiphase(*phases):
     return rho, unwrapped
 
 
+def unwrap_multiphase2(*phases):
+    rows, cols = shape = phases[0].shape
+    assert all((phase.shape == shape for phase in phases))
+
+    phases = [phase * diff_match(phases[0], phase)
+        for phase in phases]
+
+    rhos = []
+    for phase in phases:
+        rho = get_bidiff(phase)
+        rhos.append(rho)
+
+    rho = np.median(rhos, 0)
+    dct = get_sdct(rho)
+
+    col = np.mgrid[pi / cols:pi + pi / cols: pi / cols]
+    row = np.mgrid[pi / rows:pi + pi / rows: pi / rows]
+    cosines = 2 * (np.cos(row)[:, np.newaxis] + np.cos(col) - 2)
+
+    try:
+        phiinv = dct / cosines
+    except:
+        phiinv = dct / cosines[:-1, :-1]
+    unwrapped = get_idct(phiinv)
+
+    return rho, unwrapped
+
+
 def unwrap_qg(phase, quality_map):
     """
     Quality Guided Path Following unwrapping algoritm
