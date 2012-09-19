@@ -191,16 +191,14 @@ def diff_match(phase1, phase2, threshold=np.pi/2.):
         var(diff(phase1) - diff(phase2 * k))
     """
 
-    diffphase1 = np.diff(phase1)
-    diffphase1[np.abs(diffphase1) > threshold] = 0
-    diffphase2 = np.diff(phase2)
-    diffphase2[np.abs(diffphase2) > threshold] = 0
+    diffphase1 = get_bidiff(phase1)
+    diffphase2 = get_bidiff(phase2)
+    diffratio = diffphase1 / diffphase2
+    diffratio[diffratio > threshold] = 1
+    diffratio[diffratio < threshold ** -1] = 1
+    best_k = diffratio.mean()
 
-    def diference(k):
-        distance = diffphase1 - diffphase2 * k
-        return distance.var()
-
-    best_k = generic_minimizer(diference, 1)
+    print("var(bidiff(left) - bidiff(rigth * %f))" % best_k)
     return best_k
 
 
