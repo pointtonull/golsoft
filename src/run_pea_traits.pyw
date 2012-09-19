@@ -7,10 +7,16 @@ import json
 import os
 import sys
 
+import matplotlib
+matplotlib.use("WXAgg")
+import pylab
+pylab.ion()
+
 from mayavi.core.api import PipelineBase
 from mayavi.core.ui.api import SceneEditor
 from mayavi.core.ui.mayavi_scene import MayaviScene
 from mayavi.tools.mlab_scene_model import MlabSceneModel
+from mayavi import mlab
 from traits.api import Bool, Str, Color, Float, Int, List
 from traits.api import HasTraits, Button, File, Range, Enum, Instance, Dict
 from traits.api import on_trait_change
@@ -39,14 +45,29 @@ class PEA(HasTraits):
         HasTraits.__init__(self)
 
         self.context.update({
+
             "np":np,
             "pea":self,
+
+            "equalize":equalize,
             "imread":imread,
             "imwrite":imwrite,
             "normalize":normalize,
-            "equalize":equalize,
-            "showimage":showimage,
+            "phase_denoise": phase_denoise,
             "self":self.context,
+            "showimage":showimage,
+
+            "mlab":mlab,
+            "surf": mlab.surf,
+            "get_module": get_module,
+            "get_phase": get_phase,
+            "get_shifted_dft": get_shifted_dft,
+            "get_shifted_idft": get_shifted_idft,
+
+            "pylab": pylab,
+            "plot": pylab.plot,
+            "figure": pylab.figure,
+
         })
 
         if initialfile:
