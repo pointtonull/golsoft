@@ -188,9 +188,7 @@ def diff_match(phase1, phase2, threshold=np.pi/2.):
     """
     returns k that minimizes:
 
-        var(diff(phase1) - k * diff(phase2))
-
-
+        var(diff(phase1) - diff(phase2 * k))
     """
 
     diffphase1 = np.diff(phase1)
