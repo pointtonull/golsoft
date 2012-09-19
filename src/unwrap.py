@@ -69,6 +69,15 @@ def get_bidiff(phase):
         return np.diff(phase)
 
 
+def get_aligned_phases(*phases):
+    for phase in phases:
+        uwphase = unwrap_wls(phase)
+        if np.median(uwphase) > uwphase.mean():
+            yield -phase
+        else:
+            yield phase
+
+
 def unwrap_qg(phase, quality_map):
     """
     Quality Guided Path Following unwrapping algoritm
