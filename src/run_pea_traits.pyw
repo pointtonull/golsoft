@@ -377,10 +377,11 @@ class PEA(HasTraits):
     )
 
 
-    @on_trait_change("use_ref_beam, use_auto_angles, hologram")
+    @on_trait_change("use_ref_beam, use_auto_angles, hologram, wavelength_nm")
     def calculate_director_cosines(self):
         if self.use_ref_beam and self.use_auto_angles:
-            cos_alpha, cos_beta = calculate_director_cosines(self.hologram)
+            cos_alpha, cos_beta = calculate_director_cosines(self.hologram,
+                self.wavelength_nm * 1e-9, (self.dx, self.dy))
             self.cos_alpha, self.cos_beta = cos_alpha, cos_beta
 
 
