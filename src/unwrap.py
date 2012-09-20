@@ -72,11 +72,7 @@ def unwrap_multiphase(*phases):
     rows, cols = shape = phases[0].shape
     assert all((phase.shape == shape for phase in phases))
 
-    rhos = []
-    for phase in phases:
-        rho = get_bidiff(phase)
-        rhos.append(rho)
-
+    rhos = [get_bidiff(phase) for phase in phases]
     rho = np.median(rhos, 0)
     dct = get_sdct(rho)
 
