@@ -96,10 +96,16 @@ def unwrap_multiphase2(*phases):
     phases = [phase * diff_match(phases[0], phase)
         for phase in phases]
 
-    rhos = []
-    for phase in phases:
-        rho = get_bidiff(phase)
-        rhos.append(rho)
+    rhos = [get_bidiff(phase) for phase in phases]
+    if len(rhos) == 2:
+        rho1, rho2 = rhos
+        sel = abs(rho1) > pi / 2
+
+        rho1[sel] = rho2[sel]
+        sel = abs(rho2) > pi / 2
+
+        rho2[sel] = rho1[sel]
+        rhos = [rho1, rho2]
 
     rho = np.median(rhos, 0)
     dct = get_sdct(rho)
