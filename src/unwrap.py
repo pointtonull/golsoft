@@ -15,23 +15,13 @@ tau = np.pi * 2 # two times sexier than pi
 
 def unwrap_wls(phase, quality_map=None):
     """
-    Weighted least squares algoritm.
     The fastest one but is innacurate.
     TODO: implement weights!!
     TODO: try to use lasso method
     """
     rows, cols = phase.shape
 
-    rowdiff = np.concatenate((np.diff(phase, 1, 0), np.zeros((1, cols))), 0)
-    coldiff = np.concatenate((np.diff(phase, 1, 1), np.zeros((rows, 1))), 1)
-
-    wrowdiff = np.mod(rowdiff + pi, tau) - pi
-    wcoldiff = np.mod(coldiff + pi, tau) - pi
-
-    rhox = np.diff(np.concatenate((np.zeros((1, cols)), wrowdiff), 0), axis=0)
-    rhoy = np.diff(np.concatenate((np.zeros((rows, 1)), wcoldiff), 1), axis=1)
-
-    rho = rhox + rhoy
+    rho = get_bidiff(phase)
     dct = get_sdct(rho)
 
     col = np.mgrid[pi / cols:pi + pi / cols: pi / cols]
@@ -82,11 +72,7 @@ def unwrap_multiphase(*phases):
     rows, cols = shape = phases[0].shape
     assert all((phase.shape == shape for phase in phases))
 
-    rhos = []
-    for phase in phases:
-        rho = get_bidiff(phase)
-        rhos.append(rho)
-
+    rhos = [get_bidiff(phase) for phase in phases]
     rho = np.median(rhos, 0)
     dct = get_sdct(rho)
 
@@ -110,10 +96,16 @@ def unwrap_multiphase2(*phases):
     phases = [phase * diff_match(phases[0], phase)
         for phase in phases]
 
-    rhos = []
-    for phase in phases:
-        rho = get_bidiff(phase)
-        rhos.append(rho)
+    rhos = [get_bidiff(phase) for phase in phases]
+    if len(rhos) == 2:
+        rho1, rho2 = rhos
+        sel = abs(rho1) > pi / 2
+
+        rho1[sel] = rho2[sel]
+        sel = abs(rho2) > pi / 2
+
+        rho2[sel] = rho1[sel]
+        rhos = [rho1, rho2]
 
     rho = np.median(rhos, 0)
     dct = get_sdct(rho)
@@ -218,11 +210,10 @@ def phasediff(phase1, phase2):
 
 
 def phasediff2(phase1, phase2):
-
     scale = diff_match(phase1, phase2)
     phase2 = phase2 * scale
 
     diff = np.zeros_like(phase1)
-    diff[phase1 > phase2] += tau
+    diff[phase2 > phase1] += tau
 
     return phase2 + diff

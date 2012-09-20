@@ -219,7 +219,8 @@ def open_raw(filename):
         return array
 
     else:
-        raise IOError("unknown resolution on raw file %s" % filename)
+        raise IOError("unknown resolution on raw file %s (%d pixels)" %
+            (filename, length))
 
 
 def open_gdal(filename):
