@@ -194,6 +194,7 @@ def open_raw(filename):
     known_resolutions = {
         5038848: (1944, 2592, "bayer"),
         262144: (512, 512, "mono"),
+        266638: (512, 520, "mono"),
     }
 
     bits = open(filename, "rb").read()
