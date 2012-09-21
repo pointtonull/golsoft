@@ -26,7 +26,7 @@ from traitsui.file_dialog import open_file, FileInfo
 import numpy as np
 
 from autofocus import guess_focus_distance
-from unwrap import phasediff, phasediff2
+from unwrap import unwrap_phasediff2
 from automask import get_auto_mask
 from autopipe import showimage
 from color import guess_wavelength
@@ -624,7 +624,7 @@ class PEA(HasTraits):
         print("Combining phases")
         stack = self.phases[0]
         for phase in self.phases[1:]:
-            stack = phasediff2(stack, phase)
+            stack = unwrap_phasediff2(stack, phase)
 
         self.wrapped_phase = stack
         

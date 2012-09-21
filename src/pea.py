@@ -14,6 +14,7 @@ from automask import get_circles, get_auto_mask
 from dependences import Datum, Depends
 from dft import get_shifted_dft, get_shifted_idft, get_module, get_phase
 from image import get_intensity, imread, subtract, limit_size, equalize
+from image import phase_denoise
 from propagation import get_propagation_array
 from unwrap import unwrap_wls
 import cache
@@ -130,22 +131,26 @@ class PEA(object):
 
     use_autocosines = Datum(True)
     user_cosines = Datum((0, 0))
-    @Depends(ispectrum, use_autocosines, user_cosines)
+    wavelength = Datum(650e-9)
+    dx = Datum(3e-6)
+    dy = Datum(3e-6)
+    @Depends(ispectrum, use_autocosines, user_cosines, wavelength, dx, dy)
     def cosines(self):
         print("Director cosines")
         if self.use_autocosines:
-            return calculate_director_cosines(self.ispectrum)
+            return calculate_director_cosines(self.ispectrum, self.wavelength,
+                (self.dx, self.dy))
         else:
             return self.user_cosines
 
 
-    wavelength = Datum(650e-9)
     @Depends(image, cosines, wavelength)
     def refbeam(self):
         print("Calculating refbeam")
         cos_alpha, cos_beta = self.cosines
-        return get_refbeam(self.image.shape, cos_alpha, cos_beta,
-            self.wavelength)
+        refbeam = get_refbeam(self.image.shape, cos_alpha, cos_beta,
+            self.wavelength, (self.dx, self.dy))
+        return refbeam
 
 
     use_refbeam = Datum(False)
@@ -202,8 +207,6 @@ class PEA(object):
         return self.masking[2]
 
 
-    dx = Datum(3e-6)
-    dy = Datum(3e-6)
     @Depends(ispectrum, wavelength, dx, dy)
     def auto_distance(self):
         print("Auto distance")
@@ -257,7 +260,9 @@ class PEA(object):
         return get_phase(self.reconstructed)
 
     unwrapper = Datum(unwrap_wls)
-    @Depends(phase, module, unwrapper)
+    phase_denoise = Datum(0)
+    @Depends(phase, module, unwrapper, phase_denoise)
     def unwrapped_phase(self):
         print("Unwrapped phase")
-        return self.unwrapper(self.phase, self.module)
+        phase = phase_denoise(self.phase, self.phase_denoise)
+        return self.unwrapper(phase, self.module)

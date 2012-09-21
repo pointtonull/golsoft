@@ -13,15 +13,41 @@ pi = np.pi
 tau = np.pi * 2 # two times sexier than pi
 
 
+def wrapped_diff(phase, n=1, axis=-1, threshold=pi):
+    diff = np.diff(phase, n, axis)
+    diff[diff < -threshold] += 2 * threshold
+    diff[diff > threshold] -= 2 * threshold
+    return diff
+
+
+def get_aligned_phases(*phases):
+    for phase in phases:
+        uwphase = unwrap_wls(phase)
+        if np.median(uwphase) > uwphase.mean():
+            yield -phase
+        else:
+            yield phase
+
+
 def unwrap_wls(phase, quality_map=None):
     """
     The fastest one but is innacurate.
-    TODO: implement weights!!
-    TODO: try to use lasso method
+    TODO: use lasso method
     """
     rows, cols = phase.shape
 
-    rho = get_bidiff(phase)
+    wrowdiff = wrapped_diff(phase, 1, 0, pi)
+    wrowdiff = np.concatenate((wrowdiff, np.zeros((1, cols))), 0)
+
+    wcoldiff = wrapped_diff(phase, 1, 1, pi)
+    wcoldiff = np.concatenate((wcoldiff, np.zeros((rows, 1))), 1)
+
+    rhox = np.diff(np.concatenate((np.zeros((1, cols)),
+        wrowdiff), 0), axis=0)
+    rhoy =np.diff(np.concatenate((np.zeros((rows, 1)),
+        wcoldiff), 1), axis=1)
+
+    rho = rhox + rhoy
     dct = get_sdct(rho)
 
     col = np.mgrid[pi / cols:pi + pi / cols: pi / cols]
@@ -37,77 +63,26 @@ def unwrap_wls(phase, quality_map=None):
     return unwrapped
 
 
-def get_bidiff(phase):
-    if phase.ndim == 2:
-        rows, cols = phase.shape
-        rowdiff = np.concatenate((np.diff(phase, 1, 0), np.zeros((1, cols))),
-            0)
-        coldiff = np.concatenate((np.diff(phase, 1, 1), np.zeros((rows, 1))),
-            1)
-
-        wrowdiff = (rowdiff + pi) % tau - pi
-        wcoldiff = (coldiff + pi) % tau - pi
-
-        rhox = np.diff(np.concatenate((np.zeros((1, cols)), wrowdiff), 0),
-            axis=0)
-        rhoy =np.diff(np.concatenate((np.zeros((rows, 1)), wcoldiff), 1),
-            axis=1)
-
-        rho = rhox + rhoy
-        return rho
-    else:
-        return np.diff(phase)
-
-
-def get_aligned_phases(*phases):
-    for phase in phases:
-        uwphase = unwrap_wls(phase)
-        if np.median(uwphase) > uwphase.mean():
-            yield -phase
-        else:
-            yield phase
-
-
 def unwrap_multiphase(*phases):
     rows, cols = shape = phases[0].shape
     assert all((phase.shape == shape for phase in phases))
 
-    rhos = [get_bidiff(phase) for phase in phases]
-    rho = np.median(rhos, 0)
-    dct = get_sdct(rho)
+    rhos = []
+    for phase in phases:
+        wrowdiff = wrapped_diff(phase, 1, 0, pi)
+        wrowdiff = np.concatenate((wrowdiff, np.zeros((1, cols))), 0)
 
-    col = np.mgrid[pi / cols:pi + pi / cols: pi / cols]
-    row = np.mgrid[pi / rows:pi + pi / rows: pi / rows]
-    cosines = 2 * (np.cos(row)[:, np.newaxis] + np.cos(col) - 2)
+        wcoldiff = wrapped_diff(phase, 1, 1, pi)
+        wcoldiff = np.concatenate((wcoldiff, np.zeros((rows, 1))), 1)
 
-    try:
-        phiinv = dct / cosines
-    except:
-        phiinv = dct / cosines[:-1, :-1]
-    unwrapped = get_idct(phiinv)
+        rhox = np.diff(np.concatenate((np.zeros((1, cols)),
+            wrowdiff), 0), axis=0)
+        rhoy =np.diff(np.concatenate((np.zeros((rows, 1)),
+            wcoldiff), 1), axis=1)
 
-    return rho, unwrapped
+        rhos.append(rhox + rhoy)
 
-
-def unwrap_multiphase2(*phases):
-    rows, cols = shape = phases[0].shape
-    assert all((phase.shape == shape for phase in phases))
-
-    phases = [phase * diff_match(phases[0], phase)
-        for phase in phases]
-
-    rhos = [get_bidiff(phase) for phase in phases]
-    if len(rhos) == 2:
-        rho1, rho2 = rhos
-        sel = abs(rho1) > pi / 2
-
-        rho1[sel] = rho2[sel]
-        sel = abs(rho2) > pi / 2
-
-        rho2[sel] = rho1[sel]
-        rhos = [rho1, rho2]
-
-    rho = np.median(rhos, 0)
+    rho = np.mean(rhos, 0)
     dct = get_sdct(rho)
 
     col = np.mgrid[pi / cols:pi + pi / cols: pi / cols]
@@ -181,13 +156,17 @@ def diff_match(phase1, phase2, threshold=np.pi/2.):
     returns k that minimizes:
 
         var(diff(phase1) - diff(phase2 * k))
-    """
 
-    diffphase1 = get_bidiff(phase1)
-    diffphase2 = get_bidiff(phase2)
+    """
+    #TODO: re-implement minimization
+
+    diffphase1 = wrapped_diff(phase1)
+    diffphase2 = wrapped_diff(phase2)
+
     diffratio = diffphase1 / diffphase2
     diffratio[diffratio > threshold] = 1
     diffratio[diffratio < threshold ** -1] = 1
+
     best_k = diffratio.mean()
 
     print("var(bidiff(left) - bidiff(rigth * %f))" % best_k)
@@ -203,13 +182,13 @@ def phase_match(phase1, phase2):
     return best_k
 
 
-def phasediff(phase1, phase2):
+def unwrap_phasediff(phase1, phase2):
     phase = phase1 - phase2
     phase[phase1 < phase2] += tau
     return phase
 
 
-def phasediff2(phase1, phase2):
+def unwrap_phasediff2(phase1, phase2):
     scale = diff_match(phase1, phase2)
     phase2 = phase2 * scale
 
