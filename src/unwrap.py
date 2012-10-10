@@ -13,13 +13,6 @@ pi = np.pi
 tau = np.pi * 2 # two times sexier than pi
 
 
-def wrapped_diff(phase, n=1, axis=-1, threshold=pi):
-    diff = np.diff(phase, n, axis)
-    diff[diff < -threshold] += 2 * threshold
-    diff[diff > threshold] -= 2 * threshold
-    return diff
-
-
 def get_aligned_phases(*phases):
     for phase in phases:
         uwphase = unwrap_wls(phase)
@@ -29,7 +22,23 @@ def get_aligned_phases(*phases):
             yield phase
 
 
-def unwrap_wls(phase, quality_map=None):
+def wrapped_diff(phase, n=1, axis=-1, threshold=pi):
+    diff = np.diff(phase, n, axis)
+    diff[diff < -threshold] += 2 * threshold
+    diff[diff > threshold] -= 2 * threshold
+    return diff
+
+
+def wrapped_gradient(phase):
+    dx, dy = np.gradient(phase)
+    for threshold in (tau, pi):
+        for diff in (dx, dy):
+            diff[diff < -threshold / 2] += threshold
+            diff[diff > threshold / 2] -= threshold
+    return dx + dy
+
+
+def unwrap_wls(phase):
     """
     The fastest one but is innacurate.
     TODO: use lasso method

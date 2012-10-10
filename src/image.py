@@ -75,7 +75,7 @@ def subtract(left, right):
         return result
 
 
-def limit_size(image, resolution, avoidodds=True):
+def limit_size(image, limit, avoidodds=True):
     """
     Image is a numpy array.
     Resulution is a quantity:
@@ -83,11 +83,11 @@ def limit_size(image, resolution, avoidodds=True):
         in megapixels if < 1000
     """
 
-    if resolution < 1000:
-        resolution *= 1e6
+    if limit < 1000:
+        limit *= 1e6
 
-    relsize = (image.size / resolution) ** -.5
-    if relsize > 1:
+    relsize = (image.size / limit) ** -.5
+    if relsize <= 1:
         new_shape = [int(round(res * relsize))
             for res in image.shape]
 

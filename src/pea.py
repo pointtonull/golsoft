@@ -80,6 +80,7 @@ def calculate_director_cosines(spectrum, wavelength, (dx, dy)):
 class PEA(object):
 
     def __init__(self, filename=None):
+
         if filename:
             self.filename_holo = filename
 
@@ -93,6 +94,7 @@ class PEA(object):
         image = limit_size(image, self.resolution_limit)
         return image
 
+
     filename_ref = Datum("")
     @Depends(filename_ref, resolution_limit)
     def image_ref(self):
@@ -101,6 +103,7 @@ class PEA(object):
         image = limit_size(image, self.resolution_limit)
         return image
 
+
     filename_obj = Datum("")
     @Depends(filename_obj, resolution_limit)
     def image_obj(self):
@@ -108,6 +111,7 @@ class PEA(object):
         image = imread(self.filename_obj, True)
         image = limit_size(image, self.resolution_limit)
         return image
+
 
     equalize_image = Datum(True)
     @Depends(image_holo, image_ref, image_obj, equalize_image)
@@ -138,8 +142,8 @@ class PEA(object):
     def cosines(self):
         print("Director cosines")
         if self.use_autocosines:
-            return calculate_director_cosines(self.ispectrum, self.wavelength,
-                (self.dx, self.dy))
+            return calculate_director_cosines(self.ispectrum,
+                self.wavelength, (self.dx, self.dy))
         else:
             return self.user_cosines
 
@@ -249,20 +253,34 @@ class PEA(object):
         print("IDFT(Propagated)")
         return get_shifted_idft(self.propagated)
 
+
     @Depends(reconstructed)
     def module(self):
         print("Module")
         return get_module(self.reconstructed)
+
 
     @Depends(reconstructed)
     def phase(self):
         print("Phase")
         return get_phase(self.reconstructed)
 
-    unwrapper = Datum(unwrap_wls)
+
     phase_denoise = Datum(0)
+    @Depends(phase, phase_denoise)
+    def denoised_phase(self):
+        if self.phase_denoise:
+            print("Denoising phase")
+            return phase_denoise(self.phase, self.phase_denoise)
+        else:
+            return self.phase
+
+
+    unwrapper = Datum(unwrap_wls)
     @Depends(phase, module, unwrapper, phase_denoise)
     def unwrapped_phase(self):
-        print("Unwrapped phase")
-        phase = phase_denoise(self.phase, self.phase_denoise)
-        return self.unwrapper(phase, self.module)
+        print("Unwrapping phase")
+        if self.unwrapper.func_code.co_argcount == 1:
+            return self.unwrapper(self.denoised_phase)
+        else:
+            return self.unwrapper(self.denoised_phase, self.module)
