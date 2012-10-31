@@ -167,7 +167,7 @@ class PEA(object):
             return self.image
 
 
-    @Depends(image, cosines)
+    @Depends(hologram, cosines)
     def spectrum(self):
         print("Spectrum (dft(hologram))")
         if self.use_refbeam:
@@ -176,20 +176,20 @@ class PEA(object):
             return self.ispectrum
 
 
-    softness = Datum(0)
-    order_scale = Datum(0.8)
-    use_zeromask = Datum(True)
-    zero_scale = Datum(1.2)
-    use_cuttop = Datum(False)
-    cuttop = Datum(0.005)
-    @Depends(spectrum, order_scale, use_zeromask, zero_scale, softness,
-        use_cuttop, cuttop)
+    mask_softness = Datum(0)
+    mask_order_scale = Datum(0.8)
+    mask_use_zeromask = Datum(True)
+    mask_zero_scale = Datum(1.2)
+    mask_use_cuttop = Datum(False)
+    mask_cuttop = Datum(0.005)
+    @Depends(spectrum, mask_order_scale, mask_use_zeromask, mask_zero_scale,
+        mask_softness, mask_use_cuttop, mask_cuttop)
     def masking(self):
         print("Masking")
-        zero_scale = self.zero_scale if self.use_zeromask else 0
-        cuttop = self.cuttop if self.use_cuttop else 0
+        zero_scale = self.mask_zero_scale if self.mask_use_zeromask else 0
+        cuttop = self.mask_cuttop if self.mask_use_cuttop else 0
         mask, masked, centered = get_auto_mask(self.spectrum,
-            self.softness, self.order_scale, zero_scale, cuttop)
+            self.mask_softness, self.mask_order_scale, zero_scale, cuttop)
         return mask, masked, centered
 
 

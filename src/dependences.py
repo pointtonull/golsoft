@@ -44,6 +44,7 @@ The process must be a new-style class, e.g.:
 
 """
 
+
 def Datum(value=None):
 
     class Datum(property):
