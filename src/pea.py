@@ -13,10 +13,10 @@ from autofocus import guess_focus_distance
 from automask import get_circles, get_auto_mask
 from dependences import Datum, Depends
 from dft import get_shifted_dft, get_shifted_idft, get_module, get_phase
-from image import get_intensity, imread, subtract, limit_size, equalize
+from image import get_intensity, imread, subtract, limit_size, equalize, imwrite
 from image import phase_denoise
 from propagation import get_propagation_array
-from unwrap import unwrap_wls
+from unwrap import unwrap_wls, wrapped_diff, unwrap_qg
 import cache
 
 
@@ -91,7 +91,8 @@ class PEA(object):
     def image_holo(self):
         print("Loading hologram image")
         image = imread(self.filename_holo, True)
-        image = limit_size(image, self.resolution_limit)
+        if self.resolution_limit != 0:
+            image = limit_size(image, self.resolution_limit)
         return image
 
 
@@ -284,3 +285,45 @@ class PEA(object):
             return self.unwrapper(self.denoised_phase)
         else:
             return self.unwrapper(self.denoised_phase, self.module)
+
+def main():
+    import sys
+    filenames = sys.argv[1:]
+    if not filenames:
+        print("No filenames where specified")
+        return 1
+
+    pea = PEA()
+    pea.resolution_limit = 0 # no use img_resize
+#    pea.unwrapper = unwrap_qg # a better algoritm
+
+    for filename in filenames:
+        print("\n%s:" % filename)
+        if "-h" in filename:
+            afix = "-h"
+        elif "-c" in filename:
+            afix = "-c"
+        else:
+            print("Invalid filename, must be on /.*[hc].[.*]/ form")
+            print("Ignoring '%s'" % filename)
+            continue
+
+        pea.filename_holo = filename
+
+        module_filename = filename.replace(afix, "-module")
+        imwrite(pea.module, module_filename)
+
+        phase_filename = filename.replace(afix, "-phase")
+        imwrite(pea.phase, phase_filename)
+
+        phasediff_filename = filename.replace(afix, "-phasediff")
+        imwrite(wrapped_diff(pea.phase), phasediff_filename)
+
+        uphase_filename = filename.replace(afix, "-unwraped phase")
+        imwrite(pea.unwrapped_phase, uphase_filename)
+
+        
+    return 0
+
+if __name__ == "__main__":
+    exit(main())
