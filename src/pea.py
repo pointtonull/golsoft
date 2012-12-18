@@ -91,7 +91,8 @@ class PEA(object):
     def image_holo(self):
         print("Loading hologram image")
         image = imread(self.filename_holo, True)
-        image = limit_size(image, self.resolution_limit)
+        if self.resolution_limit != 0:
+            image = limit_size(image, self.resolution_limit)
         return image
 
 
