@@ -295,7 +295,8 @@ def main():
 
     pea = PEA()
     pea.resolution_limit = 0 # no use img_resize
-#    pea.unwrapper = unwrap_qg # a better algoritm
+    pea.unwrapper = unwrap_qg # a better algoritm
+    pea.phase_denoise = 4
 
     for filename in filenames:
         print("\n%s:" % filename)
@@ -310,19 +311,19 @@ def main():
 
         pea.filename_holo = filename
 
-        module_filename = filename.replace(afix, "-module")
-        imwrite(pea.module, module_filename)
+#        module_filename = filename.replace(afix, "-module")
+#        imwrite(pea.module, module_filename)
 
-        phase_filename = filename.replace(afix, "-phase")
-        imwrite(pea.phase, phase_filename)
+#        phase_filename = filename.replace(afix, "-phase")
+#        imwrite(pea.phase, phase_filename)
 
-        phasediff_filename = filename.replace(afix, "-phasediff")
-        imwrite(wrapped_diff(pea.phase), phasediff_filename)
+#        phasediff_filename = filename.replace(afix, "-phasediff")
+#        imwrite(wrapped_diff(pea.phase), phasediff_filename)
 
-        uphase_filename = filename.replace(afix, "-unwraped phase")
+        uphase_filename = filename.replace(afix, "-unwraped phase qg")
         imwrite(pea.unwrapped_phase, uphase_filename)
 
-        
+
     return 0
 
 if __name__ == "__main__":
