@@ -126,15 +126,15 @@ def unwrap_qg(phase, quality_map):
     phase /= tau
 
     def get_neighbors(pos):
-        row = pos % cols + 1
-        col = pos / cols + 1
-        if col > 1:
+        row = pos / cols
+        col = pos % cols
+        if row > 0:
             yield pos - cols
-        if col < cols:
+        if row < (rows - 1):
             yield pos + cols
-        if row > 1:
+        if col > 0:
             yield pos - 1
-        if row < rows:
+        if col < (cols - 1):
             yield pos + 1
 
     phase = phase.ravel()
@@ -154,7 +154,11 @@ def unwrap_qg(phase, quality_map):
         for pos in get_neighbors(pixel):
             if pos not in adder:
                 adder[pos] = phase[pixel]
-                insort(border, (quality_map[pos], pos))
+                try:
+                    insort(border, (quality_map[pos], pos))
+                except IndexError:
+                    print(quality_map.shape, pos)
+                    raise
 
     phase = phase.reshape(shape) * tau
     return phase
