@@ -43,10 +43,10 @@ def phase_denoise(phase, size=1):
 
 
 @cache.hybrid
-def subtract_paramns(left, right):
+def get_subtract_paramns(left, right):
     """
     Returns k that minimizes:
-    
+
         var(left - k * left)
     """
 
@@ -61,14 +61,14 @@ def subtract(left, right):
     """
     Will operate
         left - k * right + l
-    
+
     Where k and l are the values that minimizes the result.
     """
 
     if right is None:
         return left
     else:
-        best_k = subtract_paramns(left, right)
+        best_k = get_subtract_paramns(left, right)
         print("Subtraction left - %f * right" % best_k)
         result = left - best_k * right
 
