@@ -281,3 +281,18 @@ def unwrap_phasediff2(phase1, phase2):
     diff[phase2 > phase1] += tau
 
     return phase2 + diff
+
+
+def main():
+    from pea import PEA
+    from autopipe import showimage
+    pea = PEA()
+    pea.filename_holo = "../../../../documentos/carlos/enfused-sub/0427-0433-04X-568-c.tiff"
+    wg = wrapped_gradient(pea.phase)
+    showimage(wg)
+
+    return 0
+
+
+if __name__ == "__main__":
+    exit(main())
