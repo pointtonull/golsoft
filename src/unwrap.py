@@ -105,6 +105,45 @@ def unwrap_wls(phase):
     return unwrapped
 
 
+def unwrap_wls2(phase):
+    """
+    The fastest one but is innacurate.
+    TODO: use lasso method
+    """
+    rows, cols = phase.shape
+
+    wrowdiff = wrapped_diff(phase, 1, 0, pi)
+    wrowdiff = np.concatenate((wrowdiff, np.zeros((1, cols))), 0)
+
+    wcoldiff = wrapped_diff(phase, 1, 1, pi)
+    wcoldiff = np.concatenate((wcoldiff, np.zeros((rows, 1))), 1)
+
+    rhox = np.diff(np.concatenate((np.zeros((1, cols)),
+        wrowdiff), 0), axis=0)
+    rhoy =np.diff(np.concatenate((np.zeros((rows, 1)),
+        wcoldiff), 1), axis=1)
+
+    rho = rhox + rhoy
+    rho[rho < -pi / 4] = NaN
+    rho[rho > pi / 4] = NaN
+
+    rho = fill_holes(rho)
+    dct = get_sdct(rho)
+
+    col = np.mgrid[pi / cols:pi + pi / cols: pi / cols]
+    row = np.mgrid[pi / rows:pi + pi / rows: pi / rows]
+    cosines = 2 * (np.cos(row)[:, np.newaxis] + np.cos(col) - 2)
+
+    try:
+        phiinv = dct / cosines
+    except:
+        phiinv = dct / cosines[:-1, :-1]
+    unwrapped = get_idct(phiinv)
+
+    return unwrapped
+
+
+
 def unwrap_multiphase(*phases):
     rows, cols = shape = phases[0].shape
     assert all((phase.shape == shape for phase in phases))
