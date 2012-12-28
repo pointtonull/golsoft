@@ -5,6 +5,9 @@ from bisect import insort
 
 from blist import blist
 import numpy as np
+from numpy import arange, NaN
+
+from scipy.interpolate import griddata
 
 from dft import get_sdct, get_idct
 from minimize import generic_minimizer
@@ -30,12 +33,42 @@ def wrapped_diff(phase, n=1, axis=-1, threshold=pi):
 
 
 def wrapped_gradient(phase):
+    rows, cols = phase.shape
     dx, dy = np.gradient(phase)
-    for threshold in (tau, pi):
-        for diff in (dx, dy):
-            diff[diff < -threshold / 2] += threshold
-            diff[diff > threshold / 2] -= threshold
-    return dx + dy
+    for diff in (dx, dy):
+        diff[diff < -pi / 2] += pi
+        diff[diff > pi / 2] -= pi
+
+    gradient = dx + dy
+    gradient[gradient < -pi / 4] = NaN
+    gradient[gradient > pi / 4] = NaN
+
+    gradient = fill_holes(gradient)
+
+    return gradient
+
+
+def fill_holes(array):
+    array = array.copy()
+    border = 3
+    extended = np.hstack((array[:, -border:], array, array[:, :border]))
+    extended = np.vstack((extended[-border:, :], extended, extended[:border, :]))
+
+    nans = zip(*np.where(np.isnan(array)))
+    print("Filling %d NaNs values with %d good data points." % 
+        (len(nans), (array.size - len(nans))))
+    for row, col in nans:
+        context = extended[row: row + 2 * border + 1,
+            col: col + 2 * border + 1]
+        good_points = np.where(np.logical_not(np.isnan(context)))
+        good_values = context[good_points]
+
+        new_value = griddata(good_points, good_values, (border, border),
+            method='cubic')
+        array[row, col] = new_value
+        extended[row + border, col + border] = new_value
+
+    return array
 
 
 def unwrap_wls(phase):
