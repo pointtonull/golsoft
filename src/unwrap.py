@@ -5,6 +5,9 @@ from bisect import insort
 
 from blist import blist
 import numpy as np
+from numpy import arange, NaN
+
+from scipy.interpolate import griddata
 
 from dft import get_sdct, get_idct
 from minimize import generic_minimizer
@@ -30,12 +33,42 @@ def wrapped_diff(phase, n=1, axis=-1, threshold=pi):
 
 
 def wrapped_gradient(phase):
+    rows, cols = phase.shape
     dx, dy = np.gradient(phase)
-    for threshold in (tau, pi):
-        for diff in (dx, dy):
-            diff[diff < -threshold / 2] += threshold
-            diff[diff > threshold / 2] -= threshold
-    return dx + dy
+    for diff in (dx, dy):
+        diff[diff < -pi / 2] += pi
+        diff[diff > pi / 2] -= pi
+
+    gradient = dx + dy
+    gradient[gradient < -pi / 4] = NaN
+    gradient[gradient > pi / 4] = NaN
+
+    gradient = fill_holes(gradient)
+
+    return gradient
+
+
+def fill_holes(array):
+    array = array.copy()
+    border = 3
+    extended = np.hstack((array[:, -border:], array, array[:, :border]))
+    extended = np.vstack((extended[-border:, :], extended, extended[:border, :]))
+
+    nans = zip(*np.where(np.isnan(array)))
+    print("Filling %d NaNs values with %d good data points." % 
+        (len(nans), (array.size - len(nans))))
+    for row, col in nans:
+        context = extended[row: row + 2 * border + 1,
+            col: col + 2 * border + 1]
+        good_points = np.where(np.logical_not(np.isnan(context)))
+        good_values = context[good_points]
+
+        new_value = griddata(good_points, good_values, (border, border),
+            method='cubic')
+        array[row, col] = new_value
+        extended[row + border, col + border] = new_value
+
+    return array
 
 
 def unwrap_wls(phase):
@@ -70,6 +103,45 @@ def unwrap_wls(phase):
     unwrapped = get_idct(phiinv)
 
     return unwrapped
+
+
+def unwrap_wls2(phase):
+    """
+    The fastest one but is innacurate.
+    TODO: use lasso method
+    """
+    rows, cols = phase.shape
+
+    wrowdiff = wrapped_diff(phase, 1, 0, pi)
+    wrowdiff = np.concatenate((wrowdiff, np.zeros((1, cols))), 0)
+
+    wcoldiff = wrapped_diff(phase, 1, 1, pi)
+    wcoldiff = np.concatenate((wcoldiff, np.zeros((rows, 1))), 1)
+
+    rhox = np.diff(np.concatenate((np.zeros((1, cols)),
+        wrowdiff), 0), axis=0)
+    rhoy =np.diff(np.concatenate((np.zeros((rows, 1)),
+        wcoldiff), 1), axis=1)
+
+    rho = rhox + rhoy
+    rho[rho < -pi / 4] = NaN
+    rho[rho > pi / 4] = NaN
+
+    rho = fill_holes(rho)
+    dct = get_sdct(rho)
+
+    col = np.mgrid[pi / cols:pi + pi / cols: pi / cols]
+    row = np.mgrid[pi / rows:pi + pi / rows: pi / rows]
+    cosines = 2 * (np.cos(row)[:, np.newaxis] + np.cos(col) - 2)
+
+    try:
+        phiinv = dct / cosines
+    except:
+        phiinv = dct / cosines[:-1, :-1]
+    unwrapped = get_idct(phiinv)
+
+    return unwrapped
+
 
 
 def unwrap_multiphase(*phases):
@@ -209,3 +281,18 @@ def unwrap_phasediff2(phase1, phase2):
     diff[phase2 > phase1] += tau
 
     return phase2 + diff
+
+
+def main():
+    from pea import PEA
+    from autopipe import showimage
+    pea = PEA()
+    pea.filename_holo = "../../../../documentos/carlos/enfused-sub/0427-0433-04X-568-c.tiff"
+    wg = wrapped_gradient(pea.phase)
+    showimage(wg)
+
+    return 0
+
+
+if __name__ == "__main__":
+    exit(main())
