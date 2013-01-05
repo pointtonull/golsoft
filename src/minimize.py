@@ -2,8 +2,11 @@
 #-*- coding: UTF-8 -*-
 
 from scipy import optimize
+from numpy import pi
 
 import numpy as np
+
+tau = 2 * pi
 
 def generic_minimizer(fitness_func, initial_guess, optimizers=None):
     """
