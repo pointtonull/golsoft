@@ -17,6 +17,7 @@ from image import get_intensity, imread, subtract, limit_size, equalize, imwrite
 from image import phase_denoise
 from propagation import get_propagation_array
 from unwrap import unwrap_wls, unwrap_qg
+from minimize import get_fitted_paraboloid2
 import cache
 
 
