@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
-from scipy import optimize
+from scipy import optimize, stats
 from numpy import pi
 
 import numpy as np
@@ -31,30 +31,9 @@ def generic_minimizer(fitness_func, initial_guess, optimizers=None):
     return best_guess
 
 
-def squared_error(array1, array2):
-    return abs(((array1 - array2) ** 2)).sum()
-
-
 def get_paraboloid(x, y, a0, b0, a1, b1, c=0):
     """ a0 * (x - b0) ** 2 + a1 * (y - b1) ** 2 + c """
     return a0 * (x - b0) ** 2 + a1 * (y - b1) ** 2 + c
-
-
-def get_plane(linspace, a, b):
-    """ linspace * a + b """
-    return linspace * a + b
-
-
-def get_fitted_paraboloid(data):
-    xs, ys = data.shape
-    x, y = np.mgrid[:xs, :ys]
-
-    def fitness((a0, b0, a1, b1, c)):
-        error = squared_error(data, get_paraboloid(x, y, a0, b0, a1, b1, c))
-        return error
-
-    params = generic_minimizer(fitness, [1] * 5)
-    return get_paraboloid(x, y, *params)
 
 
 def wrapped_gradient(phase):
@@ -69,28 +48,28 @@ def wrapped_gradient(phase):
     return gradient
 
 
-def get_fitted_paraboloid2(data):
+def get_fitted_paraboloid(data):
     """
-    Similar to get_fitted_paraboloid but uses the complex gradient to determine
-    the fittness. This method allow us to correct a wrapped phase.
+    Adjust a paraboloid to the input data using normal linear regression over
+    the gradient of each dimension outline.
+    This method allow us to correct a wrapped phase paraboloic deformation.
     """
     xs, ys = data.shape
+    x = np.mgrid[:xs]
+    y = np.mgrid[:ys]
+
+    diff_outline_x = np.gradient(data.mean(1))
+    diff_outline_y = np.gradient(data.mean(0))
+
+    dax, dbx, r_value, p_value, std_err = stats.linregress(x, diff_outline_x)
+    day, dby, r_value, p_value, std_err = stats.linregress(y, diff_outline_y)
+
+    ax = dax / 2 
+    bx = - dbx / dax
+    ay = day / 2 
+    by = - dby / day
     x, y = np.mgrid[:xs, :ys]
-    data_gradient = wrapped_gradient(data)
-
-    def fitness((a0, b0, a1, b1)):
-        dx = get_plane(x, a0, b0)
-        dy = get_plane(y, a1, b1)
-        gradient = dx + dy * 1j
-        error = squared_error(data_gradient, gradient)
-        return error
-
-    params = generic_minimizer(fitness, [1] * 4)
-    a0 = params[0] / 2 
-    b0 = - params[1] / params[0]
-    a1 = params[2] / 2 
-    b1 = - params[3] / params[2]
-    return get_paraboloid(x, y, a0, b0, a1, b1)
+    return get_paraboloid(x, y, ax, bx, ay, by)
 
 
 def main():
