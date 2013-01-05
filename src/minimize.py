@@ -51,6 +51,18 @@ def get_fitted_paraboloid(data):
     return get_paraboloid(x, y, *params)
 
 
+def wrapped_gradient(phase):
+    rows, cols = phase.shape
+    dx, dy = np.gradient(phase)
+    for diff in (dx, dy):
+        diff[diff < -pi / 2] += pi
+        diff[diff > pi / 2] -= pi
+
+    gradient = dx + 1j * dy
+
+    return gradient
+
+
 def main():
     from scipy.misc import lena
     from autopipe import showimage
