@@ -48,7 +48,7 @@ def wrapped_gradient(phase):
     return gradient
 
 
-def get_fitted_paraboloid2(data):
+def get_fitted_paraboloid(data):
     """
     Similar to get_fitted_paraboloid but uses the complex gradient to determine
     the fittness. This method allow us to correct a wrapped phase.
