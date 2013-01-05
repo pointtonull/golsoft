@@ -36,7 +36,8 @@ def squared_error(array1, array2):
 
 
 def get_paraboloid(x, y, a0, b0, a1, b1, c=0):
-    return (a0 * x + b0) ** 2 + (a1 * y + b1) ** 2 + c
+    """ a0 * (x - b0) ** 2 + a1 * (y - b1) ** 2 + c """
+    return a0 * (x - b0) ** 2 + a1 * (y - b1) ** 2 + c
 
 
 def get_fitted_paraboloid(data):
