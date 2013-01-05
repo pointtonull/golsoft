@@ -40,6 +40,11 @@ def get_paraboloid(x, y, a0, b0, a1, b1, c=0):
     return a0 * (x - b0) ** 2 + a1 * (y - b1) ** 2 + c
 
 
+def get_plane(linspace, a, b):
+    """ linspace * a + b """
+    return linspace * a + b
+
+
 def get_fitted_paraboloid(data):
     xs, ys = data.shape
     x, y = np.mgrid[:xs, :ys]
