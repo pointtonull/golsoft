@@ -16,7 +16,8 @@ from dft import get_shifted_dft, get_shifted_idft, get_module, get_phase
 from image import get_intensity, imread, subtract, limit_size, equalize, imwrite
 from image import phase_denoise
 from propagation import get_propagation_array
-from unwrap import unwrap_wls, wrapped_diff, unwrap_qg
+from unwrap import unwrap_wls, unwrap_qg
+from minimize import get_fitted_paraboloid2
 import cache
 
 
@@ -201,7 +202,7 @@ class PEA(object):
 
 
     @Depends(masking)
-    def masked_spectrum(self):
+    def spectrum_masked(self):
         print("Masked spectrum")
         return self.masking[1]
 
@@ -221,12 +222,12 @@ class PEA(object):
         return distance
 
 
-    use_autofocus = Datum(False)
+    autofocus_use = Datum(False)
     user_distance = Datum(0)
-    @Depends(use_autofocus, user_distance, auto_distance)
+    @Depends(autofocus_use, user_distance, auto_distance)
     def distance(self):
         print("Distance")
-        if self.use_autofocus:
+        if self.autofocus_use:
             return self.auto_distance
         else:
             return self.user_distance
@@ -240,13 +241,13 @@ class PEA(object):
 
 
     propagate = Datum(True)
-    @Depends(propagate, masked_spectrum, propagation)
+    @Depends(propagate, spectrum_masked, propagation)
     def propagated(self):
         if self.propagate:
             print("Propagated")
-            return self.masked_spectrum * self.propagation
+            return self.spectrum_masked * self.propagation
         else:
-            return self.masked_spectrum
+            return self.spectrum_masked
 
 
     @Depends(propagated)
@@ -267,24 +268,38 @@ class PEA(object):
         return get_phase(self.reconstructed)
 
 
-    phase_denoise = Datum(0)
-    @Depends(phase, phase_denoise)
-    def denoised_phase(self):
-        if self.phase_denoise:
-            print("Denoising phase")
-            return phase_denoise(self.phase, self.phase_denoise)
+    phase_correct = Datum(True)
+    @Depends(phase, phase_correct)
+    def phase_corrected(self):
+        """
+        Try to ammend the spherical wave front curvature.
+        """
+        if self.phase_correct:
+            print("Phase correcting")
+            return (self.phase - get_fitted_paraboloid2(self.phase)) % tau
         else:
             return self.phase
 
 
-    unwrapper = Datum(unwrap_wls)
-    @Depends(phase, module, unwrapper, phase_denoise)
-    def unwrapped_phase(self):
-        print("Unwrapping phase")
-        if self.unwrapper.func_code.co_argcount == 1:
-            return self.unwrapper(self.denoised_phase)
+    phase_denoise = Datum(0)
+    @Depends(phase_corrected, phase_denoise)
+    def phase_denoised(self):
+        if self.phase_denoise:
+            print("Phase denoising")
+            return phase_denoise(self.phase_corrected, self.phase_denoise)
         else:
-            return self.unwrapper(self.denoised_phase, self.module)
+            return self.phase_corrected
+
+
+    unwrapper = Datum(unwrap_wls)
+    @Depends(phase, module, unwrapper, phase_denoised)
+    def unwrapped_phase(self):
+        print("Phase unwrapping")
+        if self.unwrapper.func_code.co_argcount == 1:
+            return self.unwrapper(self.phase_denoised)
+        else:
+            return self.unwrapper(self.phase_denoised, self.module)
+
 
 def main():
     import sys

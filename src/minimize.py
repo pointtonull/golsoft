@@ -2,8 +2,11 @@
 #-*- coding: UTF-8 -*-
 
 from scipy import optimize
+from numpy import pi
 
 import numpy as np
+
+tau = 2 * pi
 
 def generic_minimizer(fitness_func, initial_guess, optimizers=None):
     """
@@ -29,10 +32,10 @@ def generic_minimizer(fitness_func, initial_guess, optimizers=None):
 
 
 def squared_error(array1, array2):
-    return ((array1 - array2) ** 2).sum()
+    return abs(((array1 - array2) ** 2)).sum()
 
 
-def get_paraboloid(x, y, a0, b0, a1, b1, c):
+def get_paraboloid(x, y, a0, b0, a1, b1, c=0):
     return (a0 * x + b0) ** 2 + (a1 * y + b1) ** 2 + c
 
 
@@ -45,6 +48,36 @@ def get_fitted_paraboloid(data):
         return error
 
     params = generic_minimizer(fitness, [1] * 5)
+    return get_paraboloid(x, y, *params)
+
+
+def wrapped_gradient(phase):
+    rows, cols = phase.shape
+    dx, dy = np.gradient(phase)
+    for diff in (dx, dy):
+        diff[diff < -pi / 2] += pi
+        diff[diff > pi / 2] -= pi
+
+    gradient = dx + 1j * dy
+
+    return gradient
+
+
+def get_fitted_paraboloid2(data):
+    """
+    Similar to get_fitted_paraboloid but uses the complex gradient to determine
+    the fittness. This method allow us to correct a wrapped phase.
+    """
+    xs, ys = data.shape
+    x, y = np.mgrid[:xs, :ys]
+    data_gradient = wrapped_gradient(data)
+
+    def fitness((a0, b0, a1, b1)):
+        error = squared_error(data_gradient, wrapped_gradient(get_paraboloid(
+            x, y, a0, b0, a1, b1)))
+        return error
+
+    params = generic_minimizer(fitness, [1] * 4)
     return get_paraboloid(x, y, *params)
 
 
