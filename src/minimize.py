@@ -50,8 +50,9 @@ def wrapped_gradient(phase):
 
 def get_fitted_paraboloid(data):
     """
-    Similar to get_fitted_paraboloid but uses the complex gradient to determine
-    the fittness. This method allow us to correct a wrapped phase.
+    Adjust a paraboloid to the input data using normal linear regression over
+    the gradient of each dimension outline.
+    This method allow us to correct a wrapped phase paraboloic deformation.
     """
     xs, ys = data.shape
     x = np.mgrid[:xs]
