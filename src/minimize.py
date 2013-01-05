@@ -36,7 +36,13 @@ def squared_error(array1, array2):
 
 
 def get_paraboloid(x, y, a0, b0, a1, b1, c=0):
-    return (a0 * x + b0) ** 2 + (a1 * y + b1) ** 2 + c
+    """ a0 * (x - b0) ** 2 + a1 * (y - b1) ** 2 + c """
+    return a0 * (x - b0) ** 2 + a1 * (y - b1) ** 2 + c
+
+
+def get_plane(linspace, a, b):
+    """ linspace * a + b """
+    return linspace * a + b
 
 
 def get_fitted_paraboloid(data):
@@ -73,12 +79,18 @@ def get_fitted_paraboloid2(data):
     data_gradient = wrapped_gradient(data)
 
     def fitness((a0, b0, a1, b1)):
-        error = squared_error(data_gradient, wrapped_gradient(get_paraboloid(
-            x, y, a0, b0, a1, b1)))
+        dx = get_plane(x, a0, b0)
+        dy = get_plane(y, a1, b1)
+        gradient = dx + dy * 1j
+        error = squared_error(data_gradient, gradient)
         return error
 
     params = generic_minimizer(fitness, [1] * 4)
-    return get_paraboloid(x, y, *params)
+    a0 = params[0] / 2 
+    b0 = - params[1] / params[0]
+    a1 = params[2] / 2 
+    b1 = - params[3] / params[2]
+    return get_paraboloid(x, y, a0, b0, a1, b1)
 
 
 def main():
