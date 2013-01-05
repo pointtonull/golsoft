@@ -31,30 +31,9 @@ def generic_minimizer(fitness_func, initial_guess, optimizers=None):
     return best_guess
 
 
-def squared_error(array1, array2):
-    return abs(((array1 - array2) ** 2)).sum()
-
-
 def get_paraboloid(x, y, a0, b0, a1, b1, c=0):
     """ a0 * (x - b0) ** 2 + a1 * (y - b1) ** 2 + c """
     return a0 * (x - b0) ** 2 + a1 * (y - b1) ** 2 + c
-
-
-def get_plane(linspace, a, b):
-    """ linspace * a + b """
-    return linspace * a + b
-
-
-def get_fitted_paraboloid(data):
-    xs, ys = data.shape
-    x, y = np.mgrid[:xs, :ys]
-
-    def fitness((a0, b0, a1, b1, c)):
-        error = squared_error(data, get_paraboloid(x, y, a0, b0, a1, b1, c))
-        return error
-
-    params = generic_minimizer(fitness, [1] * 5)
-    return get_paraboloid(x, y, *params)
 
 
 def wrapped_gradient(phase):
