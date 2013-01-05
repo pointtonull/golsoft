@@ -35,7 +35,7 @@ def squared_error(array1, array2):
     return abs(((array1 - array2) ** 2)).sum()
 
 
-def get_paraboloid(x, y, a0, b0, a1, b1, c):
+def get_paraboloid(x, y, a0, b0, a1, b1, c=0):
     return (a0 * x + b0) ** 2 + (a1 * y + b1) ** 2 + c
 
 
