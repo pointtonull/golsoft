@@ -63,6 +63,24 @@ def wrapped_gradient(phase):
     return gradient
 
 
+def get_fitted_paraboloid2(data):
+    """
+    Similar to get_fitted_paraboloid but uses the complex gradient to determine
+    the fittness. This method allow us to correct a wrapped phase.
+    """
+    xs, ys = data.shape
+    x, y = np.mgrid[:xs, :ys]
+    data_gradient = wrapped_gradient(data)
+
+    def fitness((a0, b0, a1, b1)):
+        error = squared_error(data_gradient, wrapped_gradient(get_paraboloid(
+            x, y, a0, b0, a1, b1)))
+        return error
+
+    params = generic_minimizer(fitness, [1] * 4)
+    return get_paraboloid(x, y, *params)
+
+
 def main():
     from scipy.misc import lena
     from autopipe import showimage
