@@ -5,7 +5,7 @@ from bisect import insort
 
 from blist import blist
 import numpy as np
-from numpy import arange, NaN
+from numpy import NaN
 
 from scipy.interpolate import griddata
 
