@@ -86,7 +86,11 @@ def get_fitted_paraboloid2(data):
         return error
 
     params = generic_minimizer(fitness, [1] * 4)
-    return get_paraboloid(x, y, *params)
+    a0 = params[0] / 2 
+    b0 = - params[1] / params[0]
+    a1 = params[2] / 2 
+    b1 = - params[3] / params[2]
+    return get_paraboloid(x, y, a0, b0, a1, b1)
 
 
 def main():
