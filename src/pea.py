@@ -16,7 +16,7 @@ from dft import get_shifted_dft, get_shifted_idft, get_module, get_phase
 from image import get_intensity, imread, subtract, limit_size, equalize, imwrite
 from image import phase_denoise
 from propagation import get_propagation_array
-from unwrap import unwrap_wls, wrapped_diff, unwrap_qg
+from unwrap import unwrap_wls, unwrap_qg
 import cache
 
 
