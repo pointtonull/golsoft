@@ -32,7 +32,7 @@ def generic_minimizer(fitness_func, initial_guess, optimizers=None):
 
 
 def squared_error(array1, array2):
-    return ((array1 - array2) ** 2).sum()
+    return abs(((array1 - array2) ** 2)).sum()
 
 
 def get_paraboloid(x, y, a0, b0, a1, b1, c):
