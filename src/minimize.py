@@ -79,8 +79,10 @@ def get_fitted_paraboloid2(data):
     data_gradient = wrapped_gradient(data)
 
     def fitness((a0, b0, a1, b1)):
-        error = squared_error(data_gradient, wrapped_gradient(get_paraboloid(
-            x, y, a0, b0, a1, b1)))
+        dx = get_plane(x, a0, b0)
+        dy = get_plane(y, a1, b1)
+        gradient = dx + dy * 1j
+        error = squared_error(data_gradient, gradient)
         return error
 
     params = generic_minimizer(fitness, [1] * 4)
