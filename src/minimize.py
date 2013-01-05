@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
-from scipy import optimize
+from scipy import optimize, stats
 from numpy import pi
 
 import numpy as np
@@ -75,22 +75,21 @@ def get_fitted_paraboloid2(data):
     the fittness. This method allow us to correct a wrapped phase.
     """
     xs, ys = data.shape
+    x = np.mgrid[:xs]
+    y = np.mgrid[:ys]
+
+    diff_outline_x = np.gradient(data.mean(1))
+    diff_outline_y = np.gradient(data.mean(0))
+
+    dax, dbx, r_value, p_value, std_err = stats.linregress(x, diff_outline_x)
+    day, dby, r_value, p_value, std_err = stats.linregress(y, diff_outline_y)
+
+    ax = dax / 2 
+    bx = - dbx / dax
+    ay = day / 2 
+    by = - dby / day
     x, y = np.mgrid[:xs, :ys]
-    data_gradient = wrapped_gradient(data)
-
-    def fitness((a0, b0, a1, b1)):
-        dx = get_plane(x, a0, b0)
-        dy = get_plane(y, a1, b1)
-        gradient = dx + dy * 1j
-        error = squared_error(data_gradient, gradient)
-        return error
-
-    params = generic_minimizer(fitness, [1] * 4)
-    a0 = params[0] / 2 
-    b0 = - params[1] / params[0]
-    a1 = params[2] / 2 
-    b1 = - params[3] / params[2]
-    return get_paraboloid(x, y, a0, b0, a1, b1)
+    return get_paraboloid(x, y, ax, bx, ay, by)
 
 
 def main():
