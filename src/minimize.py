@@ -43,9 +43,7 @@ def wrapped_gradient(phase):
         diff[diff < -pi / 2] += pi
         diff[diff > pi / 2] -= pi
 
-    gradient = dx + 1j * dy
-
-    return gradient
+    return dx, dy
 
 
 def get_fitted_paraboloid(data):
@@ -58,8 +56,9 @@ def get_fitted_paraboloid(data):
     x = np.mgrid[:xs]
     y = np.mgrid[:ys]
 
-    diff_outline_x = np.gradient(data.mean(1))
-    diff_outline_y = np.gradient(data.mean(0))
+    diff_x, diff_y = wrapped_gradient(data)
+    diff_outline_x = diff_x.mean(1)
+    diff_outline_y = diff_y.mean(0)
 
     dax, dbx, r_value, p_value, std_err = stats.linregress(x, diff_outline_x)
     day, dby, r_value, p_value, std_err = stats.linregress(y, diff_outline_y)
@@ -75,12 +74,16 @@ def get_fitted_paraboloid(data):
 def main():
     from scipy.misc import lena
     from autopipe import showimage
-    x, y = np.mgrid[:100, :100]
-    eye = lena()[200:300, 200:300]
-    data = get_paraboloid(x, y, 1, 2, 3, 4, 5)
-    noisy = data + eye
+    x, y = np.mgrid[:512, :512]
+    eye = lena()
+    data = get_paraboloid(x, y, 1, 250, 3, 300, 5)
+    data /= data.ptp() / 256. * 0.25
+    noisy = (data + eye).astype(float)
+    noisy /= noisy.ptp() / 20
+    print noisy.ptp()
+    noisy %= tau
     fitted = get_fitted_paraboloid(noisy)
-    showimage(eye, noisy, fitted, noisy - fitted)
+    showimage(eye, noisy, fitted % tau, (noisy - fitted) % tau)
     return 0
 
 
