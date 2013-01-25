@@ -275,8 +275,10 @@ class PEA(object):
         Try to ammend the spherical wave front curvature.
         """
         if self.phase_correct:
-            print("Phase correcting")
-            return (self.phase - get_fitted_paraboloid(self.phase)) % tau
+            print("Double phase correcting")
+            phase = (self.phase - get_fitted_paraboloid(self.phase)) % tau
+            phase = (phase - get_fitted_paraboloid(phase)) % tau
+            return phase
         else:
             return self.phase
 

@@ -26,18 +26,20 @@ from traitsui.file_dialog import open_file, FileInfo
 import numpy as np
 
 from autofocus import guess_focus_distance
-from unwrap import unwrap_phasediff2
 from automask import get_auto_mask
 from autopipe import showimage
 from color import guess_wavelength
 from dft import get_shifted_idft, get_shifted_dft
 from image import equalize, imread, normalize, phase_denoise, imwrite, subtract
 from image import limit_size
+from minimize import get_fitted_paraboloid
 from pea import calculate_director_cosines, get_refbeam
 from pea import get_phase, get_module
 from propagation import get_propagation_array
+from unwrap import unwrap_phasediff2
 from unwrap import unwrap_qg, unwrap_wls
 
+tau = 2 * np.pi # two times sexier than pi
 
 class PEA(HasTraits):
 
@@ -148,8 +150,8 @@ class PEA(HasTraits):
     grp_datainput = Group(
 
         Item('holo_filename', label="Hologram"),
-        Item('ref_filename', label="Reference"),
         Item('obj_filename', label="Object"),
+        Item('ref_filename', label="Reference"),
         Item("btn_update_hologram", show_label=False),
         "camera",
         HGroup(
@@ -506,7 +508,10 @@ class PEA(HasTraits):
     use_propagation = Bool(False)
 
     btn_guess_focus = Button("Guess focus distance")
-    distance = Range(-0.30, 0.30, 0., mode="xslider", enter_set=True,
+    distance = Float(0)
+    distance_m = Range(-0.50, 0.50, 0., mode="xslider", enter_set=True,
+        auto_set=False)
+    distance_cm = Range(-5., 5., 0., mode="xslider", enter_set=True,
         auto_set=False)
     propagation_vismode = Enum("module", "phase", label="Visualize")
 
@@ -520,7 +525,7 @@ class PEA(HasTraits):
         "use_propagation",
         Group(
             Item("btn_guess_focus", show_label=False),
-            "distance",
+            "distance", "distance_m", "distance_cm",
             label="Propagation parameters",
             show_border=True,
             visible_when="use_propagation",
@@ -533,11 +538,16 @@ class PEA(HasTraits):
     )
 
 
+    @on_trait_change("distance_m, distance_cm")
+    def compose_distance(self):
+        self.distance = self.distance_m + self.distance_cm / 100
+    
+
     @on_trait_change("btn_guess_focus")
     def guess_focus_distance(self):
         wavelength = self.wavelength_nm * 1e-9
         masked_spectrum = get_auto_mask(self.spectrum)[1]
-        self.distance = guess_focus_distance(masked_spectrum, wavelength)
+        self.distance = guess_focus_distance(masked_spectrum, wavelength, (self.dx, self.dy))
     
 
     @on_trait_change("propagation_vismode, distance, wavelength_nm")
@@ -551,7 +561,9 @@ class PEA(HasTraits):
             self.propagated = self.masked_spectrum
         self.reconstructed = get_shifted_idft(self.propagated)
         self.module = normalize(get_module(self.reconstructed))
-        self.wrapped_phase = get_phase(self.reconstructed)
+        wrapped_phase = get_phase(self.reconstructed)
+        paraboloid = get_fitted_paraboloid(wrapped_phase)
+        self.wrapped_phase = (wrapped_phase - paraboloid) % tau
         self.update_propagation_vis()
         self.update_overview_vis()
         self.update_unwrapping_phase()
