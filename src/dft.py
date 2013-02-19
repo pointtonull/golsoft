@@ -15,8 +15,10 @@ The valid values for FFTW are:
 import anfft
 import cv2
 import numpy as np
+from matplotlib.pyplot import plot, show
 
 from minimize import get_fitted_paraboloid
+from autopipe import showimage
 
 pi = np.pi
 tau = np.pi * 2
@@ -79,64 +81,95 @@ def get_phase(array):
 
 
 def align_phase(phase, pins=20):
-    phase = phase % tau
+    showimage(phase)
     pin_width = tau / float(pins)
     histogram = np.histogram(phase, pins)[0]
+    
+    print(histogram)
+    plot(histogram)
+    show(block=True)
+
     gap_start = histogram.argmin() * pin_width
-    return (phase - gap_start) % tau
+    phase = (phase - gap_start) % tau
+    showimage(phase)
+
+    histogram = np.histogram(phase, pins)[0]
+    histogram[histogram < histogram.max() / 100.] = 0
+
+    print(histogram)
+    plot(histogram)
+    show(block=True)
+
+    is_wrapped = (histogram[0] * histogram[-1]) > 0
+    showimage(phase)
+    return is_wrapped, phase
 
 
-def binary_search(function, min_value=0., max_value=1., levels=8):
-    value = (min_value + max_value) / 2.
-    print(value, levels)
-    result = function(value)
-    if result == 0 or levels <= 0:
-        return value
-    elif result < 0:
-        return binary_search(function, min_value, value, levels - 1)
-    else:
-        return binary_search(function, value, max_value, levels - 1)
+class Bisector:
+    def __init__(self, universe, left=None, right=None):
+        self.universe = universe
+        self.left = left or 0
+        self.right = right or len(universe)
+
+    def value(self):
+        return self.universe[int((self.left + self.right) / 2.)]
+
+    def to_left(self):
+        self.right = int(round((self.left + self.right) / 2.))
+
+    def to_right(self):
+        self.left = int(round((self.left + self.right) / 2.))
+
+    def is_closed(self):
+        return (self.right - self.left) <= 1
+
+    def reset(self):
+        self.left = 0
+        self.right = len(self.universe)
+
+    def reset_to_right(self):
+        self.left = int((self.left + self.right) / 2.) + 1
+        self.right = len(self.universe)
+
+    def get_window(self):
+        return self.universe[self.left:self.right]
+
+    def __repr__(self):
+        return str(self.get_window())
 
 
-def get_secure_phase(spectrum, left=0.0, until=1.):
+def get_secure_phase(spectrum, until=1.):
     """
-    bleh
+    If we knew what it was we were doing it would not be called research.
     """
     rows, cols = spectrum.shape
-    x, y = np.mgrid[:rows, :cols]
-    x -= rows / 2.
-    y -= cols / 2.
-    z = (x ** 2 + y ** 2) ** 0.5
-    z /= z.max() / 2 ** .5
 
-    maxlevel = np.ceil(np.log2(max((rows, cols)) / 2.))
-    rest = 1.
-    sec_phase = np.zeros_like(spectrum, float)
-    level = 0.
+    def get_partial_phase(max_value):
+        mask = spectrum >= max_value
+        masked = spectrum * mask
+        phase = get_phase(get_shifted_idft(masked))
+        paraboloid = get_fitted_paraboloid(phase)
+        phase -= paraboloid
+        return paraboloid, phase % tau
 
     # Initial phase
-    
 
-    while left <= until:
-        right = left + rest / 2 ** level
-        print("%d" % level)
-        mask = (z >= left) * (z < right)
-        masked = spectrum * mask
+    sec_phase = np.zeros_like(spectrum, float)
+    values = sorted(spectrum.ravel(), reverse=True)
+    bisector = Bisector(values)
+    while bisector.value() > values.min():
+        paraboloid, phase = get_partial_phase(bisector.value())
+        is_wrapped, phase = align_phase((phase - sec_phase) % tau, 20)
+        print(is_wrapped)
 
-        phase = align_phase(get_phase(get_shifted_idft(masked)))
-
-        if phase.ptp() < (tau - 0.1):
+        if is_wrapped:
+            bisector.to_left()
+        else:
             print("add ring")
             sec_phase += phase
-            level = maxlevel + 1
-
-        if level > maxlevel:
-            left = right
-            rest -= rest / 2 ** level
-            level = 0
-            print(" %f %f" % (left, rest))
-        else:
-            level += 1
+            sec_phase += paraboloid
+            showimage(sec_phase)
+            bisector.reset_to_right()
 
     return sec_phase
 

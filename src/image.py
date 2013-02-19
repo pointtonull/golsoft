@@ -18,7 +18,7 @@ import cache
 
 VERBOSE = 0
 pi = 3.14159265358979323846264338327950288419716939937510582097494
-tau = pi * 2
+tau = pi * 2 # two times sexier than pi
 
 #TODO:
 #  * implement:
@@ -31,7 +31,7 @@ def phase_denoise(phase, size=1):
     Cuadratic denoise. Is a median filter applied on the angular space.
     """
     if size == 0:
-        return phase
+        return phase % tau
     else:
         y_over = sin(phase)
         x_over = cos(phase)
