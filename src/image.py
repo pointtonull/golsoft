@@ -26,7 +26,7 @@ tau = pi * 2 # two times sexier than pi
 #    - imsave
 
 
-def phase_denoise(phase, size=1):
+def phase_denoise(phase, size=1, filter_func=ndimage.filters.median_filter):
     """
     Cuadratic denoise. Is a median filter applied on the angular space.
     """
@@ -35,11 +35,21 @@ def phase_denoise(phase, size=1):
     else:
         y_over = sin(phase)
         x_over = cos(phase)
-        y_over = ndimage.filters.median_filter(y_over, size)
-        x_over = ndimage.filters.median_filter(x_over, size)
+        y_over = filter_func(y_over, size)
+        x_over = filter_func(x_over, size)
         denoised = arctan2(y_over, x_over)
         
     return denoised
+
+
+def phase_filter(phase, size=3, filter_func=np.var):
+    def wrapper(array):
+        array -= array[len(array) / 2]
+        array = abs(array) % pi
+        return filter_func(array)
+
+    return ndimage.filters.generic_filter(phase, wrapper, size)
+
 
 
 @cache.hybrid
