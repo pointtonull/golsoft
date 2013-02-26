@@ -12,6 +12,7 @@ import Image as pil
 import ImageOps
 import gdal
 import numpy as np
+from skimage.filter import canny
 
 from minimize import generic_minimizer
 import cache
@@ -42,13 +43,36 @@ def phase_denoise(phase, size=1, filter_func=ndimage.filters.median_filter):
     return denoised
 
 
-def phase_filter(phase, size=3, filter_func=np.var):
-    def wrapper(array):
-        array -= array[len(array) / 2]
-        array = abs(array) % pi
-        return filter_func(array)
+def phase_filter(phase, filter_func=np.var, *extra_args):
+    y_over = (sin(phase) + 1) / 2.
+    print y_over.ptp(), y_over.min()
+    y_over = filter_func(y_over, *extra_args)
+    return y_over
 
-    return ndimage.filters.generic_filter(phase, wrapper, size)
+
+def auto_canny(array, average=0.15, gaussian_sigma=1, strongness=2.5):
+    array -= array.min()
+    array /= array.max()
+
+    def canny_average(hard_threshold):
+        soft_threshold = hard_threshold / strongness
+        edges = canny(array, gaussian_sigma, hard_threshold, soft_threshold)
+        return edges.mean()
+
+    hard_threshold = 0.4
+    current_average = canny_average(hard_threshold)
+    epsilon = 0.001
+    for iteration in xrange(50):
+        if abs(current_average - average) < epsilon:
+            break
+        if current_average < average:
+            hard_threshold /= 1.2
+        else:
+            hard_threshold *= 1.2
+        print(hard_threshold, current_average)
+
+    soft_threshold = hard_threshold / strongness
+    return canny(array, gaussian_sigma, hard_threshold, soft_threshold)
 
 
 
