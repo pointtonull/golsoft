@@ -69,63 +69,83 @@ def get_sdct(array):
         return cv2.dct(array[:-1, :-1])
 
 
-def get_idct(*args, **kwargs): """ Performs the inverse discrete cosine
-transform """ return cv2.idct(*args, **kwargs)
+def get_idct(*args, **kwargs):
+    """ Performs the inverse discrete cosine
+    transform """
+    return cv2.idct(*args, **kwargs)
 
 
-def get_phase(array): return np.arctan2(array.real, array.imag)
+def get_phase(array):
+    return np.arctan2(array.real, array.imag)
 
 
-def align_phase(phase, pins=20): pin_width = tau / float(pins) histogram =
-np.histogram(phase, pins)[0]
+def align_phase(phase, pins=20):
+    pin_width = tau / float(pins)
+    histogram = np.histogram(phase, pins)[0]
     
 #    print(histogram) plot(histogram) show(block=True)
 
-    gap_start = histogram.argmin() * pin_width phase = (phase - gap_start) %
-    tau
+    gap_start = histogram.argmin() * pin_width
+    phase = (phase - gap_start) % tau
 
-    histogram = np.histogram(phase, pins)[0] histogram[histogram <
-    histogram.max() / 100.] = 0
+    histogram = np.histogram(phase, pins)[0]
+    histogram[histogram < histogram.max() / 100.] = 0
 
 #    print(histogram) plot(histogram) show(block=True)
 
-    is_wrapped = (histogram[0] * histogram[-1]) > 0 return is_wrapped, phase
+    is_wrapped = (histogram[0] * histogram[-1]) > 0
+    return is_wrapped, phase
 
 
-class Bisector: def __init__(self, universe, left=None, right=None):
-self.universe = universe self.left = left or 0 self.right = right or
-len(universe)
+class Bisector:
+    def __init__(self, universe, left=None, right=None):
+        self.universe = universe
+        self.left = left or 0
+        self.right = right or len(universe)
 
-    def value(self): return self.universe[int((self.left + self.right) / 2.)]
+    def value(self):
+        return self.universe[int((self.left + self.right) / 2.)]
 
-    def to_left(self): self.right = int(round((self.left + self.right) / 2.))
+    def to_left(self):
+        self.right = int(round((self.left + self.right) / 2.))
 
-    def to_right(self): self.left = int(round((self.left + self.right) / 2.))
+    def to_right(self):
+        self.left = int(round((self.left + self.right) / 2.))
 
-    def is_closed(self): return (self.right - self.left) <= 1
+    def is_closed(self):
+        return (self.right - self.left) <= 1
 
-    def reset(self): self.left = 0 self.right = len(self.universe)
+    def reset(self):
+        self.left = 0
+        self.right = len(self.universe)
 
-    def reset_to_right(self): self.left = int((self.left + self.right) / 2.) +
-    1 self.right = len(self.universe)
+    def reset_to_right(self):
+        self.left = int((self.left + self.right) / 2.) + 1
+        self.right = len(self.universe)
 
-    def get_window(self): return self.universe[self.left:self.right]
+    def get_window(self):
+        return self.universe[self.left:self.right]
 
-    def __repr__(self): return str(self.get_window())
+    def __repr__(self):
+        return str(self.get_window())
 
 
-def get_secure_phase(spectrum, until=1.): """ If we knew what it was we were
-doing it would not be called research.  """ rows, cols = spectrum.shape
+def get_secure_phase(spectrum, until=1.):
+    """ If we knew what it was we were doing it would not be called research."""
+    rows, cols = spectrum.shape
 
-    def get_partial_phase(max_value): mask = spectrum >= max_value masked =
-    spectrum * mask phase = get_phase(get_shifted_idft(masked)) paraboloid =
-    get_fitted_paraboloid(phase) phase -= paraboloid return paraboloid, phase %
-    tau
+    def get_partial_phase(max_value):
+        mask = spectrum >= max_value
+        masked = spectrum * mask
+        phase = get_phase(get_shifted_idft(masked))
+        paraboloid = get_fitted_paraboloid(phase)
+        phase -= paraboloid
+        return paraboloid, phase % tau
 
     # Initial phase
 
-    sec_phase = np.zeros_like(spectrum, float) values =
-    sorted(spectrum.ravel(), reverse=True)
+    sec_phase = np.zeros_like(spectrum, float)
+    values = sorted(spectrum.ravel(), reverse=True)
     bisector = Bisector(values)
     while bisector.value() > values.min():
         paraboloid, phase = get_partial_phase(bisector.value())
