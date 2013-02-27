@@ -4,9 +4,13 @@
 """
 """
 
+from bisect import insort
+
+from blist import blist
+
 import matplotlib.pyplot as plt
 import numpy as np
-
+import cache
 
 class Bisector:
     def __init__(self, no, yes=None, min_step=1., search_yes=False):
@@ -48,8 +52,33 @@ class Bisector:
         self.yes = self.get_value()
 
 
+class Point:
+    def __init__(self, coordinates, function, custom_cmp=cmp):
+        self.coordinates = coordinates
+        self.function = function
+        self.cmp = custom_cmp
 
-class IBisector:
+    def get_value(self):
+        return self.fuction(*self.coordinates)
+
+    @cache.to_ram
+    def __cmp__(self, other):
+        return self.cmp(self.get_value(), other.get_value())
+
+    def __add__(self, other):
+        coordinates = [self[i] + other[i] for i in range(len(self.coordinates))]
+        return Point(coordinates, self.function)
+
+    def __sub__(self, other):
+        coordinates = [self[i] - other[i] for i in range(len(self.coordinates))]
+        return Point(coordinates, self.function)
+
+    def __div__(self, value):
+        coordinates = [coordinate / value for coordinate in self.coordinates]
+        return Point(coordinates, self.function)
+
+
+class Handler:
     def __init__(self, updater, bisector, plt_args):
         self.figure = plt.figure()
         self.figure.canvas.mpl_connect('key_press_event', self)
@@ -117,39 +146,59 @@ class IBisector:
         print("Image updated")
 
 
-"""
-threshold = 0.01
-while f(poins[-1]) - f(points[0] > threshold:
+class Amoeba:
+    def __init__(self, function, initial_values, plt_args=None):
+        """
+        initial
+        """
+        dimensions = len(initial_values)
+        assert len(initial_values) == dimensions + 1
+        self.points = [Point(coordinates, function) for coordinates in initial_values]
+        figure = plt.figure()
+        figure.canvas.mpl_connect('key_press_event', self)
+        self.image = plt.imshow(self.updater(self.bisector.get_value()), **plt_args)
 
-#1. settle
-    Ordenar de acuerdo a f(x) los vertices tal que:
-    f(points[0]) ≤ f(points[1]) ≤ f(points[2]) ≤ … ≤ f(points[-1])
-#2. centroid
-    x_o = mean(points[:-1])
-#3. reflection
-    x_r = 2 * x_o - points[-1]
-    if  f(points[0]) ≤ f(x_r) < f(points[-2]):
-        points[-1] = x_r
-        continue
-#4. expansion
-    if f(x_r) < f(points[0]):
-        x_e = x_o + 2 * (x_o - points[-1])
-        if f(x_e) < f(x_r):
-            points[-1] = x_e
-        else:
-            points[-1] = r_r
-        continue
-#5. contraction
-    assert f(x_r) ≥ f(points[-2])
-    x_c = x_o - (x_o - points[-1]) / 2
-    if f(x_c) < f(points[-1]):
-        points[-1] = x_c
-        continue
-#6. reduction
-    for i in range(1, n+1):
-        points[i] = points[0] + (points[i] - points[0]) / 2
-        continue
-"""
+
+    def iterate(self, iterations):
+        for iteraction in range(iterations):
+            self.points.sort()
+            # reflection
+            x_o = sum(self.points[:-1]) / float(len(self.points - 1))
+            x_r = x_o + 2 * (x_o - self.points[-1])
+            if self.points[0] <= x_r < self.points[-2]:
+                self.points[-1] = x_r
+                continue
+            # expansion
+            if x_r < self.points[0]:
+                x_e = x_o + 2 * (x_o - self.points[0])
+                if x_e < x_r:
+                    self.points[-1] = x_e
+                    continue
+                else:
+                    self.points[-1] = x_r
+                    continue
+            else:
+                # contraction
+                x_c = x_o - (x_o - self.points[-1]) / 2.
+                if x_c < self.points[-1]:
+                    self.points[-1] = x_c
+                else:
+                    # reduction
+                    for i in range(1, len(self.points) - 1):
+                        self.points[i] = self.points[0] + (self.points[i] - self.points[0]) / 2.
+        
+
+    def icmp(left, right):
+        def key_handler(event):
+            if event.key == "left":
+                return
+        memento = [[], []]
+        print("Image updated")
+        plt.show()
+    
+
+
+
 
 
 if __name__ == "__main__":
