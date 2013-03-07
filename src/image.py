@@ -18,8 +18,7 @@ from minimize import generic_minimizer
 import cache
 
 VERBOSE = 0
-pi = 3.14159265358979323846264338327950288419716939937510582097494
-tau = pi * 2 # two times sexier than pi
+tau = np.pi * 2 # two times sexier than pi
 
 #TODO:
 #  * implement:
