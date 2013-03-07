@@ -6,7 +6,8 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
-
+import cache
+from bisect import insort
 
 class Bisector:
     def __init__(self, no, yes=None, min_step=1., search_yes=False):
@@ -48,8 +49,46 @@ class Bisector:
         self.yes = self.get_value()
 
 
+class Point(object):
+    def __init__(self, coordinates, function, custom_cmp=cmp):
+        self.coordinates = np.array(coordinates)
+        self.function = function
+        self.cmp = custom_cmp
+        self.value = None
 
-class IBisector:
+    def get_value(self):
+        if self.value is None:
+            self.value = self.function(*self.coordinates)
+        return self.value
+
+    def __cmp__(self, other):
+        print("%s vs %s" % (self, other))
+        return self.cmp(self.get_value(), other.get_value())
+
+    def __div__(self, other):
+        return Point(self.coordinates / other, self.function, self.cmp)
+
+    def __sub__(self, other):
+        return Point(self.coordinates - other, self.function, self.cmp)
+
+    def __add__(self, other):
+        return Point(self.coordinates + other, self.function, self.cmp)
+
+    def __mul__(self, other):
+        return Point(self.coordinates * other, self.function, self.cmp)
+
+    def __repr__(self):
+        return "Point(%s)" % ", ".join(("%5.3f" % coord for coord in self.coordinates))
+
+    def __getattr__(self, attr):
+        return getattr(self.coordinates, attr)
+
+    def distance(self, other):
+        return osum((self - other).coordinates ** 2) ** 0.5
+
+
+
+class Handler:
     def __init__(self, updater, bisector, plt_args):
         self.figure = plt.figure()
         self.figure.canvas.mpl_connect('key_press_event', self)
@@ -58,13 +97,13 @@ class IBisector:
         self.plt_args = plt_args
         self.image = plt.imshow(self.updater(self.bisector.get_value()), **plt_args)
         self.memento = [[], []]
-        print("Image updated")
         plt.show()
 
     def __call__(self, event):
-        attr = getattr(self, "key_" + event.key, None)
-        if attr:
-            attr()
+        if not event.key is None:
+            attr = getattr(self, "key_" + event.key, None)
+            if attr:
+                attr()
 
     def key_down(self):
         """Mark the current value as no"""
@@ -117,60 +156,210 @@ class IBisector:
         print("Image updated")
 
 
-"""
-threshold = 0.01
-while f(poins[-1]) - f(points[0] > threshold:
+class Comparable(object):
+    def __init__(self, thing, cmp_fnc):
+        self.thing = thing
+        self.cmp = cmp_fnc
 
-#1. settle
-    Ordenar de acuerdo a f(x) los vertices tal que:
-    f(points[0]) ≤ f(points[1]) ≤ f(points[2]) ≤ … ≤ f(points[-1])
-#2. centroid
-    x_o = mean(points[:-1])
-#3. reflection
-    x_r = 2 * x_o - points[-1]
-    if  f(points[0]) ≤ f(x_r) < f(points[-2]):
-        points[-1] = x_r
-        continue
-#4. expansion
-    if f(x_r) < f(points[0]):
-        x_e = x_o + 2 * (x_o - points[-1])
-        if f(x_e) < f(x_r):
-            points[-1] = x_e
+    def __cmp__(self, other_thing):
+        return self.cmp(self, other_thing)
+
+    def __getattr__(self, attr):
+        return getattr(self.thing, attr)
+
+
+def osum(iterable):
+    initial = 0
+    for item in iterable:
+        if initial is 0:
+            initial = item
         else:
-            points[-1] = r_r
-        continue
-#5. contraction
-    assert f(x_r) ≥ f(points[-2])
-    x_c = x_o - (x_o - points[-1]) / 2
-    if f(x_c) < f(points[-1]):
-        points[-1] = x_c
-        continue
-#6. reduction
-    for i in range(1, n+1):
-        points[i] = points[0] + (points[i] - points[0]) / 2
-        continue
-"""
+            initial = initial + item
+    return initial
 
+def omean(iterable):
+    initial = 0
+    lenght = 0
+    for item in iterable:
+        lenght += 1
+        if initial is 0:
+            initial = item
+        else:
+            initial = initial + item
+    return initial / float(lenght)
+
+class Amoeba:
+    def __init__(self, function, initial_values=None, plt_args=None):
+        dimensions = function.func_code.co_argcount
+        if initial_values is None:
+            initial_values = [np.random.normal(0, 15, dimensions)
+                for i in range(dimensions + 1)]            
+        else:
+            assert len(initial_values) == dimensions + 1
+
+        self.ndim = dimensions
+        self.cmp = Icmp(plt_args)
+        self.points = []
+        for coordinates in initial_values:
+            insort(self.points, Point(coordinates, function, self.cmp))
+
+
+    def iterate(self, iterations=None, distance=None):
+        if iterations:
+            for iteraction in range(iterations):
+                self.iterate()
+        elif distance:
+            while self.points[0].distance(self.points[-1]) > distance:
+                self.iterate()
+        else:
+            # reflection
+            assert len(self.points) == self.ndim + 1
+            x_o = omean(self.points[:-1])
+            x_r = x_o * 2 - self.points[-1]
+            if x_r < self.points[0]:
+                print("expansion")
+                x_e = x_r * 2 - x_o
+                if x_e < x_r:
+                    self.points.pop()
+                    self.points.insert(0, x_e)
+                    return
+                else:
+                    self.points.pop()
+                    self.points.insert(0, x_r)
+                    return
+            elif x_r < self.points[-2]:
+                print("reflection")
+                self.points.pop()
+                insort(self.points, x_r)
+                return
+            else:
+                x_c = (x_o + self.points[-1]) / 2.
+                if x_c < self.points[-1]:
+                    print("contraction")
+                    self.points.pop()
+                    insort(self.points, x_c)
+                else:
+                    print("reduction")
+                    newpoints = []
+                    for point in self.points:
+                        insort(newpoints, (point + self.points[0]) / 2.)
+                    self.points = newpoints
+        
+
+class Icmp:
+    def __init__(self, plt_args={}):
+        self.figure = plt.figure()
+        self.figure.canvas.mpl_connect('key_press_event', self.handler)
+        self.plt_args = plt_args
+        self.image = None
+        self.returns = None
+
+    @cache.toram
+    def __call__(self, left, right):
+        if (left == right).all():
+            print("Auto draw!")
+            return 0
+        image = np.hstack((left, right))
+        if self.image is None:
+            self.image = plt.imshow((image), **self.plt_args)
+            plt.show(block=False)
+        else:
+            self.image.set_array(image)
+            self.image.set_visible(True)
+            self.figure.canvas.draw()
+
+        while self.returns is None:
+            plt.waitforbuttonpress()
+        result = self.returns
+        self.image.set_visible(False)
+        self.figure.canvas.draw()
+        self.returns = None
+        return result
+
+    def handler(self, event):
+        if not event.key is None:
+            attr = getattr(self, "key_" + event.key, None)
+            if attr:
+                attr()
+
+    def key_left(self):
+        if self.returns is None:
+            self.returns = -1 
+    def key_down(self):
+        if self.returns is None:
+            self.returns = 0
+    def key_up(self):
+        if self.returns is None:
+            self.returns = 0
+    def key_right(self):
+        if self.returns is None:
+            self.returns = 1
+    def key_4(self):
+        if self.returns is None:
+            self.returns = -1 
+    def key_5(self):
+        if self.returns is None:
+            self.returns = 0
+    def key_6(self):
+        if self.returns is None:
+            self.returns = 1
+    def key_q(self):
+        if self.returns is None:
+            self.returns = 0
+        plt.close()
+        
 
 if __name__ == "__main__":
 
-    from dft import align_phase
-    import pea
-    import unwrap
+#    from dft import align_phase
+#    import pea
+#    import unwrap
 
-    tau = np.pi * 2
+#    tau = np.pi * 2
 
-    p = pea.PEA()
-    p.unwrapper = unwrap.unwrap_qg
-    p.filename_holo = "1206-h-det.png"
-    p.filename_ref  = "1206-r-det.png"
-    p.filename_obj  = "1206-o-det.png"
+#    p = pea.PEA()
+#    p.unwrapper = unwrap.unwrap_qg
+#    p.filename_holo = "1206-h-det.png"
+#    p.filename_ref  = "1206-r-det.png"
+#    p.filename_obj  = "1206-o-det.png"
 
-    def updater(distance):
-        print("Distance: %f" % distance)
-        p.distance = distance
-        return align_phase(p.phase)[1]
+#    def updater(distance):
+#        print("Distance: %f" % distance)
+#        p.distance = distance
+#        return align_phase(p.phase)[1]
             
+#    plt_args = {"cmap":plt.get_cmap("bone")}
+#    handler = Handler(updater, Bisector(-5, 5, 0.0001, search_yes=True), plt_args=plt_args)
+#    p.phase_denoise = handler.bisector.yes
+
+
+    from scipy.misc import lena
+    from image import normalize, equalize
+    from autopipe import showimage
+    from scipy.ndimage.filters import median_filter, gaussian_filter
+    from dft import align_phase
+
+#    icmp = Icmp({"cmap":plt.get_cmap("bone")})
+#    lenas = sortedlist()
+#    for wrapp in np.random.random_integers(0, 255, 10):
+#        lenas.add(Comparable(align_phase(normalize(lena() % wrapp) / 40.74)[1], icmp))
+#    showimage(np.hstack(lenas))
+
+    def sigmoid(x):
+        result = np.abs(1 / (1 + np.exp(-x)))
+        return result
+
+    image = lena()
+    def processor(median_size, tonemapping_level, equalize_level):
+        median_size = sigmoid(median_size) * 50
+        tonemapping_level = sigmoid(tonemapping_level)
+        equalize_level = sigmoid(equalize_level)
+        local_context = gaussian_filter(image, median_size)
+        tonemapped = normalize(image - local_context * tonemapping_level)
+        equalized = tonemapped * (1 - equalize_level) + equalize(tonemapped) * equalize_level
+        return equalized
     plt_args = {"cmap":plt.get_cmap("bone")}
-    handler = Handler(updater, Bisector(-5, 5, 0.0001, search_yes=True), plt_args=plt_args)
-    p.phase_denoise = handler.bisector.yes
+    amoeba = Amoeba(processor, plt_args=plt_args)
+    amoeba.iterate(distance=1)
+    print(amoeba.points)
+    showimage(np.hstack((image, amoeba.points[0].value)))
