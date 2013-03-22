@@ -78,12 +78,15 @@ class Point(object):
         return Point(self.coordinates * other, self.function, self.cmp)
 
     def __repr__(self):
-        return "Point(%s)" % ", ".join(("%5.3f" % coord for coord in self.coordinates))
+        return "Point(%s)" % ", ".join(("%5.3f" % coord
+            for coord in self.coordinates))
 
     def __getattr__(self, attr):
         return getattr(self.coordinates, attr)
 
-    def distance(self, other):
+    def distance(self, other=None):
+        if other is None:
+            other = self - self
         return osum((self - other).coordinates ** 2) ** 0.5
 
 
@@ -189,11 +192,15 @@ def omean(iterable):
     return initial / float(lenght)
 
 class Amoeba:
-    def __init__(self, function, initial_values=None, plt_args=None):
+    def __init__(self, function, initial_values=None, plt_args={}):
         dimensions = function.func_code.co_argcount
         if initial_values is None:
-            initial_values = [np.random.normal(0, 15, dimensions)
-                for i in range(dimensions + 1)]            
+            initial_values = []
+            for i in range(dimensions + 1):
+                point = np.random.normal(0, 1, dimensions)
+                distance = np.sum(point ** 2) ** 0.5
+                point = (point / distance) * 10
+                initial_values.append(point)
         else:
             assert len(initial_values) == dimensions + 1
 
@@ -261,6 +268,7 @@ class Icmp:
             return 0
         image = np.hstack((left, right))
         if self.image is None:
+            plt.axis("off")
             self.image = plt.imshow((image), **self.plt_args)
             plt.show(block=False)
         else:
@@ -284,82 +292,91 @@ class Icmp:
 
     def key_left(self):
         if self.returns is None:
+            print("Left")
             self.returns = -1 
     def key_down(self):
         if self.returns is None:
+            print("Draw")
             self.returns = 0
     def key_up(self):
         if self.returns is None:
+            print("Draw")
             self.returns = 0
     def key_right(self):
         if self.returns is None:
+            print("Right")
             self.returns = 1
     def key_4(self):
         if self.returns is None:
+            print("Left")
             self.returns = -1 
     def key_5(self):
         if self.returns is None:
+            print("Draw")
             self.returns = 0
     def key_6(self):
         if self.returns is None:
+            print("Right")
             self.returns = 1
     def key_q(self):
         if self.returns is None:
+            print("Draw")
             self.returns = 0
         plt.close()
         
 
 if __name__ == "__main__":
 
-#    from dft import align_phase
-#    import pea
-#    import unwrap
-
-#    tau = np.pi * 2
-
-#    p = pea.PEA()
-#    p.unwrapper = unwrap.unwrap_qg
-#    p.filename_holo = "1206-h-det.png"
-#    p.filename_ref  = "1206-r-det.png"
-#    p.filename_obj  = "1206-o-det.png"
-
-#    def updater(distance):
-#        print("Distance: %f" % distance)
-#        p.distance = distance
-#        return align_phase(p.phase)[1]
-            
-#    plt_args = {"cmap":plt.get_cmap("bone")}
-#    handler = Handler(updater, Bisector(-5, 5, 0.0001, search_yes=True), plt_args=plt_args)
-#    p.phase_denoise = handler.bisector.yes
-
-
-    from scipy.misc import lena
-    from image import normalize, equalize
-    from autopipe import showimage
-    from scipy.ndimage.filters import median_filter, gaussian_filter
     from dft import align_phase
+    from image import normalize, equalize
+    from skimage.filter import canny
+    from scipy.ndimage.filters import gaussian_filter
+    from autopipe import showimage
+    from unwrap import wrapped_gradient, wrapped_diff, unwrap_qg
+    import pea
 
-#    icmp = Icmp({"cmap":plt.get_cmap("bone")})
-#    lenas = sortedlist()
-#    for wrapp in np.random.random_integers(0, 255, 10):
-#        lenas.add(Comparable(align_phase(normalize(lena() % wrapp) / 40.74)[1], icmp))
-#    showimage(np.hstack(lenas))
+    p = pea.PEA()
+    p.filename_holo = "1206-h-det.png"
+    p.filename_ref  = "1206-r-det.png"
+    p.filename_obj  = "1206-o-det.png"
+    p.unvwrapper = unwrap_qg
 
     def sigmoid(x):
         result = np.abs(1 / (1 + np.exp(-x)))
         return result
 
-    image = lena()
-    def processor(median_size, tonemapping_level, equalize_level):
-        median_size = sigmoid(median_size) * 50
-        tonemapping_level = sigmoid(tonemapping_level)
-        equalize_level = sigmoid(equalize_level)
-        local_context = gaussian_filter(image, median_size)
-        tonemapped = normalize(image - local_context * tonemapping_level)
-        equalized = tonemapped * (1 - equalize_level) + equalize(tonemapped) * equalize_level
-        return equalized
+#    phase = np.sin(align_phase(p.phase_corrected)[1]) / 2 + 0.5
+#    phase = p.unwrapped_phase
+#    phase = wrapped_gradient(p.phase_corrected)
+#    phase = wrapped_diff(p.phase_corrected)
+
+#    phase = phase / phase.ptp()
+#    phase -= phase.min()
+    def processor(t_sigma, t_level, sigma, low_threshold, high_threshold):
+        t_sigma = sigmoid(t_sigma) * 20
+        t_level = sigmoid(t_level)
+        sigma = sigmoid(sigma) * 50
+        phase = p.unwrapped_phase
+        local_context = gaussian_filter(phase, t_sigma)
+        phase = (phase - local_context) / (1 - t_level)
+        phase /= phase.ptp()
+        phase -= phase.min()
+        cannied = canny(phase, sigma, low_threshold, high_threshold)
+        return np.vstack((phase, cannied))
+
+    initial_values = None
+    # Unwrapped
+#    initial_values = [(-1.469, -3.429, -4.503, 1.695), (-1.519, -4.142, -4.525, 2.041), (-1.699, -3.178, -4.871, 1.224), (-1.416, -3.636, -5.074, 1.400), (-1.078, -4.102, -4.455, 1.525)]
+    # sinoided
+#    initial_values = [(2.671, -1.034, -1.752, -11.838), (2.863, -0.547, -1.404, -11.574), (3.073, -0.643, -1.065, -10.938), (3.014, -1.110, -1.634, -11.724), (2.188, -1.027, -1.925, -11.677)]
+    # denoised unwrapped
+    # [Point(5.095, 4.652, -2.600, -11.167, 0.369), Point(5.050, 4.233, -1.862, -10.801, 0.226), Point(4.725, 4.596, -2.015, -11.064, 0.065), Point(3.842, 4.795, -1.818, -10.624, -0.691), Point(4.410, 4.721, -1.873, -11.075, 0.000), Point(4.824, 4.758, -1.950, -11.196, -0.007)]
+    # denoised tonemaped unwrapped phase
+    # [Point(11.302, 32.193, -17.454, 0.062, -23.372), Point(11.606, 33.481, -17.760, 0.066, -24.366), Point(10.540, 31.750, -17.362, 0.080, -23.049), Point(9.432, 33.442, -19.050, 0.111, -23.610), Point(11.899, 32.981, -18.453, 0.123, -23.621), Point(11.175, 32.647, -18.048, 0.390, -23.549)]
+
+ 
     plt_args = {"cmap":plt.get_cmap("bone")}
-    amoeba = Amoeba(processor, plt_args=plt_args)
+    amoeba = Amoeba(processor, initial_values, plt_args=plt_args)
     amoeba.iterate(distance=1)
     print(amoeba.points)
-    showimage(np.hstack((image, amoeba.points[0].value)))
+    showimage(amoeba.points[0].value)
