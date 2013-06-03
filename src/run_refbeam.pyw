@@ -9,13 +9,15 @@ lp_ft_magnitude = logpolar(ft_magnitude)
 fmt = fft(lp_ft_magnitude)
 """
 
-from autopipe import showimage
-from image import imread, equalize, normalize, logscale
-from scipy import misc
-from pea import guess_director_cosines, get_ref_beam, calculate_director_cosines
-from dft import get_shifted_dft
 import sys
 
+from numpy import hstack, sin, cos
+from scipy import misc
+
+from autopipe import showimage
+from dft import get_shifted_dft
+from image import imread, normalize
+from pea import get_refbeam, calculate_director_cosines, PEA
 
 
 def main():
@@ -28,30 +30,21 @@ def main():
     for filename, image in images:
         print("Original image: %s" % filename)
         image = normalize(image)
-        image_dft = get_shifted_dft(image)
-        image_dft = equalize(image_dft)
         methods = (
-            ("Naïve aproximation", guess_director_cosines),
             ("Direct method", calculate_director_cosines),
         )
 
         for description, function in methods:
 
-            cos_alpha, cos_beta = function(image)
+            cos_alpha, cos_beta = function(get_shifted_dft(image), 1, (1, 1))
             print("\n%s\n" % description)
             print(cos_alpha, cos_beta)
 
-            ref_beam = get_ref_beam(image.shape, cos_alpha, cos_beta)
-            showimage(equalize(image), equalize(ref_beam.real))
-            showimage(equalize(ref_beam.real), equalize(image))
-
-            ref_beam_dft = get_shifted_dft(ref_beam.real)
-            ref_beam_dft_cmp = 1 * equalize(ref_beam_dft)
-            ref_beam_dft_cmp += 0 * logscale(ref_beam_dft)
-            ref_beam_dft = normalize(ref_beam_dft_cmp)
-
-            showimage(image_dft, ref_beam_dft)
-            showimage(ref_beam_dft, image_dft)
+            pea = PEA(filename)
+            phase = pea.phase
+            ref_beam = get_refbeam(image.shape, cos_alpha, cos_beta, 1, (1, 1))
+            showimage(hstack((normalize(image), normalize(ref_beam.imag))))
+            showimage(hstack(((ref_beam.imag +  cos(phase)) % 1, ref_beam.imag)))
 
     return 0
 

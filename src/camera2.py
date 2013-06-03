@@ -29,12 +29,11 @@ def main():
     grey = cv.CreateImage((cols, rows), 8, 1)
     cumulated = cv.CreateImage((cols, rows), 8, 1)
 
-    equalize = False
+    equalize = True
     laplace = False
 
     settings = {
         "canny_avg": 10,
-        "acumulator_alpha": 0.1   
     }
 
     threshold1 = 600
@@ -52,8 +51,6 @@ def main():
             cv.Smooth(grey, grey, param1=5, param2=5)
             cv.EqualizeHist(grey, grey)
 
-        cv.Acc(grey, cumulated)
-
         if laplace:
             cv.Canny(grey, grey, threshold1, threshold2)
             avg = cv.Avg(cumulated)[0]
@@ -64,7 +61,7 @@ def main():
                 threshold1 /= 1.1
                 threshold2 = threshold1 / 2.5
 
-        cv.ShowImage("camera", cumulated)
+        cv.ShowImage("camera", grey)
 
         key = cv.WaitKey(1)
         if key not in (-1, 1114085, 1245157): # None, block
