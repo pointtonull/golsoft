@@ -30,6 +30,7 @@ def get_refbeam(shape, cos_alpha, cos_beta, wavelength, (dx, dy)):
     directors angles
     """
     wavenumber = tau / wavelength
+
     maxrow = shape[0] / 2
     maxcol = shape[1] / 2
     minrow, mincol = -maxrow, -maxcol

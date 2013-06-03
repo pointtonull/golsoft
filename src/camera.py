@@ -67,6 +67,7 @@ def main():
 
     cams = camera.list_cameras()
     cam = camera.Camera(cams[0], (360, 296))
+    cam = camera.Camera(cams[0], (640, 480))
     cam.start()
     fps = 25.0
     window = pygame.display.set_mode((640, 480), 0, 8)
