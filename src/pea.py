@@ -16,12 +16,66 @@ from dft import get_shifted_dft, get_shifted_idft, get_module, get_phase
 from image import get_intensity, imread, subtract, limit_size, equalize, imwrite
 from image import phase_denoise
 from propagation import get_propagation_array
-from unwrap import unwrap_wls, unwrap_qg
-from minimize import get_fitted_paraboloid
+from unwrap import unwrap_wls, unwrap_qg, unwrap_cls
+from minimize import get_fitted_paraboloid, generic_minimizer
 import cache
 
 
 tau = 6.283185307179586 # two times sexier than pi
+
+def sigmoid(s):
+    if s < -500:
+        return 0
+    elif s > 500:
+        return 1
+    else:
+        return 1 / (1 + np.exp(-s))
+
+
+def get_fringes(phase, wavelength=1):
+    wavenumber = tau / wavelength
+    fringes = np.cos(wavenumber * phase)
+    return fringes
+
+
+def get_initial_phase(hologram, wavelength=1):
+    fringes = hologram / float(hologram.ptp())
+    fringes = (fringes + fringes.min()) * 2 - 1
+    image_dft = get_shifted_dft(fringes)
+    cos_alpha, cos_beta = calculate_director_cosines(image_dft, wavelength, (1, 1))
+    maxrow = fringes.shape[0]
+    maxcol = fringes.shape[1]
+    row, col = np.ogrid[:maxrow:1., :maxcol:1.]
+    plane = cos_alpha * col + cos_beta * row
+
+    def fitness((alpha, beta, offset)):
+        alpha = (sigmoid(alpha) - 0.5) * 2 ** 2
+        beta = (sigmoid(beta) - 0.5) * 2 ** 2
+        offset = sigmoid(offset) * tau / 2
+        correction = cos_alpha * col + cos_beta * row + offset
+        sintetic_fringes = get_fringes(plane + correction, wavelength)
+        score = np.sum(np.fabs(fringes - sintetic_fringes))
+        print(alpha, beta, offset, score)
+        return score
+    alpha, beta, offset = generic_minimizer(fitness, [0, 0, 0])
+
+    alpha = (sigmoid(alpha) - 0.5) * 2 ** 2
+    beta = (sigmoid(beta) - 0.5) * 2 ** 2
+    offset = sigmoid(offset) * tau / 2
+    correction = alpha * col + beta * row + offset
+    plane = plane + correction
+    return plane
+
+
+def get_inclined_plane(shape, cos_alpha, cos_beta, wavelength, (dx, dy)):
+    wavenumber = tau / wavelength
+
+    rows, cols = shape 
+    row, col = np.ogrid[:rows:1., :cols:1.]
+
+    inclined_plane = wavenumber * (cos_alpha * col * dx + cos_beta *
+        row * dy)
+    return inclined_plane
 
 
 def get_refbeam(shape, cos_alpha, cos_beta, wavelength, (dx, dy)):
@@ -29,15 +83,8 @@ def get_refbeam(shape, cos_alpha, cos_beta, wavelength, (dx, dy)):
     Generate a reference beam array given the shape of the hologram and the
     directors angles
     """
-    wavenumber = tau / wavelength
-
-    maxrow = shape[0] / 2
-    maxcol = shape[1] / 2
-    minrow, mincol = -maxrow, -maxcol
-    row, col = np.ogrid[minrow:maxrow:1., mincol:maxcol:1.]
-
-    ref_beam = exp(1j * wavenumber * (cos_alpha * col * dx + cos_beta *
-        row * dy))
+    inclined_plane = get_inclined_plane(shape, cos_alpha, cos_beta, wavelength, (dx, dy))
+    ref_beam = exp(1j * inclined_plane)
     
     return ref_beam
 
