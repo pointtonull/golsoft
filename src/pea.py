@@ -348,7 +348,11 @@ class PEA(object):
         if self.unwrapper.func_code.co_argcount == 1:
             return self.unwrapper(self.phase_denoised)
         else:
-            return self.unwrapper(self.phase_denoised, self.module)
+            if self.filename_obj:
+                module = self.image_obj
+            else:
+                module = self.module
+            return self.unwrapper(self.phase_denoised, module)
 
 
 def main():
