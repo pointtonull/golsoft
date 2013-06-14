@@ -181,9 +181,9 @@ class AdaptativeORC:
 
         return cost
 
-    def run(self, initial_guest=None):
-        initial_guest = initial_guest or np.random.random((7, 3))
-        best = generic_minimizer(self.cost_func, initial_guest)
+    def run(self, initial_guess=None):
+        initial_guess = initial_guess or np.random.random((7, 3))
+        best = generic_minimizer(self.cost_func, initial_guess)
         return best
         
 

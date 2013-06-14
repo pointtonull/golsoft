@@ -1,17 +1,19 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
-from itertools import groupby, izip, count
 import operator
+
+from itertools import groupby, izip, count
+
+import Image as pil
+import ImageOps
+import gdal
+import numpy as np
 
 from numpy import sin, cos, exp, log, arctan2
 from scipy import misc, ndimage
 from scipy.misc import imresize
 from scipy.ndimage import geometric_transform
-import Image as pil
-import ImageOps
-import gdal
-import numpy as np
 from skimage.filter import canny
 
 from minimize import generic_minimizer
@@ -24,6 +26,16 @@ tau = np.pi * 2 # two times sexier than pi
 #  * implement:
 #    - imshow   as in autopipe
 #    - imsave
+
+
+def choice_density_map(density_map, random=None):
+    cumsum = np.cumsum(density_map)
+    if random is None:
+        random = np.random.rand()
+    pos = np.searchsorted(cumsum, random * cumsum[-1])
+    row, col = np.unravel_index(pos, density_map.shape)
+    print("(%d, %d)" % (row, col))
+    return row, col
 
 
 def phase_denoise(phase, size=1, filter_func=ndimage.filters.median_filter):
@@ -80,7 +92,7 @@ def get_subtract_paramns(left, right):
     """
     Returns k that minimizes:
 
-        var(left - k * left)
+        var(left - k * right)
     """
 
     def diference((k)):

@@ -14,7 +14,7 @@ quantity of operations:
 Datum is the base class that handle dependences, and propagate deprecation
     signals.
 Depends is a helper decorator that enable easy creation of methods with
-    Daturm ready interface.
+    Datum ready interface.
 
 
 The process must be a new-style class, e.g.:

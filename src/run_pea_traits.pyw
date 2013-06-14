@@ -37,7 +37,7 @@ from pea import calculate_director_cosines, get_refbeam
 from pea import get_phase, get_module
 from propagation import get_propagation_array
 from unwrap import unwrap_phasediff2
-from unwrap import unwrap_qg, unwrap_wls
+from unwrap import unwrap_qg, unwrap_wls, unwrap_cls
 
 tau = 2 * np.pi # two times sexier than pi
 
@@ -647,7 +647,7 @@ class PEA(HasTraits):
     use_unwrapping = Bool(True)
 
     phase_denoise = Range(0, 19, 1, auto_set=False, enter_set=True)
-    unwrapping_method = Enum("Unweighted Least Squares", "Quality Guided")
+    unwrapping_method = Enum("Least Squares", "Congruent Least Squares", "Quality Guided")
     unwrapping_vismode = Enum("phase", "hibryd", label="Visualize")
 
     scn_unwrapping = Instance(MlabSceneModel, ())
@@ -680,7 +680,9 @@ class PEA(HasTraits):
             wrapped_phase = phase_denoise(self.wrapped_phase,
                 self.phase_denoise)
             method = self.unwrapping_method
-            if "Unweighted Least Squares" in method:
+            if "Congruent Least Squares" in method:
+                self.unwrapped_phase = unwrap_cls(wrapped_phase)
+            if "Least Squares" in method:
                 self.unwrapped_phase = unwrap_wls(wrapped_phase)
             elif "Quality Guided" in method:
                 self.unwrapped_phase = unwrap_qg(wrapped_phase,
