@@ -341,7 +341,7 @@ class PEA(object):
             return self.phase_corrected
 
 
-    unwrapper = Datum(unwrap_wls)
+    unwrapper = Datum(unwrap_cls)
     @Depends(phase, module, unwrapper, phase_denoised)
     def unwrapped_phase(self):
         print("Phase unwrapping")
