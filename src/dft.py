@@ -81,9 +81,11 @@ def get_phase(array):
 
 def align_phase(phase, pins=20):
     pin_width = tau / float(pins)
-    histogram = np.histogram(phase, pins)[0]
+    histogram = np.histogram(phase, pins, (0, tau))[0]
     
-#    print(histogram) plot(histogram) show(block=True)
+#    print(histogram)
+#    plot(histogram)
+#    show(block=True)
 
     gap_start = histogram.argmin() * pin_width
     phase = (phase - gap_start) % tau
@@ -91,7 +93,9 @@ def align_phase(phase, pins=20):
     histogram = np.histogram(phase, pins)[0]
     histogram[histogram < histogram.max() / 100.] = 0
 
-#    print(histogram) plot(histogram) show(block=True)
+#    print(histogram)
+#    plot(histogram)
+#    show(block=True)
 
     is_wrapped = (histogram[0] * histogram[-1]) > 0
     return is_wrapped, phase
