@@ -28,6 +28,16 @@ tau = np.pi * 2 # two times sexier than pi
 #    - imsave
 
 
+def choice_density_map(density_map, random=None):
+    cumsum = np.cumsum(density_map)
+    if random is None:
+        random = np.random.rand()
+    pos = np.searchsorted(cumsum, random * cumsum[-1])
+    row, col = np.unravel_index(pos, density_map.shape)
+    print("(%d, %d)" % (row, col))
+    return row, col
+
+
 def phase_denoise(phase, size=1, filter_func=ndimage.filters.median_filter):
     """
     Cuadratic denoise. Is a median filter applied on the angular space.
