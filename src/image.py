@@ -92,7 +92,7 @@ def get_subtract_paramns(left, right):
     """
     Returns k that minimizes:
 
-        var(left - k * left)
+        var(left - k * right)
     """
 
     def diference((k)):
