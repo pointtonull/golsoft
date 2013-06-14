@@ -1,17 +1,19 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
-from itertools import groupby, izip, count
 import operator
+
+from itertools import groupby, izip, count
+
+import Image as pil
+import ImageOps
+import gdal
+import numpy as np
 
 from numpy import sin, cos, exp, log, arctan2
 from scipy import misc, ndimage
 from scipy.misc import imresize
 from scipy.ndimage import geometric_transform
-import Image as pil
-import ImageOps
-import gdal
-import numpy as np
 from skimage.filter import canny
 
 from minimize import generic_minimizer
