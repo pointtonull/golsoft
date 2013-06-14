@@ -103,7 +103,7 @@ def get_circles(array, count=3, window=25):
         radius[center0] = max(radius[center0], radius0)
         radius[center1] = max(radius[center1], radius1)
 
-    circles = [(array[center], center, radius[center]) for center in centers]
+    circles = [(center, array[center], radius[center]) for center in centers]
     return circles
 
 
@@ -177,16 +177,17 @@ def get_holed_window(winfunc, length, holelen=0):
 
 
 def get_auto_mask(spectrum, softness=0, radious_scale=.8, zero_scale=1.3,
-        cuttop=0):
+        cuttop=0, centered=True):
     """
     Try to filter spurious data out.
     """
     shape = spectrum.shape
     intensity = get_intensity(spectrum)
 
-    circles = sorted(get_circles(intensity, 3, 50))
-    virtual_order, real_order, zero_order = circles
-    peak_height, peak_center, peak_radious = real_order
+    circles = sorted(get_circles(intensity, 3, 50)) # de arriba a abajo
+    print(circles)
+    virtual_order, zero_order, real_order = circles
+    peak_center, peak_height, peak_radious = real_order
 
     peak_radious = min([(abs(shape[0] / 3.5 - peak[2]), peak[2])
         for peak in circles])[1]
@@ -196,7 +197,7 @@ def get_auto_mask(spectrum, softness=0, radious_scale=.8, zero_scale=1.3,
     mask = get_mask(shape, window, peak_center)
 
     zerowindow = get_holed_window(windowmaker, peak_radious * zero_scale)
-    zeromask = 1 - get_mask(shape, zerowindow, zero_order[1])
+    zeromask = 1 - get_mask(shape, zerowindow, zero_order[0])
     mask *= zeromask
 
     masked_intensity = mask * intensity
@@ -206,9 +207,10 @@ def get_auto_mask(spectrum, softness=0, radious_scale=.8, zero_scale=1.3,
     mask[cutoff] = 0
     masked = mask * spectrum
 
-    centered = get_centered(intensity, peak_center)
-    masked = get_centered(masked, peak_center)
-    mask = get_centered(mask, peak_center)
+    if centered:
+        masked = get_centered(masked, peak_center)
+        mask = get_centered(mask, peak_center)
+        centered = get_centered(intensity, peak_center)
 
     return mask, masked, centered
 
