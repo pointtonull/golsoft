@@ -42,9 +42,8 @@ def main():
 
             pea = PEA(filename)
             phase = pea.phase
-            ref_beam = get_refbeam(image.shape, cos_alpha, cos_beta, 1, (1, 1))
-            showimage(hstack((normalize(image), normalize(ref_beam.imag))))
-            showimage(hstack(((ref_beam.imag +  cos(phase)) % 1, ref_beam.imag)))
+            ref_beam = get_refbeam(image.shape, cos_alpha, cos_beta, 1, (1, 1), phase)
+            showimage(hstack((normalize(image), normalize(ref_beam.real))))
 
     return 0
 
