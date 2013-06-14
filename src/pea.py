@@ -227,9 +227,9 @@ class PEA(object):
 
 
     mask_softness = Datum(0)
-    mask_order_scale = Datum(0.8)
+    mask_order_scale = Datum(1.5)
     mask_use_zeromask = Datum(True)
-    mask_zero_scale = Datum(1.2)
+    mask_zero_scale = Datum(1)
     mask_use_cuttop = Datum(False)
     mask_cuttop = Datum(0.005)
     @Depends(spectrum, mask_order_scale, mask_use_zeromask, mask_zero_scale,
