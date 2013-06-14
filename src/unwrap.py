@@ -9,8 +9,9 @@ from numpy import NaN
 
 from scipy.interpolate import griddata
 
-from dft import get_sdct, get_idct
+from dft import get_sdct, get_idct, align_phase
 from minimize import generic_minimizer
+from image import get_subtract_paramns, normalize
 
 pi = np.pi
 tau = np.pi * 2 # two times sexier than pi
@@ -23,6 +24,14 @@ def get_aligned_phases(*phases):
             yield -phase
         else:
             yield phase
+
+
+def compare_unwrappers(pea, unwrappers):
+    unwrappeds = []
+    for unwrapper in unwrappers:
+        pea.unwrapper = unwrapper
+        unwrappeds.append(normalize(pea.unwrapped_phase))
+    return np.hstack(unwrappeds)
 
 
 def wrapped_diff(phase, n=1, axis=-1, threshold=pi):
