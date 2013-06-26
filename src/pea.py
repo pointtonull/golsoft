@@ -12,7 +12,7 @@ import numpy as np
 from autofocus import guess_focus_distance
 from automask import get_circles, get_auto_mask
 from dependences import Datum, Depends
-from dft import get_shifted_dft, get_shifted_idft, get_module, get_phase
+from dft import get_shifted_dft, get_shifted_idft, get_module, get_phase, align_phase
 from image import get_intensity, imread, subtract, limit_size, equalize, imwrite
 from image import phase_denoise
 from propagation import get_propagation_array
