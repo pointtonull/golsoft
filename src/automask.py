@@ -72,9 +72,9 @@ def get_wide_segment(array, startpoint, endpoint):
 def get_circles(array, count=3, window=25):
     """
     Identify the center and radius for each local max
-    Returns value, center, radius
-        Value: the value at the center cell
+    Returns center, value, radius
         Center: row, col position
+        Value: the value at the center cell
         Radius: radius
     """
 
@@ -186,11 +186,18 @@ def get_auto_mask(spectrum, softness=0, radious_scale=.8, zero_scale=1.3,
     Try to filter spurious data out.
     """
     shape = spectrum.shape
+    rows, cols = shape
+    center = (rows / 2., cols / 2.)
     intensity = get_intensity(spectrum)
 
-    circles = sorted(get_circles(intensity, 3, 50)) # de arriba a abajo
-    print(circles)
-    virtual_order, zero_order, real_order = circles
+    circles = get_circles(intensity, 3, 50)
+    circles = sorted([(circle[1], circle[0], circle[2])
+        for circle in circles
+            if get_distance(center, circle[0]) > 10])[-2:]
+    circles = sorted([(circle[1], circle[0], circle[2])
+        for circle in circles])
+    virtual_order, real_order = circles
+    zero_order = (center, 0, 0)
     peak_center, peak_height, peak_radious = real_order
 
     peak_radious = min([(abs(shape[0] / 3.5 - peak[2]), peak[2])
