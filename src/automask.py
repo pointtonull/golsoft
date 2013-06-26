@@ -17,6 +17,12 @@ import numpy as np
 tau = np.pi * 2
 VERBOSE = 0
 
+def get_distance(point1, point2):
+    distance = ((point1[0] - point2[0]) ** 2
+        + (point1[1] - point2[1]) ** 2) ** .5
+    return distance
+
+
 
 def graph(*arrays):
     if VERBOSE:
