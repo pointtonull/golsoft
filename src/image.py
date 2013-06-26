@@ -28,6 +28,28 @@ tau = np.pi * 2 # two times sexier than pi
 #    - imsave
 
 
+def correct_cmos_stripes(phase, position=0.5, denoise=5):
+    """
+    Al capturar hologramas con CMOS pueden aparecer franjas horizontales que
+    deforman la phase. Estas franjas pueden ser aisladas por su regularidad
+    horizotal.
+
+    position: medida de posición no central, puede ser cualquier flotante entre 0 y 1:
+        1.0 es el máximo
+        0.5 (default) equivale la mediana, al segundo cuantil y al 50º percentil
+        0.0 es el mínimo
+
+    denoise: tamaño del filtro gausiano aplicado a los valores de las franjas
+    """
+    assert 0 <= position <= 1
+    values = np.sort(phase)
+    denoised = ndimage.filters.gaussian_filter(values, denoise)
+    rows, cols = phase.shape
+    col = cols * position
+    strip = denoised[:, col].reshape((rows, 1))
+    return phase - strip
+
+
 def choice_density_map(density_map, random=None):
     cumsum = np.cumsum(density_map)
     if random is None:
