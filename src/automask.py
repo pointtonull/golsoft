@@ -7,8 +7,6 @@ spectrum image.
 View run_automask to see a complete example.
 """
 
-#from autopipe import showimage
-#from image import normalize
 from collections import defaultdict
 from image import get_centered, get_intensity
 from scipy.ndimage import geometric_transform
