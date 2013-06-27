@@ -149,8 +149,11 @@ class PEA(object):
     @Depends(filename_ref, resolution_limit)
     def image_ref(self):
         print("Loading reference image")
-        image = imread(self.filename_ref, True)
-        image = limit_size(image, self.resolution_limit)
+        if self.filename_ref:
+            image = imread(self.filename_ref, True)
+            image = limit_size(image, self.resolution_limit)
+        else:
+            image = np.zeros_like(self.image_holo)
         return image
 
 
@@ -158,20 +161,21 @@ class PEA(object):
     @Depends(filename_obj, resolution_limit)
     def image_obj(self):
         print("Loading object image")
-        image = imread(self.filename_obj, True)
-        image = limit_size(image, self.resolution_limit)
+        if self.filename_obj:
+            image = imread(self.filename_obj, True)
+            image = limit_size(image, self.resolution_limit)
+        else:
+            image = np.zeros_like(self.image_holo)
         return image
 
 
-    equalize_image = Datum(True)
+    equalize_image = Datum(False)
     @Depends(image_holo, image_ref, image_obj, equalize_image)
     def image(self):
         print("Calculating hologram")
         image = self.image_holo
-        if self.filename_ref:
-            image = subtract(image, self.image_ref)
-        if self.filename_obj:
-            image = subtract(image, self.image_obj)
+        image = subtract(image, self.image_ref)
+        image = subtract(image, self.image_obj)
         if self.equalize_image:
             image = equalize(image)
         return image
@@ -326,6 +330,7 @@ class PEA(object):
             print("Double phase correcting")
             phase = (self.phase - get_fitted_paraboloid(self.phase)) % tau
             phase = (phase - get_fitted_paraboloid(phase)) % tau
+            wrapped, phase = align_phase(phase)
             return phase
         else:
             return self.phase
