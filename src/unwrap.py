@@ -12,6 +12,7 @@ from scipy.interpolate import griddata
 from dft import get_sdct, get_idct, align_phase
 from minimize import generic_minimizer
 from image import get_subtract_paramns, normalize
+from autopipe import showimage
 
 pi = np.pi
 tau = np.pi * 2 # two times sexier than pi
@@ -115,23 +116,28 @@ def unwrap_wls(phase):
 
 
 
+def make_congruent(phase, unwrapped_phase):
+    gradient = wrapped_diff(phase)
+    gradient_unwrapped = wrapped_diff(unwrapped_phase)
+    k = get_subtract_paramns(gradient, gradient_unwrapped)
+
+    phase_diff = (phase - unwrapped_phase * k) / tau
+    phase_diff -= np.median(phase_diff) # cool
+    phase_diff = np.round(phase_diff) * tau
+#    showimage(np.hstack((phase, unwrapped_phase * k, phase_diff)))
+    congruent_phase = phase - phase_diff
+    return congruent_phase
+
+    
+
 def unwrap_cls(phase):
     """
     Patched Quality Guided
     """
 
     unwrapped_ls = unwrap_wls(phase)
-    gradient = wrapped_diff(phase)
-    gradient_ls = wrapped_diff(unwrapped_ls)
-    k = get_subtract_paramns(gradient, gradient_ls)
-    phase_diff = phase - unwrapped_ls * k
-    congruent_diff = (phase_diff) % tau
-    wrapped, aligned_congruent_diff = align_phase(congruent_diff)
-    offset = (congruent_diff - aligned_congruent_diff).mean()
-    phase_diff += offset
-    phase_diff = np.round(phase_diff / tau) * tau
-    pqg = phase - phase_diff
-    return pqg
+    cls = make_congruent(phase, unwrapped_ls)
+    return cls
 
     
 def unwrap_multiphase(*phases):

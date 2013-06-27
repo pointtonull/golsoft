@@ -28,7 +28,36 @@ tau = np.pi * 2 # two times sexier than pi
 #    - imsave
 
 
+def correct_cmos_stripes(phase, position=0.5, denoise=5):
+    """
+    Al capturar hologramas con CMOS pueden aparecer franjas horizontales que
+    deforman la phase. Estas franjas pueden ser aisladas por su regularidad
+    horizotal.
+
+    position: medida de posición no central, puede ser cualquier flotante entre 0 y 1:
+        1.0 es el máximo
+        0.5 (default) equivale la mediana, al segundo cuantil y al 50º percentil
+        0.0 es el mínimo
+
+    denoise: tamaño del filtro gausiano aplicado a los valores de las franjas
+    """
+    assert 0 <= position <= 1
+    values = np.sort(phase)
+    denoised = ndimage.filters.gaussian_filter(values, denoise)
+    rows, cols = phase.shape
+    col = cols * position
+    strip = denoised[:, col].reshape((rows, 1))
+    return phase - strip
+
+
 def choice_density_map(density_map, random=None):
+    """
+    devuelve coordenadas aleatorias dentro de la forma de density_map donde se
+    considera a density_map como una función de densidad de probabilidad.
+
+    Si random es especificado este será el valor usado para los cálcules en
+    lugar de usar un número aleatorio.
+    """
     cumsum = np.cumsum(density_map)
     if random is None:
         random = np.random.rand()
@@ -54,14 +83,9 @@ def phase_denoise(phase, size=1, filter_func=ndimage.filters.median_filter):
     return denoised
 
 
-def phase_filter(phase, filter_func=np.var, *extra_args):
-    y_over = (sin(phase) + 1) / 2.
-    print y_over.ptp(), y_over.min()
-    y_over = filter_func(y_over, *extra_args)
-    return y_over
-
-
-def auto_canny(array, average=0.15, gaussian_sigma=1, strongness=2.5):
+def auto_canny(array, average=None, gaussian_sigma=1, strongness=2.5):
+    if average is None:
+        average = array.size ** 0.5 / array.size
     array -= array.min()
     array /= array.max()
 
@@ -71,16 +95,21 @@ def auto_canny(array, average=0.15, gaussian_sigma=1, strongness=2.5):
         return edges.mean()
 
     hard_threshold = 0.4
-    current_average = canny_average(hard_threshold)
-    epsilon = 0.001
-    for iteration in xrange(50):
+    epsilon = 0.0001
+    bottom, top = 0., 1.
+    for iteration in xrange(20):
+        current_average = canny_average(hard_threshold)
+        print(hard_threshold, current_average)
         if abs(current_average - average) < epsilon:
             break
-        if current_average < average:
-            hard_threshold /= 1.2
+        elif current_average < average:
+            top = hard_threshold   
+            hard_threshold = (bottom + top) / 2
         else:
-            hard_threshold *= 1.2
-        print(hard_threshold, current_average)
+            bottom = hard_threshold
+            hard_threshold = (bottom + top) / 2
+    else:
+        print("Agotados los intentos")
 
     soft_threshold = hard_threshold / strongness
     return canny(array, gaussian_sigma, hard_threshold, soft_threshold)

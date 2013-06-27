@@ -7,7 +7,7 @@ from scipy import optimize
 import matplotlib.pyplot as plt
 import numpy as np
 
-from automask import get_mask, get_auto_mask
+from automask import get_mask
 from autopipe import showimage
 from dft import get_shifted_idft, get_module
 from image import imread, normalize, get_intensity, equalize
