@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 from numpy import abs, array, average, corrcoef, mat, shape, std, sum, transpose, zeros
 from numpy.linalg import svd
 
@@ -604,3 +605,24 @@ def CorrelationLoadings(X, Scores):
             CorrLoadings[i, row] = corrs[0,1]
                 
     return CorrLoadings        
+
+
+def main():
+    import pea
+    import image
+    from autopipe import showimage
+    import unwrap
+    p = pea.PEA()
+    p.unwrapper = unwrap.unwrap_qg
+    p.filename_holo = "feh_004123_000001_tmpXAePgu.png"
+    phase = image.correct_cmos_stripes(p.unwrapped_phase)
+    module = p.module
+    comb = array((phase.ravel(), module.ravel())).transpose()
+    pca = PCA_nipals2(comb)
+    p = pca[0]
+    showimage(p[:, 0].reshape(phase.shape))
+    
+    return 0
+
+if __name__ == "__main__":
+    exit(main())
