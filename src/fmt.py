@@ -56,7 +56,7 @@ def get_high_pass_filter(array, radius=0.2, softness=4):
     
 
 @cache.hybrid
-def get_fmt(array):
+def get_fmt(array, high_pass=0.15):
     """
     Follows this algoritm:
         * FFT with centered frecuencies
@@ -66,48 +66,21 @@ def get_fmt(array):
     """
     fourier = get_shifted_dft(array)
     magnitude = np.abs(fourier)
-    showimage(magnitude)
-    high_passed = get_high_pass_filter(magnitude, .15, 2)
+    high_passed = get_high_pass_filter(magnitude, high_pass, 0)
     logpolar = get_logpolar(high_passed, 3)
     fmt = get_shifted_dft(logpolar)
     return fmt
 
 
 @cache.hybrid
-def get_fmt_correlation(image1, image2):
+def get_fmt_correlation(image1, image2, high_pass=0.15):
     image1 = get_centered(image1)
     image2 = get_centered(image2)
 
-    #1 Apply same 2D windowing to both the images
-    #2 Fourier-Mellin transform (which is translation invariant:
-    #  is a 2D Fourier transform followed by abs()) (sic)
-    #3 map the transformed images to log-polar space, so that rotation / scaling
-    #  become Dx/Dy translations on the new axes
-    #4 take 2D Fourier transform to results
-    fmt1 = get_fmt(image1)
-    fmt2 = get_fmt(image2)
+    fmt1 = get_fmt(image1, high_pass)
+    fmt2 = get_fmt(image2, high_pass)
 
-    # Multiply one for the coniugate of the other
-    #5 divide (element by element) this product by its abs()
-
-#    correlation = correlate2d(get_intensity(fmt1), get_intensity(fmt2))
     correlation = correlate2d(np.abs(fmt1), np.abs(fmt2)) #magnitude
-#    correlation = correlate2d(np.angle(fmt1), np.angle(fmt2)) #phase
-#    showimage(logscale(correlation), equalize(correlation))
-
-    #6 reverse 2D Fourier transform of result of step 5; note that steps 4+6 are
-    #  equivalent to perform a correlation on results of step 3; step 5
-    #  introduces a normalization; all together is the "cross power spectrum"
-    #  calculation
-
-    #7 calculate the position of peaks; after appropriate conversion these are
-    #  candidates for rotation and scale parameters. Note that:
-    #  a. for scale it will be probably necessary to test more than one peak
-    #  b. rotation is affected by a 180 degree ambiguity therefore at least two 
-    #     cases shell be tested.
-    #8 adjust images for scale and rotation
-    #9 find Dx/Dy and adjust for translation, more or less the same as 4 to 7,
-    #  but applied to results of step 8 and with less problems).
 
     argmax = np.unravel_index(correlation.argmax(), correlation.shape)
     peak = correlation[argmax]
