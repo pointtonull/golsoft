@@ -14,7 +14,7 @@ from automask import get_circles, get_auto_mask
 from dependences import Datum, Depends
 from dft import get_shifted_dft, get_shifted_idft, get_module, get_phase, align_phase
 from image import get_intensity, imread, subtract, limit_size, equalize, imwrite
-from image import phase_denoise
+from image import phase_denoise, correct_cmos_stripes
 from propagation import get_propagation_array
 from unwrap import unwrap_wls, unwrap_qg, unwrap_cls
 from minimize import get_fitted_paraboloid, generic_minimizer
@@ -151,7 +151,8 @@ class PEA(object):
         print("Loading reference image")
         if self.filename_ref:
             image = imread(self.filename_ref, True)
-            image = limit_size(image, self.resolution_limit)
+            if self.resolution_limit != 0:
+                image = limit_size(image, self.resolution_limit)
         else:
             image = np.zeros_like(self.image_holo)
         return image
@@ -163,7 +164,8 @@ class PEA(object):
         print("Loading object image")
         if self.filename_obj:
             image = imread(self.filename_obj, True)
-            image = limit_size(image, self.resolution_limit)
+            if self.resolution_limit != 0:
+                image = limit_size(image, self.resolution_limit)
         else:
             image = np.zeros_like(self.image_holo)
         return image
@@ -347,17 +349,23 @@ class PEA(object):
 
 
     unwrapper = Datum(unwrap_cls)
-    @Depends(phase, module, unwrapper, phase_denoised)
+    phase_correct_cmos = Datum(True)
+    @Depends(phase, module, unwrapper, phase_denoised, phase_correct_cmos)
     def unwrapped_phase(self):
         print("Phase unwrapping")
         if self.unwrapper.func_code.co_argcount == 1:
-            return self.unwrapper(self.phase_denoised)
+            unwrapped = self.unwrapper(self.phase_denoised)
         else:
             if self.filename_obj:
                 module = self.image_obj
             else:
                 module = self.module
-            return self.unwrapper(self.phase_denoised, module)
+            unwrapped = self.unwrapper(self.phase_denoised, module)
+        if self.phase_correct_cmos:
+            print("Correcting cmos strips")
+            return correct_cmos_stripes(unwrapped)
+        else:
+            return unwrapped
 
 
 def main():

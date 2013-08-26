@@ -143,7 +143,6 @@ def subtract(left, right):
         return left
     else:
         best_k = get_subtract_paramns(left, right)
-        print("Subtraction left - %f * right" % best_k)
         result = left - best_k * right
 
         return result
